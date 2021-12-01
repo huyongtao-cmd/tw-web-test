@@ -1,0 +1,52 @@
+import exspenseTrip from './exspenseTrip.hbs';
+import exspenseNormal from './exspenseNormal.hbs';
+import expensePersonal from './expensePersonal.hbs';
+import exspenseSpec from './exspenseSpec.hbs';
+import expenseeFeeApple from './expenseeFeeApple.hbs';
+import exspenseTicket from './exspenseTicket.hbs';
+import invSpec from './invSpec.hbs';
+import adPayTemplate from './adPay.hbs';
+import withdrawFlowPay from './withdrawFlowPay.hbs';
+import transferMoney from './transferMoney.hbs';
+import paymentApply from './paymentApply.hbs';
+
+const handlebarsMap = {
+  ACC_A12: exspenseNormal, // 非差旅
+  ACC_A13: exspenseTrip, // 差旅
+  ACC_A25: exspenseSpec, // 专项
+  COS_S01: expensePersonal, // 报销
+  COS02: expensePersonal, // 报销
+  ACC_A24: exspenseTicket, // 因公行政订票
+  ACC_A27: expenseeFeeApple, // 特殊
+  printInv: invSpec, // 开票
+  ACC_A29: adPayTemplate, // 预付款
+  ACC_A38: withdrawFlowPay, // 提现付款
+  ACC_A66: transferMoney, // 资金划款
+  ACC_A83: paymentApply, // 预付款申请
+  ACC_A82: paymentApply, // 预付款核销
+  ACC_A80: paymentApply, // 付款申请
+  ACC_A84: paymentApply, // 薪资福利
+  ACC_A81: paymentApply, // 协议
+  ACC_A86: paymentApply, //  投标保证金
+  ACC_A87: paymentApply, //  薪资福利结算
+  ACC_A90: paymentApply, // 付款申请单:合同采购-服务贸易
+  ACC_A91: paymentApply, // 付款申请单:对公资源外包(提点)
+  ACC_A92: paymentApply, // 付款申请单:个体资源外包
+  ACC_A93: paymentApply, // 付款申请单:对公资源外包
+  ACC_A96: paymentApply, // 付款申请单:合同采购-产品贸易
+  ACC_A98: paymentApply, // 付款申请单:合同采购-渠道费用
+  ACC_A100: paymentApply, // 付款申请单:房屋租赁
+  ACC_A101: paymentApply, // 付款申请单:杂项采购
+  ACC_A102: paymentApply, // 付款申请单:市场渠道
+  ACC_A103: paymentApply, // 付款申请单:预付款核销
+  ACC_A104: paymentApply, // 付款申请单:研发采购
+  ACC_A105: paymentApply, // 付款申请单:行政运营类采购
+  ACC_A107: paymentApply, // 付款申请单:公司管理类
+  ACC_A108: paymentApply, // 付款申请单:资源赋能类采购
+  ACC_A110: paymentApply, // 付款申请单:预付款：预付款（产品贸易类）/预付款（服务贸易类）/预付款（其它）
+};
+
+export function getHandlebars(name) {
+  if (!name) return '';
+  return handlebarsMap[name] || undefined;
+}

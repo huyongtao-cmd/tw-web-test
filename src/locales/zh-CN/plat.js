@@ -4,7 +4,7 @@ export default {
   'plat.customer.basic.title': '基本信息',
   'plat.customer.custNo.title': '客户编号',
   'plat.customer.custName.title': '客户姓名',
-  'plat.customer.custStatus.title': '',
+  'plat.customer.custStatus.title': '客户状态',
   'plat.customer.custType1.title': '客户性质',
   'plat.customer.buName.title': '所属BU',
   'plat.customer.salemanName.title': '销售人员',

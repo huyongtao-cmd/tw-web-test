@@ -7,6 +7,7 @@ import Title from '@/components/layout/Title';
 import { mountToTab } from '@/layouts/routerControl';
 import { fromQs } from '@/utils/stringUtils';
 import { AddrViewContext } from '../customerInfoDetail';
+import TreeSearch from '@/components/common/TreeSearch';
 
 const DOMAIN = 'customer';
 const { Description } = DescriptionList;
@@ -29,8 +30,22 @@ class AddrDetT0 extends PureComponent {
 
   render() {
     const {
-      customer: { formData },
+      customer: { formData, checkedKeys },
+      treeLoading,
+      tagTree,
+      flatTags,
     } = this.props;
+
+    let checkedKeysTemp = checkedKeys;
+    if (checkedKeysTemp.length < 1) {
+      if (formData.tagIds) {
+        const arrayTemp = formData.tagIds.split(',');
+        checkedKeysTemp = arrayTemp.filter(item => {
+          const menu = flatTags[item];
+          return menu && (menu.children === null || menu.children.length === 0);
+        });
+      }
+    }
 
     return (
       <>
@@ -49,6 +64,22 @@ class AddrDetT0 extends PureComponent {
             <pre>{formData.headOfficeAddr || ''}</pre>
           </Description>
         </DescriptionList>
+
+        <DescriptionList size="large" col={1}>
+          <Description term="客户标签">
+            <TreeSearch
+              checkable
+              // checkStrictly
+              showSearch={false}
+              placeholder="请输入关键字"
+              treeData={tagTree}
+              defaultExpandedKeys={tagTree.map(item => `${item.id}`)}
+              checkedKeys={checkedKeysTemp}
+              disabled
+            />
+          </Description>
+        </DescriptionList>
+
         <DescriptionList size="large" col={2}>
           <Description term="客户标签1">{formData.custLabel1 || ''}</Description>
           <Description term="客户标签2">{formData.custLabel2 || ''}</Description>

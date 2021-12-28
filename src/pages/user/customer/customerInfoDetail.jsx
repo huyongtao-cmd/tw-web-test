@@ -22,6 +22,7 @@ import AddrDetT5 from './components/AddrDetT5';
 import AddrDetT6 from './components/AddrDetT6';
 import AddrDetT7 from './components/AddrDetT7';
 import AddrDetT8 from './components/AddrDetT8';
+import AddrEditT0 from '@/pages/user/customer/components/AddrEditT0';
 
 const DOMAIN = 'userCustDetail'; // 自己替换
 const AddrViewContext = createContext();
@@ -33,6 +34,7 @@ const AddrViewContext = createContext();
  */
 @connect(({ loading, userCustDetail, customer }) => ({
   // :loading.effects['namespace/submodule'], // 页面加载loading停止的条件, 此处代表这个请求结束
+  treeLoading: loading.effects[`${DOMAIN}/getTagTree`],
   customer,
   ...userCustDetail, // 代表与该组件相关redux的model
 }))
@@ -66,6 +68,12 @@ class AddrDet extends React.PureComponent {
     // const { dispatch } = this.props;
     const { dispatch } = this.props;
     const { id, no } = fromQs();
+    // 客户标签数据
+    dispatch({
+      type: `${DOMAIN}/getTagTree`,
+      payload: { key: 'CUSTOMER_TAG' },
+    });
+
     id &&
       dispatch({
         type: `customer/customerDetails`,
@@ -140,6 +148,10 @@ class AddrDet extends React.PureComponent {
     const {
       tabkey,
       tabModified,
+      form,
+      tagTree,
+      treeLoading,
+      flatTags,
       customer: { formData },
     } = this.props;
 
@@ -224,7 +236,14 @@ class AddrDet extends React.PureComponent {
             onTabChange={this.onTabChange}
           >
             {{
-              custDetail: <AddrDetT0 />,
+              custDetail: (
+                <AddrDetT0
+                  form={form}
+                  tagTree={tagTree}
+                  treeLoading={treeLoading}
+                  flatTags={flatTags}
+                />
+              ),
               basic: <AddrDetT1 />,
               personDet: <AddrDetT2 />,
               compDet: <AddrDetT3 />,

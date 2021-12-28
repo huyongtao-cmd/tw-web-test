@@ -10,6 +10,7 @@ import defaultSettings from '../src/defaultSettings';
 // 系统工程配置文件(umi -> webpack) - 执行启动命令umi会读取此文件的配置进行工程构件。
 export default {
   hash: true,
+  // treeShaking: true,
   // add for transfer to umi
   plugins: [
     [
@@ -36,26 +37,18 @@ export default {
                 include: ['dva', 'dva/router', 'dva/saga', 'dva/fetch'],
                 exclude: ['@babel/runtime'],
               },
-              hardSource: false,
+              hardSource: true,
             }
           : {}),
       },
     ],
   ],
-  devServer: {
-    proxy: {
-      '/tw': {
-        target: env.proxyTargetHost,
-        changeOrigin: true,
-        // pathRewrite: { "^/tw" : "/tw" }
-      },
-    },
-    port: 3003,
-  },
   define: {
     // 工程内部全局变量 - 请勿随意自行添加
     APP_TYPE: process.env.APP_TYPE || '',
     SERVER_URL: env.serverHost,
+    YEE_DOC_URL: env.yeeDocUrl,
+    YEE_DOC_DOMAIN: env.yeeDocDomain,
   },
   // polyfill - BRAND SPANKING NEW
   targets: {

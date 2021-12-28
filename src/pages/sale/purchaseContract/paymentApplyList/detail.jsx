@@ -12,7 +12,7 @@ import createMessage from '@/components/core/AlertMessage';
 import { fromQs } from '@/utils/stringUtils';
 import { add as mathAdd, checkIfNumber, div, mul, sub } from '@/utils/mathUtils';
 import { formatDT } from '@/utils/tempUtils/DateTime';
-import { isEmpty, takeLast, add, isNil, gte, lte } from 'ramda';
+import { isEmpty, takeLast, add, isNil, gte, lte, clone } from 'ramda';
 import { toIsoDate } from '@/utils/timeUtils';
 import BpmWrapper from '@/pages/gen/BpmMgmt/BpmWrapper';
 import BpmConnection from '@/pages/gen/BpmMgmt/BpmConnection';
@@ -182,7 +182,7 @@ class Edit extends Component {
     } = this.props;
 
     const { mode, scene, docNo } = fromQs();
-    const { taskId, remark, result } = parmas;
+    const { taskId, remark, result, branch } = parmas;
     const { payDetailList, formData } = paymentApplyDetail;
     if (payDetailList.length !== 0) {
       if (formData.currPaymentAmt > 0) {
@@ -207,6 +207,7 @@ class Edit extends Component {
                         taskId,
                         remark,
                         result,
+                        branch,
                       },
                     },
                   }).then(resq => {
@@ -310,6 +311,12 @@ class Edit extends Component {
     const param = fromQs();
     const { taskId } = param;
 
+    const submitBtn =
+      loading.effects[`${DOMAIN}/paymentSlipBatchOperation`] ||
+      loading.effects[`${DOMAIN}/save`] ||
+      loading.effects[`${DOMAIN}/reSubmit`] ||
+      loading.effects[`${DOMAIN}/submit`];
+
     // 获取工作流组件相关数据
     const { id, scene, paymentApplicationType } = formData;
     const docId = id;
@@ -337,11 +344,37 @@ class Edit extends Component {
         }
       }
     }
+
+    // 处理申请人修改节点的按钮
+    let wrappedFieldsConfig = fieldsConfig;
+    if (
+      fieldsConfig &&
+      fieldsConfig.taskKey &&
+      (fieldsConfig.taskKey.indexOf('ACCOUNTANCY') > -1 ||
+        fieldsConfig.taskKey.indexOf('CASHIER_CONFIRM') > -1)
+    ) {
+      wrappedFieldsConfig = clone(fieldsConfig);
+      wrappedFieldsConfig.buttons.push({
+        type: 'button',
+        key: 'FLOW_PASS',
+        title: '申请人修改',
+        className: 'tw-btn-primary',
+        branches: [
+          {
+            id: 1,
+            code: 'AGAIN_SUBMIT',
+            name: '申请人修改',
+          },
+        ],
+      });
+    }
+
     return (
       <PageHeaderWrapper title="付款申请单审批">
         <BpmWrapper
+          buttonLoading={submitBtn}
           fields={formData}
-          fieldsConfig={fieldsConfig}
+          fieldsConfig={wrappedFieldsConfig}
           flowForm={flowForm}
           scope={procDefKey}
           onBpmChanges={value => {
@@ -351,14 +384,18 @@ class Edit extends Component {
             });
           }}
           onBtnClick={({ operation, formData: formD, bpmForm }) => {
-            const { key } = operation;
+            const { key, title } = operation;
             const payload = {
               taskId: param.taskId,
               remark: bpmForm.remark,
+              branch: bpmForm.branch,
             };
             if (key === 'FLOW_PASS') {
               // 相关bu处理人
-              if (taskKey.indexOf('ACCOUNTANCY') !== -1) {
+              if (
+                (taskKey.indexOf('ACCOUNTANCY') !== -1 && title !== '申请人修改') ||
+                taskKey.indexOf('APPLY_RES_EDIT') !== -1
+              ) {
                 payload.result = 'APPROVED';
                 payload.scene = formData.scene;
                 validateFieldsAndScroll((error, values) => {

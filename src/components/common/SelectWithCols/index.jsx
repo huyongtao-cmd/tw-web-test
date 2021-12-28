@@ -54,7 +54,14 @@ class SelectWithCols extends React.Component {
   };
 
   render() {
-    const { columns, dataSource, selectProps, valueKey = 'code', labelKey = 'name' } = this.props;
+    const {
+      columns,
+      dataSource,
+      selectProps,
+      valueKey = 'code',
+      labelKey = 'name',
+      disabled,
+    } = this.props;
     const { value } = this.state;
 
     // const val = {
@@ -80,6 +87,7 @@ class SelectWithCols extends React.Component {
         filterOption={false}
         optionLabelProp="label"
         onChange={this.triggerOnChange}
+        disabled={disabled}
         // onBlur={this.triggerOnBlur}
       >
         <Option key="disabled-option" value="disabled-option" disabled>

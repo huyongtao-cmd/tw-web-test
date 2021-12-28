@@ -18,6 +18,7 @@ import EditableDataTable from '@/components/common/EditableDataTable';
 import AsyncSelect from '@/components/common/AsyncSelect';
 import { createAlert } from '@/components/core/Confirm';
 import { queryUdc } from '@/services/gen/app';
+import { isEmpty } from 'ramda';
 
 const DOMAIN = 'userTravelTicket'; // 自己替换
 
@@ -61,6 +62,18 @@ class AdminTicket extends React.PureComponent {
       dispatch({
         type: `${DOMAIN}/query`,
         payload: param,
+      }).then(res => {
+        dispatch({
+          type: `${DOMAIN}/queryTravelDels`,
+          payload: { id: param.applyId },
+        }).then(res1 => {
+          dispatch({
+            type: `${DOMAIN}/updateState`,
+            payload: {
+              dataList: [...res, ...res1],
+            },
+          });
+        });
       });
     } else {
       dispatch({
@@ -162,6 +175,7 @@ class AdminTicket extends React.PureComponent {
       placeList = [],
       ticketChannelList = [],
     } = _udcMap;
+    const { applyId, resId } = fromQs();
 
     return {
       rowKey: 'id',
@@ -173,19 +187,40 @@ class AdminTicket extends React.PureComponent {
       showCopy: false,
       onAdd: newRow => {
         const genId = genFakeId(-1);
-        dispatch({
-          type: `${DOMAIN}/updateState`,
-          payload: {
-            dataList: update(dataList, {
-              $push: [
-                {
-                  ...newRow,
-                  id: genId,
-                },
-              ],
-            }),
-          },
-        });
+        if (dataList !== null && dataList.length > 0) {
+          dispatch({
+            type: `${DOMAIN}/updateState`,
+            payload: {
+              dataList: update(dataList, {
+                $push: [
+                  {
+                    ...newRow,
+                    id: genId,
+                    tripResId: resId,
+                    vehicle: dataList[dataList.length - 1].vehicle,
+                    fromPlace: dataList[dataList.length - 1].fromPlace,
+                    toPlace: dataList[dataList.length - 1].toPlace,
+                  },
+                ],
+              }),
+            },
+          });
+        } else {
+          dispatch({
+            type: `${DOMAIN}/updateState`,
+            payload: {
+              dataList: update(dataList, {
+                $push: [
+                  {
+                    ...newRow,
+                    id: genId,
+                    tripResId: resId,
+                  },
+                ],
+              }),
+            },
+          });
+        }
         return genId;
       },
       onSave: (rowForm, record, index) => {
@@ -409,48 +444,18 @@ class AdminTicket extends React.PureComponent {
           ),
         },
         {
-          title: '时间',
-          dataIndex: 'timespan',
+          title: '订票日期',
+          dataIndex: 'bookingDate',
           align: 'center',
           editable: true,
-          required: true,
-          width: 340,
-          options: {
-            rules: [
-              {
-                required: true,
-                message: '请输入时间',
-              },
-            ],
-          },
+          width: 150,
           render: (value, row, index) => (
-            <Input
-              placeholder="请输入时间段"
-              defaultValue={value}
-              onBlur={this.onCellChanged(index, 'timespan')}
-            />
-          ),
-        },
-        {
-          title: '车次/航班号',
-          dataIndex: 'vehicleNo',
-          align: 'center',
-          width: 200,
-          editable: true,
-          required: true,
-          options: {
-            rules: [
-              {
-                required: true,
-                message: '请输入车次/航班号',
-              },
-            ],
-          },
-          render: (value, row, index) => (
-            <Input
-              placeholder="车次/航班号"
-              defaultValue={value}
-              onBlur={this.onCellChanged(index, 'vehicleNo')}
+            <DatePicker
+              placeholder="订票日期"
+              format="YYYY-MM-DD"
+              className="x-fill-100"
+              value={row.bookingDate ? moment(row.bookingDate) : null}
+              onChange={this.onCellChanged(index, 'bookingDate')}
             />
           ),
         },
@@ -479,18 +484,48 @@ class AdminTicket extends React.PureComponent {
           ),
         },
         {
-          title: '订票日期',
-          dataIndex: 'bookingDate',
+          title: '时间',
+          dataIndex: 'timespan',
           align: 'center',
           editable: true,
-          width: 150,
+          required: true,
+          width: 90,
+          options: {
+            rules: [
+              {
+                required: true,
+                message: '请输入时间',
+              },
+            ],
+          },
           render: (value, row, index) => (
-            <DatePicker
-              placeholder="订票日期"
-              format="YYYY-MM-DD"
-              className="x-fill-100"
-              value={row.bookingDate ? moment(row.bookingDate) : null}
-              onChange={this.onCellChanged(index, 'bookingDate')}
+            <Input
+              placeholder="请输入时间段"
+              defaultValue={value}
+              onBlur={this.onCellChanged(index, 'timespan')}
+            />
+          ),
+        },
+        {
+          title: '车次/航班号',
+          dataIndex: 'vehicleNo',
+          align: 'center',
+          width: 40,
+          editable: true,
+          required: true,
+          options: {
+            rules: [
+              {
+                required: true,
+                message: '请输入车次/航班号',
+              },
+            ],
+          },
+          render: (value, row, index) => (
+            <Input
+              placeholder="车次/航班号"
+              defaultValue={value}
+              onBlur={this.onCellChanged(index, 'vehicleNo')}
             />
           ),
         },

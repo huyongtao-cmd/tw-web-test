@@ -7,9 +7,11 @@ import { FormattedMessage } from 'umi/locale';
 import Login from '@/components/layout/Login';
 import { getEncryptPsw } from '@/services/gen/app';
 import styles from './Login.less';
+//导入公共的工具类：fromQs()方法用于获取请求的参数信息
+import { fromReturnUrl } from '@/utils/stringUtils';
 
 const { Tab, UserName, Password, Captcha, Submit } = Login; // Mobile
-
+const yeedocxDomain = `${YEE_DOC_DOMAIN}`;
 @connect(({ login, loading, global }) => ({
   login,
   submitting: loading.effects['login/login'],
@@ -23,6 +25,17 @@ class LoginPage extends Component {
 
   componentDidMount() {
     const { dispatch } = this.props;
+    const indexOf = decodeURIComponent(window.location.href).indexOf(yeedocxDomain);
+    if (indexOf !== -1) {
+      // // 易稻壳跳转过来的，先登出一次
+      dispatch({
+        type: 'login/logoutOnly',
+      }).then(() => {
+        dispatch({
+          type: 'RESET',
+        });
+      });
+    }
     dispatch({
       type: 'global/updateState',
       payload: {
@@ -30,7 +43,7 @@ class LoginPage extends Component {
       },
     });
     this.onGetCaptcha();
-    // this.getHomepageConfig();
+    this.getHomepageConfig();
     this.getLogoAndExtensionConfig();
   }
 
@@ -45,12 +58,12 @@ class LoginPage extends Component {
     });
   };
 
-  // getHomepageConfig = () => {
-  //   const { dispatch } = this.props;
-  //   dispatch({
-  //     type: 'global/querySysHomeConfig',
-  //   });
-  // };
+  getHomepageConfig = () => {
+    const { dispatch } = this.props;
+    dispatch({
+      type: 'global/querySysHomeConfig',
+    });
+  };
 
   getLogoAndExtensionConfig = () => {
     const { dispatch } = this.props;
@@ -83,9 +96,10 @@ class LoginPage extends Component {
   };
 
   handleSubmit = async (err, values) => {
+    const returnurl = fromReturnUrl(); //fromQs()类似于const return = fromQs().return
     const { response } = await getEncryptPsw();
     let { password } = values;
-    password = this.encryptData(response.data || response, password);
+    password = this.encryptData(response, password);
     const { dispatch } = this.props;
     const { type, autoLogin } = this.state;
     if (!err) {
@@ -97,6 +111,7 @@ class LoginPage extends Component {
           type,
           href: window.location.href,
           password,
+          returnurl,
         },
       });
     }

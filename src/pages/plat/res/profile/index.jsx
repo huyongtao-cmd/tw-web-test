@@ -1,6 +1,6 @@
 import React, { PureComponent } from 'react';
 import { connect } from 'dva';
-import { Form, Tooltip, DatePicker } from 'antd';
+import { Form, Tooltip, DatePicker, Modal, Button, Card } from 'antd';
 import AsyncSelect from '@/components/common/AsyncSelect';
 import Link from 'umi/link';
 import router from 'umi/router';
@@ -10,12 +10,17 @@ import { createConfirm } from '@/components/core/Confirm';
 import DataTable from '@/components/common/DataTable';
 import PageHeaderWrapper from '@/components/layout/PageHeaderWrapper';
 import createMessage from '@/components/core/AlertMessage';
-import { queryUdc } from '@/services/gen/app';
 import { selectBus } from '@/services/org/bu/bu';
 import { Selection, UdcSelect } from '@/pages/gen/field';
 import { getUrl } from '@/utils/flowToRouter';
 import { stringify } from 'qs';
+import FieldList from '@/components/layout/FieldList';
+import ZipImportExport from '@/components/common/ZipImportExport';
+import { isEmpty } from 'ramda';
+
 import ResLeaveModal from './modal/ResLeaveModal';
+
+const { Field } = FieldList;
 
 const DOMAIN = 'platResProfile';
 // 资源状态
@@ -27,8 +32,19 @@ const resStatus = {
   RES_STATUS_5: '5', // 调岗中
   RES_STATUS_6: '6', // 已离职
 };
+// 拥有 批量上传电子照片 按钮权限的角色
+const roleAuth = [
+  'SYS_ADMIN',
+  'PLAT_HR_ADMIN',
+  'PLAT_ALL_PIC',
+  'PLAT_IT_ADMIN',
+  'PLAT_HR_PIC',
+  'PLAT_RES_PIC',
+  'PLAT_SALARY_PIC',
+];
 
-@connect(({ loading, platResProfile }) => ({
+@connect(({ loading, platResProfile, user }) => ({
+  user,
   platResProfile,
   loading: loading.effects[`${DOMAIN}/query`] || loading.effects[`${DOMAIN}/getPageConfig`],
 }))
@@ -50,7 +66,14 @@ class ResProfile extends PureComponent {
 
   state = {
     resLeaveVisible: false,
+    // eslint-disable-next-line react/no-unused-state
+    isBatchEdit: false,
+    // eslint-disable-next-line react/no-unused-state
+    selectedKeys: undefined,
     modalData: {},
+    importVisible: false,
+    uploading: false,
+    failedList: [],
   };
 
   componentDidMount() {
@@ -132,7 +155,6 @@ class ResProfile extends PureComponent {
         resLeaveVisible: !resLeaveVisible,
         modalData: {},
       });
-      console.log('--', queryParams);
       this.fetchData(queryParams);
     });
   };
@@ -145,15 +167,158 @@ class ResProfile extends PureComponent {
     });
   };
 
+  // 批量修改是否弹框判断
+  batchEditModal = item => {
+    this.setState({
+      isBatchEdit: true,
+      selectedKeys: item,
+    });
+  };
+
+  // 确认批量修改
+  confirmModification = () => {
+    const { selectedKeys } = this.state;
+    const {
+      dispatch,
+      form: { validateFieldsAndScroll, setFieldsValue },
+    } = this.props;
+    // 保存请求
+    validateFieldsAndScroll((error, values) => {
+      // if (values) {
+      if (!error) {
+        dispatch({
+          type: `${DOMAIN}/batchEditLevelRq`,
+          payload: { ids: selectedKeys, value: values },
+        }).then(ok => {
+          this.setState({
+            isBatchEdit: false,
+          });
+          this.fetchData({ sortBy: 'resNo', sortDirection: 'DESC' });
+          setFieldsValue({
+            jobGrade: undefined,
+            managementGrade: undefined,
+            positionSequence: undefined,
+            professionalSequence: undefined,
+          });
+        });
+      }
+      // }
+    });
+  };
+
+  // 取消弹框
+  cancel = () => {
+    const {
+      dispatch,
+      form: { validateFieldsAndScroll, setFieldsValue },
+    } = this.props;
+    this.setState({
+      isBatchEdit: false,
+    });
+    setFieldsValue({
+      jobGrade: undefined,
+      managementGrade: undefined,
+      positionSequence: undefined,
+      professionalSequence: undefined,
+    });
+  };
+
+  // 电子照片批量导入
+  batchUploadOwerPhoto = fileList => {
+    this.setState({
+      uploading: true,
+    });
+
+    const fileData = new FormData();
+    fileList.forEach(file => {
+      fileData.append('file', file);
+    });
+    fileData.append('cover', this.modal?.state?.checked);
+
+    const { dispatch } = this.props;
+    dispatch({
+      type: `${DOMAIN}/uploadOwerPhoto`,
+      payload: fileData,
+    }).then(res => {
+      this.setState({
+        uploading: false,
+      });
+      if (res.ok) {
+        createMessage({ type: 'success', description: '上传成功' });
+        this.toggleImportVisible();
+        return null;
+      }
+      if (
+        res.datum &&
+        Array.isArray(res.datum.failExcelData) &&
+        !isEmpty(res.datum.failExcelData)
+      ) {
+        createMessage({ type: 'error', description: res.datum.msg || '上传失败' });
+        this.setState({
+          failedList: res.datum.failExcelData,
+        });
+      } else {
+        createMessage({ type: 'error', description: res.datum.msg || '上传失败,返回结果为空' });
+        this.toggleImportVisible();
+      }
+      return null;
+    });
+  };
+
+  toggleImportVisible = () => {
+    const { importVisible } = this.state;
+    this.setState({ importVisible: !importVisible });
+  };
+
+  onRef = ref => {
+    this.modal = ref;
+  };
+
   render() {
+    // console.log(this.modal,'this.modal');
     const {
       dispatch,
       loading,
       platResProfile: { dataSource, total, searchForm, type2Data, pageConfig },
       form,
+      user: { user },
     } = this.props;
+    const { importVisible, failedList, uploading } = this.state;
+    const { roles = [] } = user;
+    // 判断权限  批量上传电子照片 按钮权限的角色
+    const checkRole = () => {
+      let flag = false;
+      roles.forEach(v => {
+        if (roleAuth.includes(v)) {
+          flag = true;
+        }
+      });
+      return !flag;
+    };
+    // 批量上传电子照片
+    const excelImportProps = {
+      templateUrl: location.origin + `/template/batchPhoneDemo.zip`, // eslint-disable-line
+      option: {
+        fileName: '电子照片批量导入失败记录',
+        datas: [
+          {
+            sheetName: '电子照片批量导入失败记录', // 表名
+            sheetFilter: ['errorMsg', 'fileName'], // 列过滤
+            sheetHeader: ['失败原因', '文件名称'], // 第一行标题
+            columnWidths: [12, 6], // 列宽 需与列顺序对应。
+          },
+        ],
+      },
+      controlModal: {
+        visible: importVisible,
+        failedList,
+        uploading,
+      },
+    };
 
-    const { resLeaveVisible, modalData } = this.state;
+    const { getFieldDecorator } = form;
+
+    const { resLeaveVisible, modalData, isBatchEdit, selectedKeys } = this.state;
     const { pageBlockViews } = pageConfig;
     if (!pageBlockViews || pageBlockViews.length < 1) {
       return <div />;
@@ -194,7 +359,7 @@ class ResProfile extends PureComponent {
     const tableProps = {
       rowKey: 'id',
       columnsCache: DOMAIN,
-      loading: false,
+      loading,
       total,
       dataSource,
       searchForm,
@@ -202,6 +367,7 @@ class ResProfile extends PureComponent {
       onChange: filters => {
         this.fetchData(filters);
       },
+
       onSearchBarChange: (changedValues, allValues) => {
         const obj = { ...allValues };
         if (Object.keys(changedValues)[0] === 'resType1') {
@@ -300,7 +466,7 @@ class ResProfile extends PureComponent {
           tag: (
             <Selection
               source={() => selectBus()}
-              placeholder={`${pageFieldJsonQuery.resStatus.displayName}下拉`}
+              placeholder={`${pageFieldJsonQuery.baseBuId.displayName}下拉`}
             />
           ),
         },
@@ -382,6 +548,62 @@ class ResProfile extends PureComponent {
             initialValue: searchForm.label1,
           },
           tag: <Selection source={() => selectBus()} />,
+        },
+        pageFieldJsonQuery.jobGrade.visibleFlag && {
+          title: `${pageFieldJsonQuery.jobGrade.displayName}`, // TODO: 国际化
+          dataIndex: 'jobGrade',
+          sortNo: `${pageFieldJsonQuery.jobGrade.sortNo}`,
+          options: {
+            initialValue: searchForm.jobGrade,
+          },
+          tag: (
+            <Selection.UDC
+              code="RES:JOB_GRADE"
+              placeholder={`请选择${pageFieldJsonQuery.jobGrade.displayName}`}
+            />
+          ),
+        },
+        pageFieldJsonQuery.managementGrade.visibleFlag && {
+          title: `${pageFieldJsonQuery.managementGrade.displayName}`, // TODO: 国际化
+          dataIndex: 'managementGrade',
+          sortNo: `${pageFieldJsonQuery.managementGrade.sortNo}`,
+          options: {
+            initialValue: searchForm.managementGrade,
+          },
+          tag: (
+            <Selection.UDC
+              code="RES:MANAGEMENT_GRADE"
+              placeholder={`请选择${pageFieldJsonQuery.managementGrade.displayName}`}
+            />
+          ),
+        },
+        pageFieldJsonQuery.positionSequence.visibleFlag && {
+          title: `${pageFieldJsonQuery.positionSequence.displayName}`, // TODO: 国际化
+          dataIndex: 'positionSequence',
+          sortNo: `${pageFieldJsonQuery.positionSequence.sortNo}`,
+          options: {
+            initialValue: searchForm.positionSequence,
+          },
+          tag: (
+            <Selection.UDC
+              code="RES:POSITION_SEQUENCE"
+              placeholder={`请选择${pageFieldJsonQuery.positionSequence.displayName}`}
+            />
+          ),
+        },
+        pageFieldJsonQuery.professionalSequence.visibleFlag && {
+          title: `${pageFieldJsonQuery.professionalSequence.displayName}`, // TODO: 国际化
+          dataIndex: 'professionalSequence',
+          sortNo: `${pageFieldJsonQuery.professionalSequence.sortNo}`,
+          options: {
+            initialValue: searchForm.professionalSequence,
+          },
+          tag: (
+            <Selection.UDC
+              code="RES:PROFESSIONAL_SEQUENCE"
+              placeholder={`请选择${pageFieldJsonQuery.professionalSequence.displayName}`}
+            />
+          ),
         },
       ]
         .filter(Boolean)
@@ -471,6 +693,34 @@ class ResProfile extends PureComponent {
           align: 'center',
           sortNo: `${pageFieldJsonList.label1.sortNo}`,
         },
+        pageFieldJsonList.jobGrade.visibleFlag && {
+          title: `${pageFieldJsonList.jobGrade.displayName}`, // TODO: 国际化
+          dataIndex: 'jobGrade',
+          align: 'center',
+          sorter: true,
+          sortNo: `${pageFieldJsonList.jobGrade.sortNo}`,
+        },
+        pageFieldJsonList.managementGrade.visibleFlag && {
+          title: `${pageFieldJsonList.managementGrade.displayName}`, // TODO: 国际化
+          dataIndex: 'managementGrade',
+          align: 'center',
+          sorter: true,
+          sortNo: `${pageFieldJsonList.managementGrade.sortNo}`,
+        },
+        pageFieldJsonList.positionSequence.visibleFlag && {
+          title: `${pageFieldJsonList.positionSequence.displayName}`, // TODO: 国际化
+          dataIndex: 'positionSequenceName',
+          align: 'center',
+          sorter: true,
+          sortNo: `${pageFieldJsonList.positionSequence.sortNo}`,
+        },
+        pageFieldJsonList.professionalSequence.visibleFlag && {
+          title: `${pageFieldJsonList.professionalSequence.displayName}`, // TODO: 国际化
+          dataIndex: 'professionalSequenceName',
+          align: 'center',
+          sorter: true,
+          sortNo: `${pageFieldJsonList.professionalSequence.sortNo}`,
+        },
         pageFieldJsonList.remark.visibleFlag && {
           title: `${pageFieldJsonList.remark.displayName}`, // TODO: 国际化
           dataIndex: 'remark1',
@@ -529,6 +779,19 @@ class ResProfile extends PureComponent {
                 `/hr/res/profile/list/resDetailEdit?id=${selectedRowKeys}&mode=update&tab=basic`
               );
             }
+          },
+        },
+        {
+          key: 'batchEdit',
+          className: 'tw-btn-primary',
+          icon: 'form',
+          title: '批量修改',
+          loading: false,
+          hidden: false,
+          minSelections: 0,
+          disabled: selectedRows => !(selectedRows.length > 0),
+          cb: (selectedRowKeys, selectedRows, queryParams) => {
+            this.batchEditModal(selectedRowKeys);
           },
         },
         {
@@ -690,10 +953,33 @@ class ResProfile extends PureComponent {
             return true;
           },
           cb: (selectedRowKeys, selectedRows, queryParams) => {
-            this.setState({
-              resLeaveVisible: !resLeaveVisible,
-              modalData: selectedRows[0],
+            createConfirm({
+              content: (
+                <span>
+                  <span>确定对资源</span>
+                  <h1>{selectedRows[0].resName}</h1>
+                  <span>进行离职操作？操作后账号将不可恢复！！！</span>
+                </span>
+              ),
+              onOk: () =>
+                this.setState({
+                  resLeaveVisible: !resLeaveVisible,
+                  modalData: selectedRows[0],
+                }),
             });
+          },
+        },
+        {
+          key: 'importTag',
+          icon: 'file-zip',
+          className: 'tw-btn-primary',
+          title: '批量上传电子照片',
+          loading: false,
+          hidden: checkRole(),
+          disabled: false,
+          minSelections: 0,
+          cb: (selectedRowKeys, selectedRows, queryParams) => {
+            this.toggleImportVisible();
           },
         },
       ],
@@ -701,6 +987,12 @@ class ResProfile extends PureComponent {
 
     return (
       <PageHeaderWrapper>
+        <ZipImportExport
+          {...excelImportProps}
+          closeModal={this.toggleImportVisible}
+          handleUpload={this.batchUploadOwerPhoto}
+          onRef={this.onRef}
+        />
         <DataTable {...tableProps} />
         <ResLeaveModal
           visible={resLeaveVisible}
@@ -711,6 +1003,76 @@ class ResProfile extends PureComponent {
           handleCancel={this.handleCancel}
           form={form}
         />
+        <Modal
+          title="批量修改"
+          visible={isBatchEdit}
+          onOk={() => this.confirmModification()}
+          onCancel={() => this.cancel()}
+          width="700px"
+        >
+          <FieldList layout="horizontal" getFieldDecorator={getFieldDecorator} col={2} noReactive>
+            <Field
+              name="jobGrade"
+              label="专业级别"
+              decorator={{
+                // initialValue: isBatchEdit ? dataSource.jobGrade : undefined,
+                rules: [
+                  {
+                    required: false,
+                    message: '请选择专业级别',
+                  },
+                ],
+              }}
+            >
+              <Selection.UDC code="RES:JOB_GRADE" placeholder="请选择专业级别" />
+            </Field>
+            <Field
+              name="managementGrade"
+              label="管理级别"
+              decorator={{
+                // initialValue: dataSource.managementGrade,
+                rules: [
+                  {
+                    required: false,
+                    message: '请选择管理级别',
+                  },
+                ],
+              }}
+            >
+              <Selection.UDC code="RES:MANAGEMENT_GRADE" placeholder="请选择管理级别" />
+            </Field>
+            <Field
+              name="positionSequence"
+              label="职位序列"
+              decorator={{
+                // initialValue: dataSource.positionSequence,
+                rules: [
+                  {
+                    required: false,
+                    message: '请选择职位序列',
+                  },
+                ],
+              }}
+            >
+              <Selection.UDC code="RES:POSITION_SEQUENCE" placeholder="请选择职位序列" />
+            </Field>
+            <Field
+              name="professionalSequence"
+              label="专业序列"
+              decorator={{
+                // initialValue: dataSource.professionalSequence,
+                rules: [
+                  {
+                    required: false,
+                    message: '请选择专业序列',
+                  },
+                ],
+              }}
+            >
+              <Selection.UDC code="RES:PROFESSIONAL_SEQUENCE" placeholder="请选择专业序列" />
+            </Field>
+          </FieldList>
+        </Modal>
       </PageHeaderWrapper>
     );
   }

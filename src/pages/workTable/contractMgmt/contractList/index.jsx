@@ -13,12 +13,11 @@ import createMessage from '@/components/core/AlertMessage';
 import { createConfirm } from '@/components/core/Confirm';
 import { remindString } from '@/components/production/basic/Remind';
 import { outputHandle } from '@/utils/production/outputUtil';
-import { fromQs } from '@/utils/production/stringUtil';
 
 // @ts-ignore
 import {
-  contractPagingRq,
-  contractDeleteRq,
+  pcontractPagingRq,
+  pcontractDeleteRq,
   pcontractChangeStatusRq,
 } from '@/services/workbench/contract';
 
@@ -71,21 +70,21 @@ class list extends React.PureComponent {
   }
 
   fetchData = async params => {
-    const { effectiveStartDate, createTime, ...restparams } = params;
-    if (Array.isArray(effectiveStartDate) && (effectiveStartDate[0] || effectiveStartDate[1])) {
-      [restparams.effectStartDate, restparams.effectEndDate] = effectiveStartDate;
+    const { effectiveStartDate: date, createTime: date1, ...restparams } = params;
+    if (Array.isArray(date) && (date[0] || date[1])) {
+      [restparams.effectiveStartDate, restparams.effectiveEndDate] = date;
     }
 
-    if (Array.isArray(createTime) && (createTime[0] || createTime[1])) {
-      [restparams.createStartTime, restparams.createEndTime] = createTime;
+    if (Array.isArray(date1) && (date1[0] || date1[1])) {
+      [restparams.createStartTime, restparams.createEndTime] = date1;
     }
 
-    const { response } = await contractPagingRq(restparams);
+    const { response } = await pcontractPagingRq(restparams);
     return response.data;
   };
 
   deleteData = async keys =>
-    outputHandle(contractDeleteRq, { ids: keys.join(',') }, undefined, false);
+    outputHandle(pcontractDeleteRq, { ids: keys.join(',') }, undefined, false);
 
   changeStatus = async parmars => {
     const { response } = await pcontractChangeStatusRq(parmars);
@@ -121,42 +120,27 @@ class list extends React.PureComponent {
 
     return [
       <SearchFormItem
-        key="contractName"
-        fieldKey="contractName"
-        label="合同名称"
+        key="contractNoOrName"
+        fieldKey="contractNoOrName"
+        label="合同编号/名称"
         fieldType="BaseInput"
-        defaultShow
-      />,
-      <SearchFormItem
-        key="contractNo"
-        fieldKey="contractNo"
-        label="合同编号	"
-        fieldType="BaseInput"
-        defaultShow
-      />,
-      <SearchFormItem
-        label="合同状态"
-        fieldKey="contractStatus"
-        key="contractStatus"
-        fieldType="BaseSelect"
-        parentKey="FUNCTION:CONTRACT:STATUS"
         defaultShow
       />,
       <SearchFormItem
         key="contractClass1"
         label="合同类型"
-        fieldType="BaseSystemCascaderMultiSelect"
+        fieldType="BaseCustomCascaderMultiSelect"
         fieldKey="contractClass1"
-        parentKey="FUNCTION:CONTRACT:CLASS1"
+        parentKey="CUS:CONTRACT_CLASS1"
         defaultShow
         onChange={(value, option, allOptions) => {
           internalState.form.setFieldsValue({
             contractClass2: null,
           });
           dispatch({
-            type: `${DOMAIN}/systemSelectionCascaderRq`,
+            type: `${DOMAIN}/customSelectionCascaderRq`,
             payload: {
-              key: 'FUNCTION:CONTRACT:CLASS1',
+              key: 'CUS:CONTRACT_CLASS1',
               cascaderValues: value,
             },
           });
@@ -170,57 +154,64 @@ class list extends React.PureComponent {
         descList={contractClass2List}
         defaultShow
       />,
-      // <SearchFormItem
-      //   key="contractParties"
-      //   label="签约方"
-      //   fieldType="BaseInput"
-      //   fieldKey="contractParties"
-      //   defaultShow
-      // />,
       <SearchFormItem
-        key="dutyResId"
+        key="contractParties"
+        label="签约方"
+        fieldType="BaseInput"
+        fieldKey="contractParties"
+        defaultShow
+      />,
+      <SearchFormItem
+        key="inchargeResId"
         label="合同负责人"
         fieldType="ResSimpleSelect"
-        fieldKey="dutyResId"
+        fieldKey="inchargeResId"
         defaultShow
       />,
-      // <SearchFormItem
-      //   key="inchargeBuId"
-      //   label="所属部门"
-      //   fieldType="BuSimpleSelect"
-      //   fieldKey="inchargeBuId"
-      //   defaultShow
-      // />,
+      <SearchFormItem
+        key="inchargeBuId"
+        label="所属部门"
+        fieldType="BuSimpleSelect"
+        fieldKey="inchargeBuId"
+        defaultShow
+      />,
       <SearchFormItem
         label="签约公司"
-        fieldType="BaseSelect"
-        key="contractCompany"
-        fieldKey="contractCompany"
-        parentKey="FUNCTION:COMPANY:NAME"
+        fieldType="BaseCustomSelect"
+        key="signingCompany"
+        fieldKey="signingCompany"
+        parentKey="CUS:INTERNAL_COMPANY"
         defaultShow
       />,
-
-      // <SearchFormItem
-      //   label="法务意见"
-      //   fieldType="BaseInput"
-      //   key="legalComments"
-      //   fieldKey="legalComments"
-      //   defaultShow
-      // />,
-      // <SearchFormItem
-      //   label="相关项目"
-      //   fieldType="ProjectSimpleSelect"
-      //   key="relatedProject"
-      //   fieldKey="relatedProject"
-      //   defaultShow
-      // />,
-      // <SearchFormItem
-      //   key="relatedProduct"
-      //   label="相关产品"
-      //   fieldKey="relatedProduct"
-      //   fieldType="ProductSimpleSelect"
-      //   defaultShow
-      // />,
+      <SearchFormItem
+        label="合同状态"
+        fieldKey="contractStatus"
+        key="contractStatus"
+        fieldType="BaseSelect"
+        parentKey="ADM:CONTRACT_STATUS"
+        defaultShow
+      />,
+      <SearchFormItem
+        label="法务意见"
+        fieldType="BaseInput"
+        key="legalComments"
+        fieldKey="legalComments"
+        defaultShow
+      />,
+      <SearchFormItem
+        label="相关项目"
+        fieldType="ProjectSimpleSelect"
+        key="relatedProject"
+        fieldKey="relatedProject"
+        defaultShow
+      />,
+      <SearchFormItem
+        key="relatedProduct"
+        label="相关产品"
+        fieldKey="relatedProduct"
+        fieldType="ProductSimpleSelect"
+        defaultShow
+      />,
       <SearchFormItem
         key="effectiveStartDate"
         label="生效日期"
@@ -317,7 +308,9 @@ class list extends React.PureComponent {
         render: (value, row, index) => (
           <Link
             onClick={() =>
-              router.push(`/workTable/contractMgmt/contractCreate?id=${row.id}&mode=DESCRIPTION`)
+              router.push(
+                `/workTable/contractMgmt/contractList/detail?id=${row.id}&mode=DESCRIPTION`
+              )
             }
           >
             {value}
@@ -328,12 +321,6 @@ class list extends React.PureComponent {
         title: '合同名称',
         key: 'contractName',
         dataIndex: 'contractName',
-        align: 'center',
-      },
-      {
-        title: '合同状态',
-        key: 'contractStatus',
-        dataIndex: 'contractStatusDesc',
         align: 'center',
       },
       {
@@ -350,83 +337,82 @@ class list extends React.PureComponent {
       },
       {
         title: '参考合同号',
-        key: 'contractEntityNo',
-        dataIndex: 'contractEntityNo',
+        key: 'refContractNo',
+        dataIndex: 'refContractNo',
         align: 'center',
       },
       {
-        title: '合同金额',
-        dataIndex: 'contractAmount',
-        align: 'right',
-        render: val => val && val.toFixed(2),
+        title: '合同状态',
+        key: 'contractStatus',
+        dataIndex: 'contractStatusDesc',
+        align: 'center',
       },
-      // {
-      //   title: '签约公司',
-      //   key: 'signingCompany',
-      //   dataIndex: 'signingCompanyDesc',
-      //   align: 'center',
-      // },
       {
-        title: '合同负责人',
-        key: 'dutyResIdDesc',
-        dataIndex: 'dutyResIdDesc',
+        title: '签约公司',
+        key: 'signingCompany',
+        dataIndex: 'signingCompanyDesc',
         align: 'center',
       },
       {
         title: '甲方',
-        key: 'partyFirstDesc',
-        dataIndex: 'partyFirstDesc',
+        key: 'partyA',
+        dataIndex: 'partyA',
         align: 'center',
       },
       {
         title: '乙方',
-        key: 'partySecondDesc',
-        dataIndex: 'partySecondDesc',
+        key: 'partyB',
+        dataIndex: 'partyB',
         align: 'center',
       },
-      // {
-      //   title: '所属部门',
-      //   key: 'inchargeBuId',
-      //   dataIndex: 'inchargeBuIdDesc',
-      //   align: 'center',
-      // },
-
+      {
+        title: '所属部门',
+        key: 'inchargeBuId',
+        dataIndex: 'inchargeBuIdDesc',
+        align: 'center',
+      },
+      {
+        title: '合同金额',
+        dataIndex: 'amt',
+        align: 'right',
+        render: val => val && val.toFixed(2),
+      },
       {
         title: '签订日期',
-        key: 'contractSignDate',
-        dataIndex: 'contractSignDate',
+        key: 'signingDate',
+        dataIndex: 'signingDate',
         align: 'center',
       },
       {
         title: '生效日期',
-        key: 'effectStartDate',
-        dataIndex: 'effectStartDate',
+        key: 'effectiveStartDate',
+        dataIndex: 'effectiveStartDate',
         align: 'center',
       },
       {
         title: '终止日期',
-        key: 'effectEndDate',
-        dataIndex: 'effectEndDate',
+        key: 'effectiveEndDate',
+        dataIndex: 'effectiveEndDate',
         align: 'center',
       },
-      // {
-      //   title: '相关合同',
-      //   key: 'relatedContract',
-      //   dataIndex: 'relatedContractDesc',
-      //   align: 'center',
-      // },
-      // {
-      //   title: '相关项目',
-      //   key: 'relatedProject',
-      //   dataIndex: 'relatedProjectDesc',
-      //   align: 'center',
-      // },
-      // {
-      //   title: '相关产品',
-      //   key: 'relatedProduct',
-      //   dataIndex: 'relatedProductDesc',
-      //   align: 'center',
-      // },
+      {
+        title: '相关合同',
+        key: 'relatedContract',
+        dataIndex: 'relatedContractDesc',
+        align: 'center',
+      },
+      {
+        title: '相关项目',
+        key: 'relatedProject',
+        dataIndex: 'relatedProjectDesc',
+        align: 'center',
+      },
+      {
+        title: '相关产品',
+        key: 'relatedProduct',
+        dataIndex: 'relatedProductDesc',
+        align: 'center',
+      },
       {
         title: '创建人',
         key: 'createUserId',
@@ -435,21 +421,21 @@ class list extends React.PureComponent {
       },
       {
         title: '创建时间',
-        key: 'createTimeDesc',
-        dataIndex: 'createTimeDesc',
+        key: 'createTime',
+        dataIndex: 'createTime',
         align: 'center',
       },
-      // {
-      //   title: '法务意见',
-      //   key: 'legalComments',
-      //   dataIndex: 'legalComments',
-      // },
-      // {
-      //   title: '关闭原因',
-      //   key: 'closeReasonDesc',
-      //   dataIndex: 'closeReasonDesc',
-      //   align: 'center',
-      // },
+      {
+        title: '法务意见',
+        key: 'legalComments',
+        dataIndex: 'legalComments',
+      },
+      {
+        title: '关闭原因',
+        key: 'closeReasonDesc',
+        dataIndex: 'closeReasonDesc',
+        align: 'center',
+      },
     ];
 
     return (
@@ -502,7 +488,7 @@ class list extends React.PureComponent {
               });
               return;
             }
-            router.push(`/workTable/contractMgmt/contractCreate?id=${data.id}&mode=EDIT`);
+            router.push(`/workTable/contractMgmt/contractList/edit?id=${data.id}&mode=EDIT`);
           }}
           deleteData={data => {
             const { selectedRows } = getInternalState();
@@ -521,10 +507,107 @@ class list extends React.PureComponent {
           }}
           tableExtraProps={{
             scroll: {
-              x: 2000,
+              x: 3300,
             },
           }}
-          extraButtons={[]}
+          extraButtons={[
+            {
+              key: 'adjust',
+              title: '调整',
+              type: 'primary',
+              size: 'large',
+              loading: false,
+              cb: internalState => {
+                // eslint-disable-next-line no-console
+                const { selectedRowKeys, selectedRows } = internalState;
+                const tt = selectedRows.filter(v => v.contractStatus !== 'ACTIVE');
+                if (!isEmpty(tt)) {
+                  createMessage({
+                    type: 'warn',
+                    description: `仅已激活的合同才能调整！`,
+                  });
+                  return;
+                }
+                router.push(
+                  `/workTable/contractMgmt/contractList/edit?id=${
+                    selectedRows[0].id
+                  }&mode=EDIT&scene=adjust`
+                );
+              },
+              disabled: internalState => {
+                const { selectedRowKeys } = internalState;
+                return selectedRowKeys.length !== 1;
+              },
+            },
+            {
+              key: 'active',
+              title: '激活',
+              type: 'primary',
+              size: 'large',
+              loading: false,
+              cb: internalState => {
+                const { selectedRowKeys, selectedRows } = internalState;
+                const tt = selectedRows.filter(v => v.contractStatus !== 'CLOSE');
+                if (!isEmpty(tt)) {
+                  createMessage({
+                    type: 'warn',
+                    description: `仅已关闭的合同才能激活！`,
+                  });
+                  return;
+                }
+
+                createConfirm({
+                  content: remindString({
+                    remindCode: 'COM:W:REACTIVE_WARN',
+                    defaultMessage: '继续操作将重新激活选中的数据，请确认是否继续？',
+                  }),
+                  onOk: () => {
+                    this.changeStatus({
+                      ids: selectedRowKeys.join(','),
+                      contractStatus: 'ACTIVE',
+                    }).then(res => {
+                      const { refreshData } = internalState;
+                      refreshData();
+                    });
+                  },
+                });
+              },
+              disabled: internalState => {
+                const { selectedRowKeys } = internalState;
+                return selectedRowKeys.length !== 1;
+              },
+            },
+            {
+              key: 'close',
+              title: '关闭',
+              type: 'primary',
+              size: 'large',
+              loading: false,
+              cb: internalState => {
+                const { selectedRowKeys, selectedRows } = internalState;
+                const tt = selectedRows.filter(v => v.contractStatus !== 'ACTIVE');
+                if (!isEmpty(tt)) {
+                  createMessage({
+                    type: 'warn',
+                    description: `仅已激活的合同才能关闭！`,
+                  });
+                  return;
+                }
+
+                this.setState({
+                  visible: true,
+                  modalFormData: {
+                    ids: selectedRowKeys.join(','),
+                    contractStatus: 'CLOSE',
+                  },
+                });
+              },
+              disabled: internalState => {
+                const { selectedRowKeys } = internalState;
+                return selectedRowKeys.length !== 1;
+              },
+            },
+          ]}
         />
       </PageWrapper>
     );

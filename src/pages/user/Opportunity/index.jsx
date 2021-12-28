@@ -629,6 +629,10 @@ class UserOpportunity extends PureComponent {
           align: 'center',
           width: 100,
         },
+        {
+          title: `关闭原因`,
+          dataIndex: 'closeReasonDesc',
+        },
         pageFieldJsonList.currCode.visibleFlag && {
           title: `${pageFieldJsonList.currCode.displayName}`,
           dataIndex: 'currCodeName',
@@ -742,7 +746,7 @@ class UserOpportunity extends PureComponent {
           minSelections: 0,
           cb: (selectedRowKeys, selectedRows, queryParams) => {
             // console.log(selectedRows[0].id);
-            router.push(`/user/project/projectResPlanning?id=${selectedRows[0].id}&planType=1`);
+            router.push(`/user/project/projectResPlanning?objId=${selectedRows[0].id}&planType=1`);
           },
         },
         buttonLists.createContract.visible && {

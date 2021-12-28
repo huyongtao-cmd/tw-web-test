@@ -18,7 +18,7 @@ interface Props {
   defaultLayoutStyle?: "vertical" | "inline";
   defaultColumnStyle?: 8 | 12 | 24;
   extra?: React.ReactNode;
-  renderTitleFlag:boolean;   //是否渲染表格头部
+
   [propName: string]: any, // 其它属性
 }
 
@@ -153,7 +153,7 @@ class BusinessForm extends React.PureComponent<Props, any> {
       );
     } else {
       element = (
-        <Col span={children.props.span || this.state.columnStyle} key={index}>
+        <Col span={this.state.columnStyle} key={index}>
           {children}
         </Col>);
     }
@@ -248,7 +248,6 @@ class BusinessForm extends React.PureComponent<Props, any> {
       form,
       extra = [],
       defaultColumnStyle,
-      renderTitleFlag = true,
       ...rest
     } = this.props;
 
@@ -259,7 +258,6 @@ class BusinessForm extends React.PureComponent<Props, any> {
         title={this.props.title}
         size="small"
         extra={
-          renderTitleFlag &&
           <>
             {extra}
             <Dropdown overlay={this.renderFormSetting()}>

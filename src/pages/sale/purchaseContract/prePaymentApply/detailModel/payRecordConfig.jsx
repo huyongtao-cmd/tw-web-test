@@ -9,7 +9,7 @@ import { UdcSelect, FileManagerEnhance, Selection } from '@/pages/gen/field';
 import AsyncSelect from '@/components/common/AsyncSelect';
 import update from 'immutability-helper';
 import moment from 'moment';
-import { isEmpty, takeLast, add, isNil, gte, lte } from 'ramda';
+import { formatDT } from '@/utils/tempUtils/DateTime';
 import { add as mathAdd, sub, div, mul, checkIfNumber, genFakeId } from '@/utils/mathUtils';
 import { selectAbOus, selectAllAbOu } from '@/services/gen/list';
 import createMessage from '@/components/core/AlertMessage';
@@ -17,9 +17,10 @@ import {
   getPaymentApplyTempds,
   selectAccountByNo,
 } from '@/services/sale/purchaseContract/paymentApplyList';
+import { isEmpty, takeLast, add, isNil, gte, lte } from 'ramda';
 
 import { AccountSelect } from '../../suggestComponent';
-
+//付款单记录
 export function payRecordTableProps(DOMAIN, dispatch, loading, form, mode, prePaymentApplyDetail) {
   const { payRecordList, formData, fieldsConfig, pageConfig } = prePaymentApplyDetail;
   const pageFieldJson = {};
@@ -39,7 +40,9 @@ export function payRecordTableProps(DOMAIN, dispatch, loading, form, mode, prePa
       ? true
       : fieldsConfig.taskKey && fieldsConfig.taskKey.indexOf('ACCOUNTANCY') === -1
         ? true
-        : false;
+        : !isEmpty(payRecordList) && payRecordList[0].id > 0
+          ? true
+          : false;
   const onCellChanged = (rowIndex, rowField) => rowFieldValue => {
     const val = rowFieldValue && rowFieldValue.target ? rowFieldValue.target.value : rowFieldValue;
     if (rowField === 'psubjecteCompany') {
@@ -317,7 +320,7 @@ export function payRecordTableProps(DOMAIN, dispatch, loading, form, mode, prePa
       render: (value, row, index) => {
         return (
           <AccountSelect
-            abNo={row.collectionCompany || '0'}
+            abNo={row.collectionAccount || '0'}
             value={value}
             disabled={readOnly}
             onChange={onCellChanged(index, 'collectionAccount')}
@@ -367,7 +370,6 @@ export function payRecordTableProps(DOMAIN, dispatch, loading, form, mode, prePa
   const columnsFilterList = columnsList.filter(
     field => !field.key || pageFieldJson[field.key].visibleFlag === 1
   );
-
   const tableProps = {
     readOnly,
     rowKey: 'id',
@@ -460,6 +462,102 @@ export function payRecordTableProps(DOMAIN, dispatch, loading, form, mode, prePa
     //   },
     // ],
     columns: columnsFilterList,
+  };
+  return tableProps;
+}
+
+// 审批详情 付款计划参考
+export function paymentPlanAdvPayTableProps(
+  DOMAIN,
+  dispatch,
+  loading,
+  form,
+  mode,
+  prePaymentApplyEdit
+) {
+  const { paymentPlanAdvPayList, fieldsConfig } = prePaymentApplyEdit;
+  const onCellChanged = (rowIndex, rowField) => rowFieldValue => {
+    const val = rowFieldValue && rowFieldValue.target ? rowFieldValue.target.value : rowFieldValue;
+    dispatch({
+      type: `${DOMAIN}/updateState`,
+      payload: {
+        paymentPlanAdvPayList: update(paymentPlanAdvPayList, {
+          [rowIndex]: {
+            [rowField]: {
+              $set: val,
+            },
+          },
+        }),
+      },
+    });
+  };
+
+  const columnsList = [
+    {
+      title: '序号',
+      dataIndex: 'id',
+      className: 'text-center',
+      width: 20,
+      render: (value, record, index) => index + 1,
+    },
+    {
+      title: `付款阶段`,
+      key: 'paymentStage',
+      dataIndex: 'paymentStage',
+      className: 'text-center',
+      width: 200,
+    },
+    {
+      title: `付款金额`,
+      key: 'paymentAmt',
+      dataIndex: 'paymentAmt',
+      className: 'text-center',
+      width: 110,
+    },
+
+    {
+      title: `预计付款日期`,
+      key: 'estimatedPaymentDate',
+      dataIndex: 'estimatedPaymentDate',
+      className: 'text-center',
+      width: 100,
+      render: (value, row, index) => formatDT(value),
+    },
+    {
+      title: `本次付款金额`,
+      key: 'currentPaymentAmt',
+      dataIndex: 'currentPaymentAmt',
+      className: 'text-center',
+      width: 200,
+      render: (value, row, index) =>
+        mode === 'view' ? (
+          value
+        ) : (
+          <InputNumber
+            min={0}
+            precision={2}
+            formatter={v => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+            parser={v => v.replace(/\$\s?|(,*)/g, '')}
+            className="number-left x-fill-100"
+            value={value}
+            max={row.paymentAmt}
+            disabled={mode === 'view' || fieldsConfig.taskKey !== 'ACC_A110_01_SUBMIT_i'}
+            onChange={onCellChanged(index, 'currentPaymentAmt')}
+          />
+        ),
+    },
+  ];
+
+  const tableProps = {
+    readOnly: true,
+    rowKey: 'id',
+    showCopy: false,
+    pagination: false,
+    scroll: {
+      x: 1000,
+    },
+    dataSource: paymentPlanAdvPayList || [],
+    columns: columnsList,
   };
   return tableProps;
 }

@@ -3,12 +3,10 @@ import { Input } from 'antd';
 
 import Title from '@/components/layout/Title';
 import FieldList from '@/components/layout/FieldList';
+import AsyncSelect from '@/components/common/AsyncSelect';
+import { UdcSelect } from '@/pages/gen/field';
 import { AddrEditContext } from './index';
-import BaseSelect from '@/components/production/basic/BaseSelect.tsx';
-import BaseInput from '@/components/production/basic/BaseInput.tsx';
-import BaseInputAmt from '@/components/production/basic/BaseInputAmt.tsx';
-import BaseInputTextArea from '@/components/production/basic/BaseInputTextArea.tsx';
-import BaseDatePicker from '@/components/production/basic/BaseDatePicker.tsx';
+// import Loading from '@/components/core/DataLoading';
 
 const { Field } = FieldList;
 
@@ -38,21 +36,6 @@ const AddrEditT3 = props => (
           <Input placeholder="请输入公司名" />
         </Field>
         <Field
-          name="briefName"
-          label="公司简称"
-          decorator={{
-            initialValue: ouData.briefName,
-            rules: [
-              {
-                required: true,
-                message: '请输入公司简称',
-              },
-            ],
-          }}
-        >
-          <Input placeholder="请输入公司简称" />
-        </Field>
-        <Field
           name="ouType"
           label="公司类型"
           decorator={{
@@ -65,7 +48,7 @@ const AddrEditT3 = props => (
             ],
           }}
         >
-          <BaseSelect parentKey="COM:AB:OU_TYPE" placeholder="请选择公司类型" />
+          <UdcSelect code="TSK:OU_TYPE" placeholder="请选择公司类型" />
         </Field>
         <Field
           name="taxRegNo"
@@ -96,7 +79,7 @@ const AddrEditT3 = props => (
             ],
           }}
         >
-          <BaseSelect parentKey="COM:AB:OU_TAX_RATE" />
+          <UdcSelect code="COM:TAX_RATE" placeholder="请选择税率" />
         </Field>
 
         <Field
@@ -112,7 +95,7 @@ const AddrEditT3 = props => (
             ],
           }}
         >
-          <BaseSelect parentKey="COM:AB:OU_INNER_TYPE" />
+          <UdcSelect code="TSK:INNER_TYPE" placeholder="请选择内部/外部" />
         </Field>
         <Field
           name="ouProp"
@@ -121,7 +104,7 @@ const AddrEditT3 = props => (
             initialValue: ouData.ouProp,
           }}
         >
-          <BaseSelect parentKey="COM:AB:OU_PROP" />
+          <UdcSelect code="TSK:OU_PROP" placeholder="请选择公司性质" />
         </Field>
         <Field
           name="regionCode"
@@ -130,7 +113,7 @@ const AddrEditT3 = props => (
             initialValue: ouData.regionCode,
           }}
         >
-          <BaseSelect parentKey="FUNCTION:REGION:NAME" />
+          <UdcSelect code="COM:COUNTRY" placeholder="请选择公司区域" />
         </Field>
         <Field
           name="pid"
@@ -139,7 +122,15 @@ const AddrEditT3 = props => (
             initialValue: ouData.pid && ouData.pid + '',
           }}
         >
-          <BaseSelect descList={addrSel} />
+          {/* <Input placeholder="请输入公司名" /> */}
+          <AsyncSelect
+            source={addrSel}
+            placeholder="请选择母公司"
+            showSearch
+            filterOption={(input, option) =>
+              option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }
+          />
         </Field>
         <Field
           name="website"
@@ -157,7 +148,7 @@ const AddrEditT3 = props => (
             initialValue: ouData.industry,
           }}
         >
-          <BaseSelect parentKey="COM:AB:OU_IDST" />
+          <UdcSelect code="TSK:OU_IDST" placeholder="请选择所属行业" />
         </Field>
         <Field
           name="scaleType"
@@ -166,7 +157,7 @@ const AddrEditT3 = props => (
             initialValue: ouData.scaleType,
           }}
         >
-          <BaseSelect parentKey="COM:AB:OU_SCALE" />
+          <UdcSelect code="TSK:OU_SCALE" placeholder="请选择单位规模" />
         </Field>
         <Field
           name="currCode"
@@ -175,7 +166,7 @@ const AddrEditT3 = props => (
             initialValue: ouData.currCode,
           }}
         >
-          <BaseSelect parentKey="COMMON_CURRENCY" />
+          <UdcSelect code="COM:CURRENCY_KIND" placeholder="请选择主交易货币" />
         </Field>
         <Field
           name="langCode"
@@ -184,61 +175,16 @@ const AddrEditT3 = props => (
             initialValue: ouData.langCode,
           }}
         >
-          <BaseSelect parentKey="COMMON:LANGUAGE" />
+          <UdcSelect code="COM:LANG_CODE" placeholder="请选择主要语言" />
         </Field>
         <Field
           name="ouStatus"
-          label="是否可用"
+          label="公司状态"
           decorator={{
             initialValue: ouData.ouStatus,
           }}
         >
-          <BaseSelect parentKey="COMMON:YES-OR-NO" />
-        </Field>
-        <Field
-          name="registeredAddress"
-          label="注册地址"
-          decorator={{
-            initialValue: ouData.registeredAddress,
-          }}
-        >
-          <BaseInput />
-        </Field>
-        <Field
-          name="legalRepresentative"
-          label="法定代表人"
-          decorator={{
-            initialValue: ouData.legalRepresentative,
-          }}
-        >
-          <BaseInput />
-        </Field>
-        <Field
-          name="registeredCapital"
-          label="注册资本"
-          decorator={{
-            initialValue: ouData.registeredCapital,
-          }}
-        >
-          <BaseInputAmt style={{ width: '100%' }} />
-        </Field>
-        <Field
-          name="incorporationDate"
-          label="成立日期"
-          decorator={{
-            initialValue: ouData.incorporationDate,
-          }}
-        >
-          <BaseDatePicker />
-        </Field>
-        <Field
-          name="modeScope"
-          label="经营方式和范围"
-          decorator={{
-            initialValue: ouData.modeScope,
-          }}
-        >
-          <BaseInputTextArea />
+          <UdcSelect code="TSK:OU_STATUS" placeholder="请选择公司状态" />
         </Field>
       </FieldList>
     )}

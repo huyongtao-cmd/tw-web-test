@@ -43,12 +43,12 @@ const AddrDetT7 = props => (
             width: 200,
             align: 'center',
           },
-          // {
-          //   title: '区',
-          //   dataIndex: 'districtName',
-          //   width: 200,
-          //   align: 'center',
-          // },
+          {
+            title: '区',
+            dataIndex: 'districtName',
+            width: 200,
+            align: 'center',
+          },
           {
             title: '详细地址',
             dataIndex: 'detailaddr',

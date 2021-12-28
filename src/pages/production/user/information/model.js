@@ -1,7 +1,4 @@
 import { informationImport } from '@/services/production/user';
-import { outputHandle } from '@/utils/production/outputUtil.ts';
-import { companySelectRq } from '@/services/workbench/contract';
-import { commonModelReducers } from '@/utils/production/modelUtils.ts';
 
 const defaultState = {
   formData: {},
@@ -18,23 +15,6 @@ export default {
       }
       return {};
     },
-    *queryCompanyList({ payload }, { call, put, select }) {
-      const { data } = yield outputHandle(companySelectRq, payload);
-      const list = data.rows.map(item => ({
-        ...item,
-        id: item.id,
-        title: item.ouName,
-        value: item.id,
-      }));
-      yield put({
-        type: 'updateState',
-        payload: {
-          companyList: list,
-        },
-      });
-    },
   },
-  reducers: {
-    ...commonModelReducers(defaultState),
-  },
+  reducers: {},
 };

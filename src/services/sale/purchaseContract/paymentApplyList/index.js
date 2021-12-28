@@ -10,6 +10,8 @@ const {
   paymentApplyFlowSubmit,
   removePaymentApply,
   paymentApplyDetail,
+  getPaymentApplyByIdEditPageApi, //付款单 编辑回显接口
+  getSumPaymentAmtApi,
   paymentApplyAccounts,
   paymentApplyAccountsNo,
   paymentApplyInvoices, // 获取发票号
@@ -21,8 +23,11 @@ const {
   paymentSlipFlowSubmit, // 付款单记录提交发起工作流
   paymentSlipDelete, // 付款单记录删除
   paymentSlipView, // 付款记录列表
+  selectPaySerialsNumApi, // 付款记录流水号下拉列表
+  postPaymentSlipSubmitProApi, //付款记录提交-根据付款流水号
   paymentApplyByDocNoScene, // 根据前置单据和场景获取单据号
   purchaseByDoc, // 预付款：根据前置单据和场景获取采购合同信息
+  purchaseByDocPro, // 预付款：根据采购合同编号查询其付款申请单所需信息Pro 包含付款计划
   paymentSlipDetailById, // 付款记录详情
   paymentApplyWriteoffSelect, // 预付款核销单据号下拉框
   paymentWriteoffNoAndType, // 预付款核销单据号获取详情
@@ -39,6 +44,11 @@ const {
   paymentApplyIdByDoc, // 根据付款申请单编号获取ID
   purchaseAgreementIdByDoc, // 根据采购协议编号查询协议ID
   purchaseContractIdByDoc, // 根据采购合同编号查询采购合同ID
+  purchaseEmergencyPaymentList, //紧急付款列表页
+  purchaseEmergencyPaymentEdit, //紧急付款修改
+  purchaseEmergencyPaymentCreate, //紧急付款新建
+  selectByFlowNo, //通过流程编号查询单据信息
+  isAPAccountant, //是否是应付会计
 } = api.sale.purchaseContract;
 
 // 渠道费用列表
@@ -50,6 +60,17 @@ export async function channelCostListRq(params) {
 export async function getPaymentApplyById(id) {
   return request.get(toUrl(paymentApplyDetail, { id }));
 }
+
+// 根据id获取付款申请单详情
+export async function getPaymentApplyByIdEditPage(id) {
+  return request.get(toUrl(getPaymentApplyByIdEditPageApi, { id }));
+}
+
+// 全部预付款核销金额累计
+export async function getSumPaymentAmt(params) {
+  return request.get(toQs(getSumPaymentAmtApi, params));
+}
+
 // 根据筛选条件获取付款申请单列表
 export async function getPaymentApplyList(params) {
   return request.get(toQs(paymentApplyList, params));
@@ -152,6 +173,23 @@ export async function getPaymentSlipView(params) {
   return request.get(toQs(paymentSlipView, params));
 }
 
+// 流水号分组下拉列表
+export async function selectPaySerialsNumRe(params) {
+  return request.get(toQs(selectPaySerialsNumApi, params));
+}
+
+// 付款单记录提交流程
+export async function postPaymentSlipSubmitPro(param) {
+  return request.post(
+    toUrl(postPaymentSlipSubmitProApi, {
+      paySerialsNum: param.paySerialsNum,
+    }),
+    {
+      body: { entities: param.entities },
+    }
+  );
+}
+
 // 根据前置单据和场景获取单据号
 export async function getPaymentApplyByDocNoScene(docNo, scene) {
   return request.get(toUrl(paymentApplyByDocNoScene, { docNo, scene }));
@@ -160,6 +198,11 @@ export async function getPaymentApplyByDocNoScene(docNo, scene) {
 // 预付款：根据前置单据和场景获取采购合同信息
 export async function getPurchaseByDoc(docNo) {
   return request.get(purchaseByDoc.replace('{no}', docNo));
+}
+
+// 预付款：根据采购合同编号查询其付款申请单所需信息Pro 包含付款计划
+export async function getPurchaseByDocPro(docNo) {
+  return request.get(purchaseByDocPro.replace('{no}', docNo));
 }
 
 // 获取付款记录详情
@@ -226,4 +269,33 @@ export async function getPurchaseAgreementIdByDoc(docNo) {
 // 根据采购合同编号查询采购合同ID
 export async function getPurchaseContractIdByDoc(docNo) {
   return request.get(purchaseContractIdByDoc.replace('{no}', docNo));
+}
+
+// 紧急付款列表页
+export async function purchaseEmergencyPaymentListFn(params) {
+  return request.get(toQs(purchaseEmergencyPaymentList, params));
+}
+
+// 紧急付款修改
+export async function purchaseEmergencyPaymentEditFn(data) {
+  return request.put(purchaseEmergencyPaymentEdit, {
+    body: data,
+  });
+}
+
+// 紧急付款新建
+export async function purchaseEmergencyPaymentCreateFn(data) {
+  return request.post(purchaseEmergencyPaymentCreate, {
+    body: data,
+  });
+}
+
+// 通过流程编号查询单据信息
+export async function selectByFlowNoFn(params) {
+  return request.get(toQs(selectByFlowNo, params));
+}
+
+// 是否是应付会计
+export async function isAPAccountantFn(params) {
+  return request.get(toQs(isAPAccountant, params));
 }

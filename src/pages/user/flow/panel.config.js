@@ -206,6 +206,14 @@ export default [
             clickFlag: 1,
             jumpFlag: 1,
           },
+          {
+            type: 'link',
+            text: '合作伙伴准入流程',
+            link: '/sale/management/partner',
+            displayFlag: 1,
+            clickFlag: 1,
+            jumpFlag: 1,
+          },
         ],
       },
     ],
@@ -294,9 +302,8 @@ export default [
         children: [
           {
             type: 'link',
-            text: 'A29.预付款流程',
-            link: '',
-            // link: '/user/center/prePay/create',
+            text: 'A29.员工借款流程',
+            link: '/user/center/prePay/create',
             displayFlag: 1,
             clickFlag: 0,
             jumpFlag: 0,
@@ -337,10 +344,10 @@ export default [
           {
             type: 'link',
             text: '紧急付款流程',
-            link: '',
+            link: '/sale/purchaseContract/emergencyPayment',
             displayFlag: 1,
-            clickFlag: 0,
-            jumpFlag: 0,
+            clickFlag: 1,
+            jumpFlag: 1,
           },
           {
             type: 'link',
@@ -527,6 +534,21 @@ export default [
             displayFlag: 1,
             clickFlag: 0,
             jumpFlag: 0,
+          },
+        ],
+      },
+      {
+        type: 'card',
+        text: '人力资源管理类-资源管理',
+        children: [
+          {
+            type: 'link',
+            text: '独立顾问派工单申请',
+            // link: '/hr/res/adviserList',
+            link: '/hr/res/applyAdviser',
+            displayFlag: 1,
+            clickFlag: 1,
+            jumpFlag: 1,
           },
         ],
       },

@@ -27,7 +27,8 @@ export function bearDepInfoTableProps(DOMAIN, dispatch, loading, form, mode, pay
     mode === 'view'
       ? true
       : fieldsConfig.taskKey !== `${FLOW_NO[sceneval]}_01_SUBMIT_i` &&
-        (fieldsConfig.taskKey && fieldsConfig.taskKey.indexOf('ACCOUNTANCY') === -1);
+        (fieldsConfig.taskKey && fieldsConfig.taskKey.indexOf('ACCOUNTANCY') === -1) &&
+        (fieldsConfig.taskKey && fieldsConfig.taskKey.indexOf('APPLY_RES_EDIT') === -1);
 
   const pageFieldJson = {};
   if (pageConfig) {

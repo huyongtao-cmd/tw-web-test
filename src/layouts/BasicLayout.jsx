@@ -138,7 +138,7 @@ class BasicLayout extends React.Component {
         return null;
       }
       const memoizeBread = memoizeOne(getBreadcrumbNameMapStatic);
-      const { locale = '' + '' } = getBreadcrumb(memoizeBread(route.routes), paneKey);
+      const { locale = 'ui.menu.missing' } = getBreadcrumb(memoizeBread(route.routes), paneKey);
       if (urlParamFlag === undefined) {
         panes.splice(prevCloseIndex, 0, {
           key: paneKey,
@@ -201,9 +201,9 @@ class BasicLayout extends React.Component {
       // eslint-disable-next-line
       if (principal) {
         //获取头像信息
-        dispatch({
-          type: 'user/getAvatarFn',
-        });
+        // dispatch({
+        //   type: 'user/getAvatarFn',
+        // });
         // 更新前端信息
         // request auth permission menus
         dispatch({
@@ -217,6 +217,11 @@ class BasicLayout extends React.Component {
         // 获取页面 logo 以及右上角辅助菜单
         dispatch({
           type: 'global/querySysLogoAndExtension',
+        });
+
+        // 获取多页面共用数据
+        dispatch({
+          type: 'global/queryCommonData',
         });
 
         // 获取前端国际化信息

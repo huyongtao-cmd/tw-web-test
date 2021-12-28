@@ -8,13 +8,11 @@ import PageWrapper from '@/components/production/layout/PageWrapper.tsx';
 import SearchTable from '@/components/production/business/SearchTable.tsx';
 import message from '@/components/production/layout/Message';
 // @ts-ignore
-import { informationListPaging, logicDel } from '@/services/production/user';
+import { informationListPaging } from '@/services/production/user';
 import { outputHandle } from '@/utils/production/outputUtil.ts';
-import { remindString } from '@/components/production/basic/Remind.tsx';
 import { handleEmptyProps } from '@/utils/production/objectUtils.ts';
 import createMessage from '@/components/core/AlertMessage';
 import ExcelImportExport from '@/components/common/ExcelImportExport';
-import FormItem from '@/components/production/business/FormItem.tsx';
 
 const DOMAIN = 'information';
 
@@ -30,9 +28,7 @@ class Information extends React.PureComponent {
     failedList: [],
   };
 
-  componentDidMount() {
-    this.callModelEffects('queryCompanyList', { innerType: 'INTERNAL' });
-  }
+  componentDidMount() {}
 
   fetchData = async params => {
     let wrappedParam = { ...params };
@@ -90,7 +86,7 @@ class Information extends React.PureComponent {
       } else {
         createMessage({
           type: 'error',
-          description: res.errors ? res.errors[0]?.msg : '部分数据上传失败,返回结果为空',
+          description: res.errors[0].msg || '部分数据上传失败,返回结果为空',
         });
         this.toggleImportVisible();
       }
@@ -106,13 +102,6 @@ class Information extends React.PureComponent {
     });
   };
 
-  /**
-   * 删除数据方法,传给SearchTable组件使用
-   * @param keys 要删除的数据主键
-   * @returns {Promise<*>} 删除结果,给SearchTable组件使用
-   */
-  deleteData = async keys => outputHandle(logicDel, { ids: keys.join(',') }, undefined, false);
-
   // 调用model层异步方法
   callModelEffects = async (method, params) => {
     const { dispatch } = this.props;
@@ -122,128 +111,121 @@ class Information extends React.PureComponent {
     });
   };
 
-  renderSearchForm = () => {
-    const { form, formData, loading, companyList } = this.props;
+  renderSearchForm = () => [
+    //用户名、姓名、员工编号、所属公司、所属BU、Base地、职级、职位、直属上级、入职日期（时间区间）、手机号、生日（时间区间）、性别。
+    <SearchFormItem
+      key="login"
+      fieldType="BaseInput"
+      label="用户名"
+      fieldKey="login"
+      defaultShow
+      advanced
+    />,
+    <SearchFormItem
+      key="name"
+      fieldType="BaseInput"
+      label="姓名"
+      fieldKey="name"
+      defaultShow
+      advanced
+    />,
+    <SearchFormItem
+      key="resNo"
+      fieldType="BaseInput"
+      label="员工编号"
+      fieldKey="resNo"
+      defaultShow
+      advanced
+    />,
+    <SearchFormItem
+      key="ouId"
+      fieldType="InternalOuSimpleSelect"
+      label="所属公司"
+      fieldKey="ouId"
+      defaultShow
+      advanced
+    />,
+    <SearchFormItem
+      key="baseBuId"
+      fieldType="BuSimpleSelect"
+      label="所属BU"
+      fieldKey="baseBuId"
+      defaultShow
+      advanced
+    />,
 
-    return [
-      //用户名、姓名、员工编号、所属公司、所属BU、Base地、职级、职位、直属上级、入职日期（时间区间）、手机号、生日（时间区间）、性别。
-      <SearchFormItem
-        key="login"
-        fieldType="BaseInput"
-        label="用户名"
-        fieldKey="login"
-        defaultShow
-        advanced
-      />,
-      <SearchFormItem
-        key="name"
-        fieldType="BaseInput"
-        label="姓名"
-        fieldKey="name"
-        defaultShow
-        advanced
-      />,
-      <SearchFormItem
-        key="resNo"
-        fieldType="BaseInput"
-        label="员工编号"
-        fieldKey="resNo"
-        defaultShow
-        advanced
-      />,
-      <SearchFormItem
-        key="ouName"
-        fieldType="BaseSelect"
-        label="所属公司"
-        fieldKey="ouId"
-        descList={companyList}
-        // parentKey="FUNCTION:COMPANY:NAME"
-        defaultShow
-        advanced
-      />,
-      <SearchFormItem
-        key="baseBuId"
-        fieldType="BuSimpleSelect"
-        label="所属BU"
-        fieldKey="baseBuId"
-        defaultShow
-        advanced
-      />,
+    <SearchFormItem
+      key="baseCity"
+      fieldType="BaseCustomSelect"
+      label="Base地"
+      fieldKey="baseCity"
+      defaultShow
+      advanced
+      parentKey="CUS:CITY"
+    />,
 
-      /*<SearchFormItem
-        key="baseCity"
-        fieldType="BaseCustomSelect"
-        label="Base地"
-        fieldKey="baseCity"
-        defaultShow
-        advanced
-        parentKey="CUS:CITY"
-      />,*/
-      /*
-      <SearchFormItem
-        key="jobGrade"
-        fieldType="BaseSelect"
-        label="职级"
-        fieldKey="jobGrade"
-        parentKey="FUNCTION:GRADE"
-        defaultShow
-        advanced
-      />,
-    */
-      <SearchFormItem
-        key="position"
-        fieldType="BaseInput"
-        label="职位"
-        fieldKey="position"
-        defaultShow
-        advanced
-      />,
+    <SearchFormItem
+      key="jobGrade"
+      fieldType="BaseInput"
+      label="职级"
+      fieldKey="jobGrade"
+      defaultShow
+      advanced
+    />,
 
-      <SearchFormItem
-        key="parentResId"
-        fieldType="ResSimpleSelect"
-        label="直属上级"
-        fieldKey="parentResId"
-        defaultShow
-        advanced
-      />,
+    <SearchFormItem
+      key="position"
+      fieldType="BaseInput"
+      label="职位"
+      fieldKey="position"
+      defaultShow
+      advanced
+    />,
 
-      <SearchFormItem
-        key="enrollDateDateRange"
-        fieldType="BaseDateRangePicker"
-        label="入职日期"
-        fieldKey="enrollDateDateRange"
-        defaultShow
-      />,
+    <SearchFormItem
+      key="pResName"
+      fieldType="BaseInput"
+      label="直属上级"
+      fieldKey="pResName"
+      defaultShow
+      advanced
+    />,
 
-      <SearchFormItem
-        key="phone"
-        fieldType="BaseInput"
-        label="手机号"
-        fieldKey="phone"
-        defaultShow
-        advanced
-      />,
+    <SearchFormItem
+      key="enrollDateDateRange"
+      fieldType="BaseDateRangePicker"
+      label="入职日期"
+      fieldKey="enrollDateDateRange"
+      defaultShow
+    />,
 
-      <SearchFormItem
-        key="birthdayDateRange"
-        fieldType="BaseDateRangePicker"
-        label="生日"
-        fieldKey="birthdayDateRange"
-        defaultShow
-      />,
+    <SearchFormItem
+      key="phone"
+      fieldType="BaseInputNumber"
+      label="手机号"
+      fieldKey="phone"
+      defaultShow
+      advanced
+    />,
 
-      <SearchFormItem
-        key="gender"
-        fieldType="BaseSelect"
-        label="性别"
-        fieldKey="gender"
-        defaultShow
-        advanced
-        parentKey="COMMON:GENDER"
-      />,
-    ];
-  };
+    <SearchFormItem
+      key="birthdayDateRange"
+      fieldType="BaseDateRangePicker"
+      label="生日"
+      fieldKey="birthdayDateRange"
+      defaultShow
+    />,
+
+    <SearchFormItem
+      key="gender"
+      fieldType="BaseSelect"
+      label="性别"
+      fieldKey="gender"
+      defaultShow
+      advanced
+      parentKey="COM:GENDER"
+    />,
+  ];
 
   render() {
     const { form, formData, loading, ...rest } = this.props;
@@ -254,16 +236,6 @@ class Information extends React.PureComponent {
         title: '用户名',
         dataIndex: 'login',
         ellipsis: true,
-        render: (value, row) => (
-          <Link
-            twUri=""
-            onClick={() =>
-              router.push(`/plat/baseData/employeeDisplayPage?id=${row.id}&mode=DESCRIPTION`)
-            }
-          >
-            {value}
-          </Link>
-        ),
       },
       {
         title: '姓名',
@@ -277,12 +249,6 @@ class Information extends React.PureComponent {
         sorter: true,
       },
       {
-        title: '身份证号',
-        dataIndex: 'idenNo',
-        ellipsis: true,
-        sorter: true,
-      },
-      {
         title: '所属公司',
         dataIndex: 'ouName',
         ellipsis: true,
@@ -292,15 +258,15 @@ class Information extends React.PureComponent {
         dataIndex: 'buName',
         ellipsis: true,
       },
-      // {
-      //   title: 'Base地',
-      //   dataIndex: 'baseCityDesc',
-      //   ellipsis: true,
-      // },
-      // {
-      //   title: '职级',
-      //   dataIndex: 'jobGradeDesc',
-      // },
+      {
+        title: 'Base地',
+        dataIndex: 'baseCityDesc',
+        ellipsis: true,
+      },
+      {
+        title: '职级',
+        dataIndex: 'jobGrade',
+      },
       {
         title: '职位',
         dataIndex: 'position',
@@ -331,14 +297,9 @@ class Information extends React.PureComponent {
         dataIndex: 'birthday',
         ellipsis: true,
       },
-      // {
-      //   title: '资源类型一',
-      //   dataIndex: 'resType1Desc',
-      //   ellipsis: true,
-      // },
       {
-        title: '资源状态',
-        dataIndex: 'resStatusDesc',
+        title: '资源类型一',
+        dataIndex: 'resType1Desc',
         ellipsis: true,
       },
       {
@@ -346,26 +307,26 @@ class Information extends React.PureComponent {
         dataIndex: 'genderDesc',
         ellipsis: true,
       },
-      // {
-      //   title: '是否开通系统账号',
-      //   dataIndex: 'hasSystemAccount',
-      //   ellipsis: true,
-      // },
-      // {
-      //   title: '银行',
-      //   dataIndex: 'bankName',
-      //   ellipsis: true,
-      // },
-      // {
-      //   title: '户名',
-      //   dataIndex: 'holderName',
-      //   ellipsis: true,
-      // },
-      // {
-      //   title: '账号',
-      //   dataIndex: 'accountNo',
-      //   ellipsis: true,
-      // },
+      {
+        title: '是否开通系统账号',
+        dataIndex: 'hasSystemAccount',
+        ellipsis: true,
+      },
+      {
+        title: '银行',
+        dataIndex: 'bankName',
+        ellipsis: true,
+      },
+      {
+        title: '户名',
+        dataIndex: 'holderName',
+        ellipsis: true,
+      },
+      {
+        title: '账号',
+        dataIndex: 'accountNo',
+        ellipsis: true,
+      },
     ];
 
     const excelImportProps = {
@@ -393,9 +354,9 @@ class Information extends React.PureComponent {
               'resType1Desc',
               'genderDesc',
               'hasSystemAccountDesc',
-              // 'bankName',
-              // 'holderName',
-              // 'accountNo',
+              'bankName',
+              'holderName',
+              'accountNo',
               'errorMessage',
             ], // 列过滤
             sheetHeader: [
@@ -415,9 +376,9 @@ class Information extends React.PureComponent {
               '资源类型一',
               '性别',
               '是否开通系统账号',
-              // '银行',
-              // '户名',
-              // '账号',
+              '银行',
+              '户名',
+              '账号',
               '失败原因',
             ], // 第一行标题
             // columnWidths: [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8], // 列宽 需与列顺序对应
@@ -452,11 +413,6 @@ class Information extends React.PureComponent {
           fetchData={this.fetchData}
           columns={columns}
           tableExtraProps={{ scroll: { x: 2400 } }}
-          onAddClick={() => router.push('/plat/baseData/employeeDisplayPage?mode=EDIT')}
-          onEditClick={data => {
-            router.push(`/plat/baseData/employeeDisplayPage?id=${data.id}&mode=EDIT`);
-          }}
-          deleteData={this.deleteData}
           extraButtons={[
             {
               key: 'importExcel',

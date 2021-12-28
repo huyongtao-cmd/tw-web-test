@@ -623,6 +623,30 @@ export function payDetailTableProps(
       className: 'text-center',
       width: 200,
     },
+    {
+      title: `${pageFieldJson.recvAmt.displayName}`,
+      sortNo: `${pageFieldJson.recvAmt.sortNo}`,
+      key: 'recvAmt',
+      dataIndex: 'recvAmt',
+      className: 'text-center',
+      width: 100,
+    },
+    {
+      title: `${pageFieldJson.actualRecvAmt.displayName}`,
+      sortNo: `${pageFieldJson.actualRecvAmt.sortNo}`,
+      key: 'actualRecvAmt',
+      dataIndex: 'actualRecvAmt',
+      className: 'text-center',
+      width: 100,
+    },
+    {
+      title: `${pageFieldJson.text.displayName}`,
+      sortNo: `${pageFieldJson.text.sortNo}`,
+      key: 'text',
+      dataIndex: 'text',
+      className: 'text-center',
+      width: 100,
+    },
   ];
   const columnsFilterList = columnsList.filter(
     field => !field.key || pageFieldJson[field.key].visibleFlag === 1
@@ -640,7 +664,7 @@ export function payDetailTableProps(
     // loading: loading.effects[`${DOMAIN}/queryPurchase`],
     pagination: false,
     scroll: {
-      x: 1700,
+      x: 2000,
     },
     dataSource: payDetailList,
     // rowSelection: {

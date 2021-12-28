@@ -100,6 +100,14 @@ class PayRecordListCashier extends PureComponent {
       searchForm,
       searchBarForm: [
         {
+          title: '流水号',
+          dataIndex: 'paySerialsNum',
+          options: {
+            initialValue: searchForm.paySerialsNum || undefined,
+          },
+          tag: <Input placeholder="请输入流水号" />,
+        },
+        {
           title: '付款申请单编号',
           dataIndex: 'paymentNo',
           options: {
@@ -196,6 +204,12 @@ class PayRecordListCashier extends PureComponent {
         },
       ],
       columns: [
+        {
+          title: '流水号',
+          dataIndex: 'paySerialsNum',
+          align: 'center',
+          width: 150,
+        },
         {
           title: '付款申请单',
           dataIndex: 'paymentNo',

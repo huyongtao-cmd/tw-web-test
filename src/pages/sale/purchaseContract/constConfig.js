@@ -27,6 +27,7 @@ export const CONFIGSCENE = {
   '17': 'SALARIES', // 薪资福利基于薪资成本
   '18': 'RENT', // 房屋租赁
   '19': 'SUNDRY', // 杂项采购
+  '20': 'ADMINISTRATIVE_PROC_AGREEMENT', // 行政运营类采购(协议)
 };
 
 export const FLOW_NO = {
@@ -40,6 +41,8 @@ export const FLOW_NO = {
   '2': 'ACC_A96', // 付款申请单：合同采购-产品贸易
   '3': 'ACC_A86', // 付款申请单：合同采购投标保证金
   '4': 'ACC_A98', // 付款申请单：合同采购-渠道费用
+  // 个体售前资源外包流程也是A92，判断会用到
+  '5': 'ACC_A92', // 付款申请单：个体资源外包
   '6': 'ACC_A93', // 付款申请单：对公资源外包
   '7': 'ACC_A91', // 付款申请单：对公资源外包(提点)
   '8': 'ACC_A92', // 付款申请单：个体资源外包
@@ -53,6 +56,7 @@ export const FLOW_NO = {
   '16': 'ACC_A87', // 付款申请单：福利薪资结算
   '18': 'ACC_A100', // 付款申请单：房屋租赁
   '19': 'ACC_A101', // 付款申请单：杂项采购
+  '20': 'ACC_A106', // 付款申请单：行政运营类采购（协议）
 
   // 采购合同(采购类型-业务类型)
   'PROJECT-RENT': 'TSK_S12', // 采购合同：项目采购-房屋租赁
@@ -71,6 +75,7 @@ export const ARRY_NO = [
   '1',
   '2',
   '3',
+  '5',
   '4',
   '6',
   '7',
@@ -85,6 +90,7 @@ export const ARRY_NO = [
   '16',
   '18',
   '19',
+  '20',
 ];
 
 // 获取采购合同流程Key
@@ -97,7 +103,7 @@ export const getContractFlowNo = (purchaseType, businessType) => {
     flowKey += '-' + businessType;
   }
   const flowNo = FLOW_NO[flowKey] || '';
-  console.warn('获取合同流程Key：', flowKey, flowNo);
+  // console.warn('获取合同流程Key：', flowKey, flowNo);
   return flowNo;
 };
 
@@ -112,7 +118,7 @@ export const getPaymentFlowNo = ({ scene, paymentApplicationType }) => {
     flowKey = paymentApplicationType;
   }
   const flowNo = FLOW_NO[flowKey] || '';
-  console.warn('获取' + paymentApplicationType + '_' + scene + '流程Key：', flowKey, flowNo);
+  // console.warn('获取' + paymentApplicationType + '_' + scene + '流程Key：', flowKey, flowNo);
   return flowNo;
 };
 
@@ -164,7 +170,7 @@ export const checkAmt = (namespace, type = 'edit') => {
     payDetailList,
     fieldsConfig,
   } = namespace;
-  const { currPaymentAmt } = formData;
+  const { currPaymentAmt, noInvoiceVerification } = formData;
   let PaymentAmt = 0; // 付款记录总金额
   let invoiceAmt = 0; // 发票明细总金额
   let preAmt = 0; // 前置单据总金额
@@ -212,13 +218,20 @@ export const checkAmt = (namespace, type = 'edit') => {
         pageFieldJson[field.fieldKey] = field;
       });
 
-      // 付款金额与发票核销金额一致check
-      if (pageFieldJson.checkInvoiceAmt.fieldDefaultValue === 'YES') {
-        if (currPaymentAmt === invoiceAmt) {
-          checkInvoiceAmtFlag = true;
-        } else {
-          checkInvoiceAmtFlag = false;
-          createMessage({ type: 'error', description: '付款金额应与发票核销金额一致' });
+      // 无发票核销是否选中
+      let noInvoiceVerificationCheck = false;
+      if (noInvoiceVerification === true) {
+        noInvoiceVerificationCheck = true;
+      }
+      if (!noInvoiceVerificationCheck) {
+        // 付款金额与发票核销金额一致check
+        if (pageFieldJson.checkInvoiceAmt.fieldDefaultValue === 'YES') {
+          if (currPaymentAmt === invoiceAmt) {
+            checkInvoiceAmtFlag = true;
+          } else {
+            checkInvoiceAmtFlag = false;
+            createMessage({ type: 'error', description: '付款金额应与发票核销金额一致' });
+          }
         }
       }
 
@@ -254,12 +267,14 @@ export const checkAmt = (namespace, type = 'edit') => {
       }
 
       // 付款金额与BU分摊金额一致check
-      if (pageFieldJson.checkBuAmt.fieldDefaultValue === 'YES') {
-        if (currPaymentAmt === buAmt) {
-          checkBuAmtFlag = true;
-        } else {
-          checkBuAmtFlag = false;
-          createMessage({ type: 'error', description: ' 付款金额应与BU分摊金额一致' });
+      if (!noInvoiceVerificationCheck) {
+        if (pageFieldJson.checkBuAmt.fieldDefaultValue === 'YES') {
+          if (currPaymentAmt === buAmt) {
+            checkBuAmtFlag = true;
+          } else {
+            checkBuAmtFlag = false;
+            createMessage({ type: 'error', description: ' 付款金额应与BU分摊金额一致' });
+          }
         }
       }
     }

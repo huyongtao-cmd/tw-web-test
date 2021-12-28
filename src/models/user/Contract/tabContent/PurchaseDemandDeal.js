@@ -7,7 +7,7 @@ import {
   queryProdClassesTreeSub,
   queryProdList,
 } from '@/services/sys/baseinfo/product';
-import { selectAllAbOu } from '@/services/gen/list';
+import { selectAllAbOu, getProductClass } from '@/services/gen/list';
 import createMessage from '@/components/core/AlertMessage';
 import moment from 'moment';
 
@@ -25,9 +25,19 @@ export default {
     subTreeData: [],
     prodList: [],
     abOusArr: [],
+    productClassrArr: [],
   },
 
   effects: {
+    *getProductClassFun({ payload }, { call, put }) {
+      const { response } = yield call(getProductClass, payload);
+      yield put({
+        type: 'updateState',
+        payload: {
+          productClassrArr: response || [],
+        },
+      });
+    },
     *selectAbOus({ payload }, { call, put }) {
       const { response } = yield call(selectAllAbOu, payload);
       yield put({

@@ -11,7 +11,6 @@ import FieldList from '@/components/layout/FieldList';
 import AsyncSelect from '@/components/common/AsyncSelect';
 import { UdcSelect } from '@/pages/gen/field';
 import { selectIamUsers } from '@/services/gen/list';
-import BaseSelect from '@/components/production/basic/BaseSelect';
 
 const { Field } = FieldList;
 const DOMAIN = 'flowRoleCreate';
@@ -187,11 +186,7 @@ class FlowRoleCreate extends PureComponent {
                 initialValue: formData.baseCity,
               }}
             >
-              <BaseSelect
-                mode="multiple"
-                parentKey="FUNCTION:REGION:NAME"
-                placeholder="请选择管理区域"
-              />
+              <UdcSelect mode="multiple" code="COM.CITY" placeholder="请选择管理区域" />
             </Field>
             <Field
               name="defaultFlag"

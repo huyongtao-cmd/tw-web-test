@@ -1,7 +1,7 @@
 /* eslint-disable no-nested-ternary */
 import React, { Component } from 'react';
 import { connect } from 'dva';
-import { Card, Divider, Table, Icon, Menu, Tooltip, Spin } from 'antd';
+import { Card, Divider, Table, Icon, Menu, Tooltip, Spin, Button } from 'antd';
 import classNames from 'classnames';
 import Title from '@/components/layout/Title';
 import DescriptionList from '@/components/layout/DescriptionList';
@@ -151,6 +151,15 @@ class MyTrain extends Component {
     });
   };
 
+  intoStudy = (obj, timestamp) => {
+    const { courseCode, loginName, corpCode, secretKey } = obj;
+    const secret = MD5([courseCode, loginName, corpCode, timestamp, secretKey].sort().join(''));
+    window.open(
+      `http://v4.21tb.com/els/provider.newSyncUserAndPlay.do?courseCode=${courseCode}&loginName=${loginName}&corpCode=${corpCode}&timestamp=${timestamp}&secret=${secret}`,
+      '_blank'
+    );
+  };
+
   render() {
     const {
       loading,
@@ -211,14 +220,13 @@ class MyTrain extends Component {
         dataIndex: 'operate',
         align: 'center',
         render: (val, row, index) => {
-          const courseCode = row.courseNo;
-          const loginName = email;
-          const corpCode = 'elitesland';
-          const timestamp = Date.now();
-          const secretKey = 'a3c3f5e4077e75d0';
-          const secret = MD5(
-            [courseCode, loginName, corpCode, timestamp, secretKey].sort().join('')
-          );
+          const obj = {
+            courseCode: row.courseNo,
+            loginName: email,
+            corpCode: 'elitesland',
+            timestamp: Date.now(),
+            secretKey: 'a3c3f5e4077e75d0',
+          };
 
           if (row.lock) {
             return (
@@ -226,13 +234,22 @@ class MyTrain extends Component {
             );
           }
           return (
-            <a
-              // eslint-disable-next-line react/jsx-no-target-blank
-              target="_blank"
-              href={`http://v4.21tb.com/els/provider.newSyncUserAndPlay.do?courseCode=${courseCode}&loginName=${loginName}&corpCode=${corpCode}&timestamp=${timestamp}&secret=${secret}`}
+            // <a
+            //   // eslint-disable-next-line react/jsx-no-target-blank
+            //   target="_blank"
+            //   href={`http://v4.21tb.com/els/provider.newSyncUserAndPlay.do?courseCode=${courseCode}&loginName=${loginName}&corpCode=${corpCode}&timestamp=${timestamp}&secret=${secret}`}
+            // >
+            //   进入学习
+            // </a>
+            <Button
+              type="primary"
+              onClick={() => {
+                const timestamp = Date.now();
+                return this.intoStudy(obj, timestamp);
+              }}
             >
               进入学习
-            </a>
+            </Button>
           );
         },
       },

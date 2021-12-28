@@ -12,6 +12,7 @@ const {
   customerFuzzyList,
   signInvalid,
   customerUpload,
+  customerTagUploadApi,
 } = customer;
 
 // 潜在客户列表
@@ -57,6 +58,13 @@ export async function signInvalidRq(params) {
 // 导入excel潜在客户数据
 export async function customerUploadRq(params) {
   return request.post(customerUpload, {
+    body: params,
+  });
+}
+
+// 导入excel 客户标签
+export async function customerUploadRqTagFun(params) {
+  return request.post(customerTagUploadApi, {
     body: params,
   });
 }

@@ -65,8 +65,8 @@ class ProjectModal extends React.Component {
             selectedRowKeys: [record.id],
             selectedRows: [record],
           });
-          if (record.projStatus !== 'ACTIVE' && record.projStatus !== 'PENDING') {
-            createMessage({ type: 'error', description: `只能选择项目状态为激活或暂挂的项目` });
+          if (record.projStatus !== 'ACTIVE') {
+            createMessage({ type: 'error', description: `只能选择项目状态为激活的项目` });
             return;
           }
           onOk.apply(this.state, [e, [record.id], [record]]);
@@ -83,12 +83,8 @@ class ProjectModal extends React.Component {
       createMessage({ type: 'error', description: '请选择一个项目' });
       return;
     }
-    if (
-      selectedRowKeys[0] !== 0 &&
-      selectedRows[0].projStatus !== 'ACTIVE' &&
-      selectedRows[0].projStatus !== 'PENDING'
-    ) {
-      createMessage({ type: 'error', description: `只能选择项目状态为激活或暂挂的项目` });
+    if (selectedRowKeys[0] !== 0 && selectedRows[0].projStatus !== 'ACTIVE') {
+      createMessage({ type: 'error', description: `只能选择项目状态为激活的项目` });
       return;
     }
     onOk.apply(this.state, [e, selectedRowKeys, selectedRows]);

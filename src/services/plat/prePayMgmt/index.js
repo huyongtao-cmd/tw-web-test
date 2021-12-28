@@ -6,7 +6,9 @@ const {
   list,
   savePreAccountJde,
   activeSubContract,
+  virtualContractActivation,
   submitSubContract,
+  submitVirtualSubContract,
   checkSubContract,
   passSubContractResult,
 } = api.plat.prePay;
@@ -24,8 +26,16 @@ export async function getSubContractDetail({ id }) {
   return request.get(toUrl(activeSubContract, { id }));
 }
 
+export async function virtualContractActivationUrl({ id }) {
+  return request.get(toUrl(virtualContractActivation, { id }));
+}
+
 export async function saveSubContract(params) {
   return request.post(submitSubContract, { body: params });
+}
+
+export async function saveVirtualSubContract(params) {
+  return request.post(submitVirtualSubContract, { body: params });
 }
 
 export async function getViewSubContract({ id }) {

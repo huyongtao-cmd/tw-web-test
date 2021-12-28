@@ -132,9 +132,9 @@ export default {
               ...data.resVacationApply,
               date: [startDate, endDate],
               selectedVacationType: !isEmpty(
-                data.resVacationList.filter(v => v.id === data.resVacationApply.vacationId)
+                data.resVacationList?.filter(v => v.id === data.resVacationApply.vacationId)
               )
-                ? data.resVacationList.filter(v => v.id === data.resVacationApply.vacationId)[0]
+                ? data.resVacationList?.filter(v => v.id === data.resVacationApply.vacationId)[0]
                     .vacationType
                 : null,
               vacationEndDate:
@@ -142,9 +142,9 @@ export default {
                   data.resVacationApply.detailViewList.length - 1
                 ].vdate,
               vacationDeadLine: !isEmpty(
-                data.resVacationList.filter(v => v.id === data.resVacationApply.vacationId)
+                data.resVacationList?.filter(v => v.id === data.resVacationApply.vacationId)
               )
-                ? data.resVacationList.filter(v => v.id === data.resVacationApply.vacationId)[0]
+                ? data.resVacationList?.filter(v => v.id === data.resVacationApply.vacationId)[0]
                     .expirationDate
                 : null,
             },

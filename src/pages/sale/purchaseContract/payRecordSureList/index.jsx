@@ -8,6 +8,7 @@ import DataTable from '@/components/common/DataTable';
 import { Selection, DatePicker } from '@/pages/gen/field';
 import { selectAbOus } from '@/services/gen/list';
 import createMessage from '@/components/core/AlertMessage';
+import { add as mathAdd } from '@/utils/mathUtils';
 
 const DOMAIN = 'payRecordSureList';
 
@@ -31,6 +32,13 @@ const particularColumns = [
   global,
 }))
 class PayRecordListCashier extends PureComponent {
+  constructor(props) {
+    super(props);
+    this.state = {
+      sumAmt: undefined,
+    };
+  }
+
   componentDidMount() {
     this.fetchData({
       offset: 0,
@@ -78,7 +86,7 @@ class PayRecordListCashier extends PureComponent {
     } = this.props;
 
     const tableLoading = loading.effects[`${DOMAIN}/query`];
-
+    const { sumAmt } = this.state;
     const tableProps = {
       rowKey: 'id',
       columnsCache: DOMAIN,
@@ -91,6 +99,12 @@ class PayRecordListCashier extends PureComponent {
       total,
       dataSource: list,
       enableSelection: true,
+      onRowChecked: (selectedRowKeys, selectedRows) => {
+        const sumPaymentAmt = selectedRows.reduce((sum, row) => mathAdd(sum, row.paymentAmt), 0);
+        this.setState({
+          sumAmt: sumPaymentAmt,
+        });
+      },
       onChange: filters => this.fetchData(filters),
       onSearchBarChange: (changedValues, allValues) => {
         dispatch({
@@ -100,6 +114,14 @@ class PayRecordListCashier extends PureComponent {
       },
       searchForm,
       searchBarForm: [
+        {
+          title: '流水号',
+          dataIndex: 'paySerialsNum',
+          options: {
+            initialValue: searchForm.paySerialsNum || undefined,
+          },
+          tag: <Input placeholder="请输入流水号" />,
+        },
         {
           title: '付款申请单编号',
           dataIndex: 'paymentNo',
@@ -185,7 +207,13 @@ class PayRecordListCashier extends PureComponent {
           options: {
             initialValue: searchForm.state || undefined,
           },
-          tag: <Selection.UDC code="TSK:PAYMENT_SLIP_STATUS" placeholder="请选择付款记录单状态" />,
+          tag: (
+            <Selection.UDC
+              code="TSK:PAYMENT_SLIP_STATUS"
+              filters={[{ sphd1: '出纳' }]}
+              placeholder="请选择付款记录单状态"
+            />
+          ),
         },
         {
           title: '付款日期',
@@ -197,6 +225,12 @@ class PayRecordListCashier extends PureComponent {
         },
       ],
       columns: [
+        {
+          title: '流水号',
+          dataIndex: 'paySerialsNum',
+          align: 'center',
+          width: 150,
+        },
         {
           title: '付款申请单',
           dataIndex: 'paymentNo',
@@ -428,6 +462,7 @@ class PayRecordListCashier extends PureComponent {
               payload: {
                 entities: selectedRows,
                 action: 2,
+                sourceOfRequest: 'chuNaList',
               },
             });
           },
@@ -447,6 +482,7 @@ class PayRecordListCashier extends PureComponent {
               payload: {
                 entities: selectedRows,
                 action: 4,
+                sourceOfRequest: 'chuNaList',
               },
             });
           },
@@ -466,6 +502,7 @@ class PayRecordListCashier extends PureComponent {
               payload: {
                 entities: selectedRows,
                 action: 3,
+                sourceOfRequest: 'chuNaList',
               },
             });
           },
@@ -475,6 +512,14 @@ class PayRecordListCashier extends PureComponent {
 
     return (
       <PageHeaderWrapper title="付款记录确认列表 ( 出纳 )">
+        {(sumAmt || sumAmt === 0) && (
+          <div style={{ padding: '0 24px 0' }}>
+            <p style={{ color: 'red' }}>
+              合计金额：
+              {sumAmt}元
+            </p>
+          </div>
+        )}
         <DataTable {...tableProps} />
       </PageHeaderWrapper>
     );

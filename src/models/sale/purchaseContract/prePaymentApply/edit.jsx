@@ -1,10 +1,11 @@
+/* eslint-disable no-sequences */
 /* eslint-disable no-param-reassign */
 /* eslint-disable guard-for-in */
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable array-callback-return */
 /* eslint-disable no-shadow */
 /* eslint-disable prefer-const */
-import { isEmpty } from 'ramda';
+import { isEmpty, isNil } from 'ramda';
 import { add as mathAdd, sub } from '@/utils/mathUtils';
 import moment from 'moment';
 import { fromQs } from '@/utils/stringUtils';
@@ -16,6 +17,7 @@ import { businessPageDetailByNo } from '@/services/sys/system/pageConfig';
 
 import {
   getPaymentApplyById,
+  getPaymentApplyByIdEditPage,
   postPrePaymentApplySave,
   postPrePaymentApplyUpdate,
   postPaymentApplyFlowSubmit,
@@ -23,10 +25,8 @@ import {
   selectApplyAccounts,
   getPaymentApplyOpportunity,
   getInvoicesDetail,
-  getPaymentApplyInvoices,
-  getPaymentApplyCalcAmt,
   getPaymentApplyByDocNoScene,
-  getPurchaseByDoc,
+  getPurchaseByDocPro,
 } from '@/services/sale/purchaseContract/paymentApplyList';
 
 const setDefaultFormData = (defaultFormData, queryFormData) => {
@@ -42,6 +42,7 @@ const setDefaultFormData = (defaultFormData, queryFormData) => {
 
 // 从一个对象取部分属性给另一个对象
 const pick = (obj, arr) =>
+  // eslint-disable-next-line no-return-assign
   arr.reduce((iter, val) => (val in obj && (iter[val] = obj[val]), iter), {});
 
 export default {
@@ -51,7 +52,8 @@ export default {
     defaultFormData: {}, // 默认值
     pageConfig: {},
     opportunityList: [],
-    payDetailList: [],
+    payDetailList: [], //付款计划、明细
+    paymentPlanAdvPayList: [], //付款计划-预付款
     bearDepList: [], // 费用承担部门
     payRecordList: [], // 付款记录
     invoiceVerDetail: [], // 发票核销金额
@@ -67,7 +69,15 @@ export default {
       yield put({
         type: 'getPaymentApplyOpportunity',
       });
-      const { mode, id, docNo, scene } = payload;
+      const { mode, id, docNo, scene, source } = payload;
+      const {
+        payDate,
+        expHexiaoDate,
+        applicationDate,
+        purchaseInchargeResId,
+        acceptanceType,
+        invoiceState,
+      } = defaultFormData;
       if (mode === 'create') {
         if (docNo === undefined) {
           yield put({
@@ -117,56 +127,153 @@ export default {
             }
           }
           if (scene === '14') {
-            const { status, response } = yield call(getPurchaseByDoc, docNo);
-            if (response) {
-              const purchaseData = pick(response, [
-                'paymentCompany1',
-                'supplierLegalNo',
-                'paymentAmt',
-                'currCode',
-                'docType',
-                'docNo',
-                'relatedSalesContract',
-                'relatedProjectNo',
-                'payMethod',
-                'receivingUnit',
-                'receivingId',
-                'receivingBank',
-              ]);
-              let newFormData = setDefaultFormData(defaultFormData, purchaseData);
-              yield put({
-                type: 'initFieldSourcing',
-                payload: {
-                  formData: newFormData,
-                  mode,
-                },
-              });
-              yield put({
-                type: 'updateState',
-                payload: {
-                  formData: {
-                    ...formData,
-                    ...newFormData,
-                    id: '',
-                    paymentNo: '',
+            if (source === 'purchaseContract') {
+              // 采购合同
+              const { status, response } = yield call(getPurchaseByDocPro, docNo);
+              if (response) {
+                const purchaseData = pick(response, [
+                  'paymentCompany1',
+                  'supplierLegalNo',
+                  'paymentAmt',
+                  'currCode',
+                  'docType',
+                  'docNo',
+                  'relatedSalesContract',
+                  'relatedProjectNo',
+                  'payMethod',
+                  'receivingUnit',
+                  'receivingId',
+                  'receivingBank',
+                ]);
+                let newFormData = setDefaultFormData(defaultFormData, purchaseData);
+                yield put({
+                  type: 'initFieldSourcing',
+                  payload: {
+                    formData: newFormData,
+                    mode,
                   },
-                  payDetailList: [],
-                  invoiceVerDetail: [],
-                  bearDepList: [],
-                  cashOutList: [],
-                  payRecordList: [],
-                },
-              });
+                });
+                yield put({
+                  type: 'updateState',
+                  payload: {
+                    formData: {
+                      ...formData,
+                      ...newFormData,
+                      id: '',
+                      paymentNo: '',
+                    },
+                    payDetailList: [],
+                    invoiceVerDetail: [],
+                    bearDepList: [],
+                    cashOutList: [],
+                    payRecordList: [],
+                    paymentPlanAdvPayList: response.twPaymentPlanAdvpayViews,
+                  },
+                });
+              } else {
+                createMessage({
+                  type: 'error',
+                  description: '获取采购合同预付款申请失败',
+                });
+              }
             } else {
-              createMessage({
-                type: 'error',
-                description: '获取采购合同预付款申请失败',
-              });
+              //采购协议
+              const { status, response } = yield call(getPaymentApplyByDocNoScene, docNo, scene);
+              if (response.ok) {
+                const { datum } = response;
+                datum.twPaymentApplyEntity.paymentAmt = 1000000;
+                // 分摊汇总
+                let BearTotal = 0;
+                // 费用承担部门
+                if (datum.twCostUndertakeDeptEntities) {
+                  const newBearDepList = datum.twCostUndertakeDeptEntities;
+                  if (newBearDepList.length !== 0) {
+                    newBearDepList.map((item, index) => {
+                      BearTotal = mathAdd(BearTotal, item.paymentAmt || 0);
+                    });
+                  }
+                }
+                // 提现金额
+                let withdrawTotal = 0;
+                if (
+                  Array.isArray(datum.twWithdrawEntities) &&
+                  datum.twWithdrawEntities.length !== 0
+                ) {
+                  datum.twWithdrawEntities.map((item, index) => {
+                    withdrawTotal = mathAdd(withdrawTotal, item.amt);
+                  });
+                }
+                if (
+                  datum.twPaymentApplyEntity &&
+                  datum.twPaymentApplyEntity.docType === 'AGREEMENT' &&
+                  scene &&
+                  parseInt(scene, 10) !== 16
+                ) {
+                  yield put({
+                    type: 'getPaymentApplyCalcAmt',
+                    payload: {
+                      agreementNo: docNo,
+                      amt: withdrawTotal,
+                    },
+                  });
+                }
+                // 判断是否有收款人(申请人填写)
+                if (datum.twPaymentApplyEntity && datum.twPaymentApplyEntity.receivingUnit) {
+                  yield put({
+                    type: 'selectAccountByNo',
+                    payload: {
+                      receivingUnit: datum.twPaymentApplyEntity.receivingUnit,
+                    },
+                  });
+                }
+
+                // 初始化赋值
+                let newFormData = setDefaultFormData(defaultFormData, datum.twPaymentApplyEntity);
+                yield put({
+                  type: 'updateState',
+                  payload: {
+                    formData: {
+                      ...formData,
+                      ...newFormData,
+                      payDate,
+                      expHexiaoDate,
+                      applicationDate,
+                      purchaseInchargeResId,
+                      id: '',
+                      paymentNo: '',
+                      depAmt: BearTotal || 0,
+                      taxAmountAmt: sub(
+                        datum.twPaymentApplyEntity.currPaymentAmt || 0,
+                        datum.twPaymentApplyEntity.taxAmount || 0
+                      ),
+                      restAmt: sub(
+                        sub(
+                          datum.twPaymentApplyEntity.currPaymentAmt || 0,
+                          datum.twPaymentApplyEntity.taxAmount || 0
+                        ),
+                        BearTotal
+                      ),
+                      withdrawTotal, // 提现金额合计
+                    },
+                    payDetailList: datum.twPurchasePaymentPlanEntities || [],
+                    invoiceVerDetail: datum.twInvoiceVerDetailEntities || [],
+                    bearDepList: datum.twCostUndertakeDeptEntities || [],
+                    cashOutList: datum.twWithdrawEntities || [],
+                    payRecordList: datum.twPaymentSlipEntities || [],
+                  },
+                });
+              } else {
+                createMessage({ type: 'error', description: response.reason || '查询失败' });
+              }
             }
           }
         }
       } else {
-        const { status, response } = yield call(getPaymentApplyById, id);
+        let uri = getPaymentApplyById;
+        if (mode === 'edit') {
+          uri = getPaymentApplyByIdEditPage;
+        }
+        const { status, response } = yield call(uri, id);
         if (status === 200) {
           if (response.ok) {
             const { datum } = response;
@@ -210,6 +317,7 @@ export default {
                 payRecordList: datum.twPaymentSlipEntities || [],
                 bearDepList: datum.twCostUndertakeDeptEntities || [],
                 invoiceVerDetail: datum.twInvoiceVerDetailEntities || [],
+                paymentPlanAdvPayList: datum.twPaymentPlanAdvpayEntities || [],
               },
             });
           } else {
@@ -270,6 +378,13 @@ export default {
       return receivingBank;
     },
 
+    // 银行账号名称(付款申请用)
+    *tableAccounts({ payload }, { call, select, put, all }) {
+      const { accountNo } = payload;
+      const { status, response } = yield call(selectApplyAccounts, accountNo);
+      return response.datum;
+    },
+
     // 付款银行卡号(财务填写)
     *selectFinalAccountByNo({ payload }, { call, select, put, all }) {
       const { finalPaymentCompany1 } = payload;
@@ -311,25 +426,42 @@ export default {
     },
     // 保存
     *save({ payload }, { call, select, put, all }) {
-      const { formData, payDetailList, bearDepList } = yield select(
-        ({ prePaymentApplyEdit }) => prePaymentApplyEdit
-      );
+      const {
+        formData,
+        payDetailList,
+        bearDepList,
+        paymentPlanAdvPayList,
+        payRecordList,
+      } = yield select(({ prePaymentApplyEdit }) => prePaymentApplyEdit);
+      const expHexiaoDate = formData.expHexiaoDate
+        ? moment(formData.expHexiaoDate).format('YYYY-MM-DD')
+        : '';
       const { scene } = payload;
       let id = '';
+      let isNeedUpload = 0;
+      if (!isEmpty(formData.emergencyPayment) && !isNil(formData.emergencyPayment)) {
+        isNeedUpload = 1;
+      } else {
+        isNeedUpload = 0;
+      }
       if (formData.id) {
         const { status, response } = yield call(postPrePaymentApplyUpdate, {
-          twPaymentApplyEntity: { ...formData, scene },
+          twPaymentApplyEntity: { ...formData, scene, isNeedUpload, expHexiaoDate },
           twPurchasePaymentPlanEntities: payDetailList,
           twCostUndertakeDeptEntities: bearDepList,
+          twPaymentPlanAdvpayEntities: paymentPlanAdvPayList,
+          twPaymentSlipEntities: payRecordList,
         });
         if (response.ok) {
           id = response.datum;
         }
       } else {
         const { status, response } = yield call(postPrePaymentApplySave, {
-          twPaymentApplyEntity: { ...formData, scene },
+          twPaymentApplyEntity: { ...formData, scene, isNeedUpload, expHexiaoDate },
           twPurchasePaymentPlanEntities: payDetailList,
           twCostUndertakeDeptEntities: bearDepList,
+          twPaymentPlanAdvpayEntities: paymentPlanAdvPayList,
+          twPaymentSlipEntities: payRecordList,
         });
         if (response.ok) {
           id = response.datum;
@@ -395,7 +527,7 @@ export default {
           defaultFormData[field.fieldKey] = field.fieldDefaultValue;
         });
         defaultFormData.payDate = formatDT(moment());
-        defaultFormData.expHexiaoDate = formatDT(moment());
+        // defaultFormData.expHexiaoDate = formatDT(moment());
         defaultFormData.applicationDate = formatDT(moment());
         defaultFormData.purchaseInchargeResId = resId;
         for (let key in defaultFormData) {

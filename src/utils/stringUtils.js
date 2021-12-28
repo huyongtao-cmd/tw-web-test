@@ -1,7 +1,7 @@
 /* eslint-disable */
 import pathToRegexp from 'path-to-regexp';
 import { parse, stringify } from 'qs';
-import { __, compose, curry, isNil, merge, zipObj } from 'ramda';
+import { __, compose, curry, isNil, merge, zipObj, isEmpty } from 'ramda';
 
 // ----------------------------------------------------------------
 // 字符串工具类 - 负责提供非业务耦合的各种字符串操作。
@@ -151,6 +151,20 @@ const fromQsToObj = curry((url = window.location.href, queryObject) => {
     // )
   )(fromQs(url));
 });
+
+/**
+ * 获取url上面参数 returnurl
+ * @param {string} url - 指定路径
+ * @returns {returnurl} 返回参数
+ */
+const fromReturnUrl = (url = window.location.href) => {
+  let begin = url.indexOf('returnurl');
+  if (begin > 0) {
+    const returnurl = url.substring(begin + 10);
+    return returnurl;
+  }
+  return;
+};
 
 /**
  * 比较两个url是否相等
@@ -303,6 +317,22 @@ const JSON2QueryString = obj => {
   return str.join('&');
 };
 
+/**
+ * 字符串根据下划线大写转驼峰
+ * @param str
+ * @returns {string}
+ */
+const strToHump = (str = '') => {
+  if (!isNil(str) && !isEmpty(str)) {
+    var arr = str.split('_').map(v => v.toLowerCase());
+    for (var i = 1; i < arr.length; i++) {
+      arr[i] = arr[i].charAt(0).toUpperCase() + arr[i].substring(1);
+    }
+    return arr.join('');
+  }
+  return '';
+};
+
 // to developer: 函数Currify之后内部变量的依赖开发工具lint不了（应该与AST解析有关，有的如WP的一些插件加上自定义注释可以标记。）
 // 虽然有一点恶心，暂时也没有很好的办法只能先将就一下了。
 export {
@@ -316,6 +346,7 @@ export {
   toQs,
   fromQs,
   fromQsToObj,
+  fromReturnUrl,
   isUrl,
   isUrlEq,
   parseJSONPStr,
@@ -326,4 +357,5 @@ export {
   randomString,
   fittingString,
   JSON2QueryString,
+  strToHump,
 };

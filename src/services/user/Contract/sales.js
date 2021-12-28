@@ -28,6 +28,7 @@ const {
   listRemoveContact,
   resetProfitResults,
   checkCreateProj,
+  checkSubmitVirtualContractUri,
   purchaseActivity,
   purchaseClose,
   salesRegionBuSelect,
@@ -35,6 +36,7 @@ const {
   contractListDel,
   passAccount,
   getNormSettleByContId,
+  contractTagImportApi,
 } = api.user.contract;
 const { custMultiColSelect, userMultiColSelect } = api.user;
 const { busSelect } = api.org;
@@ -42,6 +44,13 @@ const { busSelect } = api.org;
 // 查询泛用结算分配详情
 export async function getNormSettleByContIdRq(params) {
   return request.get(toUrl(getNormSettleByContId, params));
+}
+
+// 导入合同标签
+export async function contractTagImportFun(params) {
+  return request.post(contractTagImportApi, {
+    body: params,
+  });
 }
 
 // 泛用结算分配 - 过账操作
@@ -199,6 +208,11 @@ export async function resetProfitResult(ids) {
 // 判断子合同是否能创建项目
 export async function checkCreateProjById(id) {
   return request.get(toUrl(checkCreateProj, id));
+}
+
+// 判断子合同是否能创建项目
+export async function checkSubmitVirtualContract(id) {
+  return request.get(toUrl(checkSubmitVirtualContractUri, id));
 }
 
 // 采购合同激活

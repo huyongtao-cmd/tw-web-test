@@ -2,9 +2,6 @@
 @import '~@/utils/utils.less';
 
 .userinfocard {
-  padding: 10px;
-  overflow: auto;
-  height: 330px;
   :global {
     .ant-card-body {
       padding: 0;
@@ -179,6 +176,31 @@
   ul.scroll {
     overflow-y: scroll;
   }
+  ul.scroll::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ul.scroll::-webkit-scrollbar-track {
+    width: 6px;
+    background-color: rgba(204, 204, 204, 0.1);
+    -webkit-border-radius: 2em;
+    -moz-border-radius: 2em;
+    border-radius: 2em;
+  }
+
+  ul.scroll::-webkit-scrollbar-thumb {
+    background-color: rgba(204, 204, 204, 0.5);
+    background-clip: padding-box;
+    min-height: 28px;
+    -webkit-border-radius: 2em;
+    -moz-border-radius: 2em;
+    border-radius: 2em;
+  }
+
+  ul.scroll::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(204, 204, 204, 1);
+  }
 }
 
 .todocard {
@@ -294,6 +316,33 @@
         }
       }
     }
+  }
+
+  // 滚动条样式
+  ul.message::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ul.message::-webkit-scrollbar-track {
+    width: 6px;
+    background-color: rgba(204, 204, 204, 0.1);
+    -webkit-border-radius: 2em;
+    -moz-border-radius: 2em;
+    border-radius: 2em;
+  }
+
+  ul.message::-webkit-scrollbar-thumb {
+    background-color: rgba(204, 204, 204, 0.5);
+    background-clip: padding-box;
+    min-height: 28px;
+    -webkit-border-radius: 2em;
+    -moz-border-radius: 2em;
+    border-radius: 2em;
+  }
+
+  ul.message::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(204, 204, 204, 1);
   }
 }
 

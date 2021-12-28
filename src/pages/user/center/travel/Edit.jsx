@@ -20,6 +20,7 @@ import FieldList from '@/components/layout/FieldList';
 import { genFakeId, checkIfNumber } from '@/utils/mathUtils';
 import router from 'umi/router';
 import createMessage from '@/components/core/AlertMessage';
+import { findOppoById } from '@/services/user/management/opportunity';
 // import { queryCapasetLeveldList } from '@/services/user/task/task';
 
 const DOMAIN = 'userTravelEdit';
@@ -442,7 +443,12 @@ class TaskEdit extends React.PureComponent {
   };
 
   setApplyResName = (value, option) => {
-    const { formData, dispatch, form } = this.props;
+    const { formData, dispatch, form, dataList } = this.props;
+    const changeDataList = dataList.map(v => {
+      // eslint-disable-next-line no-param-reassign
+      v.tripResId = value;
+      return v;
+    });
     dispatch({
       type: `${DOMAIN}/queryTaskList`,
       payload: { resId: value },
@@ -470,6 +476,7 @@ class TaskEdit extends React.PureComponent {
           buName: null,
           applyResName: option ? option.props.title : null,
         },
+        dataList: changeDataList,
       },
     });
   };
@@ -576,7 +583,7 @@ class TaskEdit extends React.PureComponent {
               filterOption={(input, option) =>
                 option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }
-              // disabled={!row.deleteable}
+              disabled
               onChange={this.onCellChanged(index, 'tripResId')}
             />
           ),
@@ -789,6 +796,40 @@ class TaskEdit extends React.PureComponent {
   };
 
   // --------------- 私有函数区域结束 -----------------
+
+  // 获取商机详情
+  getOpportunity = async id => {
+    const {
+      projSource,
+      form: { getFieldDecorator, setFieldsValue },
+      buSource,
+      formData,
+      dispatch,
+    } = this.props;
+    const { response } = await findOppoById(id);
+    const {
+      datum: { signBuId },
+    } = response;
+    const { name, ouName } = buSource.find(x => x.id === signBuId) || {};
+    // extraControl = { expenseBuId: buId, buName }
+    setFieldsValue({
+      expenseBuId: {
+        code: signBuId,
+        id: signBuId,
+        name,
+        ouName,
+      },
+
+      feeCode: undefined,
+    });
+    // dispatch({
+    //   type: `${DOMAIN}/updateForm`,
+    //   payload: {
+    //     ouName,
+    //     ...formData,
+    //   },
+    // });
+  };
 
   render() {
     const {
@@ -1025,14 +1066,25 @@ class TaskEdit extends React.PureComponent {
                 dataSource={taskSource}
                 onChange={value => {
                   let extraControl = {};
-                  if (value && value.reasonType === '01') {
-                    const { buId, buName } = projSource.find(x => x.id === value.reasonId) || {};
-                    extraControl = { expenseBuId: buId, buName };
-                  } else if (value && value.reasonType !== '01') {
-                    extraControl = {
-                      expenseBuId: value ? value.buId : null,
-                      buName: value ? value.buName : null,
-                    };
+                  if (value) {
+                    if (value.reasonType === '01') {
+                      const { buId, buName } = projSource.find(x => x.id === value.reasonId) || {};
+                      extraControl = { expenseBuId: buId, buName };
+                    } else if (value.reasonType === '02') {
+                      // const opportunityId = value.reasonId;
+                      // dispatch({
+                      //   type: `${DOMAIN}/queryOpportunity`,
+                      //   payload: {
+                      //     taskId: value.reasonId,
+                      //   },
+                      // });
+                      this.getOpportunity(value.reasonId);
+                    } else {
+                      extraControl = {
+                        expenseBuId: value ? value.buId : null,
+                        buName: value ? value.buName : null,
+                      };
+                    }
                   }
                   extraControl.expenseBuId
                     ? setFieldsValue({

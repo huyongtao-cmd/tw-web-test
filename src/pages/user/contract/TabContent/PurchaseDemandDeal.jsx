@@ -57,7 +57,7 @@ class PurchaseDemandDeal extends PureComponent {
 
     // 关联产品
     dispatch({
-      type: `${DOMAIN}/queryProdListFun`,
+      type: `${DOMAIN}/getProductClassFun`,
     });
     // 产品大类
     dispatch({
@@ -293,6 +293,7 @@ class PurchaseDemandDeal extends PureComponent {
         prodList,
         delProCurD,
         abOusArr,
+        productClassrArr,
       },
       userContractEditSub: { pageConfig = {} },
       form: { getFieldDecorator, setFieldsValue, getFieldValue },
@@ -448,9 +449,9 @@ class PurchaseDemandDeal extends PureComponent {
             <Selection
               value={value}
               className="x-fill-100"
-              source={prodList}
+              source={productClassrArr}
               columns={particularColumns}
-              transfer={{ key: 'id', code: 'id', name: 'prodName' }}
+              transfer={{ key: 'id', code: 'id', name: 'valDesc' }}
               dropdownMatchSelectWidth={false}
               showSearch
               onColumnsChange={val => {}}

@@ -14,6 +14,7 @@ import CityTrigger from '@/pages/gen/field/CityTrigger';
 import FieldList from '@/components/layout/FieldList';
 import createMessage from '@/components/core/AlertMessage';
 import ExcelImportExport from '@/components/common/ExcelImportExport';
+
 import { fromQs } from '@/utils/stringUtils';
 import { getUrl } from '@/utils/flowToRouter';
 import { stringify } from 'qs';
@@ -41,12 +42,15 @@ class Customer extends PureComponent {
     this.state = {
       visible: false,
       importVisible: false,
+      importTagVisible: false,
       confirmLoading: false,
       radioFlag: true,
       parmas: {},
       fuzzyVisible: false,
       uploading: false,
+      uploadingTag: false,
       failedList: [],
+      failedListTag: [],
     };
   }
 
@@ -106,6 +110,11 @@ class Customer extends PureComponent {
   toggleImportVisible = () => {
     const { importVisible } = this.state;
     this.setState({ importVisible: !importVisible });
+  };
+
+  toggleImportTagVisible = () => {
+    const { importTagVisible } = this.state;
+    this.setState({ importTagVisible: !importTagVisible });
   };
 
   handleCancel = () => {
@@ -225,6 +234,47 @@ class Customer extends PureComponent {
       } else {
         createMessage({ type: 'error', description: res.datum.msg || '上传失败,返回结果为空' });
         this.toggleImportVisible();
+      }
+      return null;
+    });
+  };
+
+  //客户标签导入
+  handleUploadTag = fileList => {
+    this.setState({
+      uploadingTag: true,
+    });
+
+    const fileData = new FormData();
+    fileList.forEach(file => {
+      fileData.append('file', file);
+    });
+
+    const { dispatch } = this.props;
+    dispatch({
+      type: `${DOMAIN}/uploadTag`,
+      payload: fileData,
+    }).then(res => {
+      this.setState({
+        uploadingTag: false,
+      });
+      if (res.ok) {
+        createMessage({ type: 'success', description: '上传成功' });
+        this.toggleImportTagVisible();
+        return null;
+      }
+      if (
+        res.datum &&
+        Array.isArray(res.datum.failExcelData) &&
+        !isEmpty(res.datum.failExcelData)
+      ) {
+        createMessage({ type: 'error', description: res.datum.msg || '上传失败' });
+        this.setState({
+          failedListTag: res.datum.failExcelData,
+        });
+      } else {
+        createMessage({ type: 'error', description: res.datum.msg || '上传失败,返回结果为空' });
+        this.toggleImportTagVisible();
       }
       return null;
     });
@@ -738,14 +788,30 @@ class Customer extends PureComponent {
             );
           },
         },
+        {
+          key: 'importTag',
+          icon: 'file-excel',
+          className: 'tw-btn-primary',
+          title: '导入客户标签',
+          loading: false,
+          // hidden: checkRole(),
+          disabled: false,
+          minSelections: 0,
+          cb: (selectedRowKeys, selectedRows, queryParams) => {
+            this.toggleImportTagVisible();
+          },
+        },
       ],
     };
 
     const {
       visible,
       importVisible,
+      importTagVisible,
       failedList,
+      failedListTag,
       uploading,
+      uploadingTag,
       confirmLoading,
       radioFlag,
       fuzzyVisible,
@@ -855,12 +921,36 @@ class Customer extends PureComponent {
         uploading,
       },
     };
+    const excelImportTagProps = {
+      templateUrl: location.origin + `/template/customerTagTemplate.xlsx`, // eslint-disable-line
+      option: {
+        fileName: '客户标签导入失败记录',
+        datas: [
+          {
+            sheetName: '客户标签数据导入失败记录', // 表名
+            sheetFilter: ['errorMsg', 'custName', 'tagId', 'tagName'], // 列过滤
+            sheetHeader: ['失败原因', '公司名称', '标签ID', '标签名称'], // 第一行标题
+            columnWidths: [12, 4, 6, 6], // 列宽 需与列顺序对应。
+          },
+        ],
+      },
+      controlModal: {
+        visible: importTagVisible,
+        failedList: failedListTag,
+        uploading: uploadingTag,
+      },
+    };
     return (
       <PageHeaderWrapper title="客户管理列表">
         <ExcelImportExport
           {...excelImportProps}
           closeModal={this.toggleImportVisible}
           handleUpload={this.handleUpload}
+        />
+        <ExcelImportExport
+          {...excelImportTagProps}
+          closeModal={this.toggleImportTagVisible}
+          handleUpload={this.handleUploadTag}
         />
         <DataTable {...tableProps} scroll={{ x: 3000 }} />
         <Modal

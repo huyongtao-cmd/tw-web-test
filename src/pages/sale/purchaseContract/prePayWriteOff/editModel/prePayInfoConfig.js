@@ -24,8 +24,10 @@ import { InvoicesSelect } from '../../suggestComponent/index';
 import { CalculateRate } from '../../constConfig';
 
 const { Option } = Select;
+// 发票核销明细
 export function writeOffTableProps(DOMAIN, dispatch, loading, form, mode, prePayWriteOffEdit) {
   const { invoiceVerDetail, pageConfig, formData } = prePayWriteOffEdit;
+  const { noInvoiceVerification } = formData;
   const pageFieldJson = {};
   if (pageConfig) {
     if (pageConfig.pageBlockViews && pageConfig.pageBlockViews.length > 1) {
@@ -256,7 +258,7 @@ export function writeOffTableProps(DOMAIN, dispatch, loading, form, mode, prePay
       dataIndex: 'theAmt',
       key: 'theAmt',
       className: 'text-right',
-      width: 200,
+      width: 140,
       render: (value, row, index) => (
         <InputNumber
           min={0}
@@ -276,7 +278,7 @@ export function writeOffTableProps(DOMAIN, dispatch, loading, form, mode, prePay
       key: 'invoiceAmt',
       dataIndex: 'invoiceAmt',
       className: 'text-right',
-      width: 200,
+      width: 100,
     },
     {
       title: pageFieldJson.writtenOffAmt.displayName,
@@ -284,20 +286,19 @@ export function writeOffTableProps(DOMAIN, dispatch, loading, form, mode, prePay
       dataIndex: 'writtenOffAmt',
       key: 'writtenOffAmt',
       className: 'text-right',
-      width: 200,
+      width: 120,
     },
     {
       title: pageFieldJson.rate.displayName,
       sortNo: pageFieldJson.rate.sortNo,
       key: 'rate',
       dataIndex: 'rate',
-      width: 150,
+      width: 60,
     },
     {
       title: pageFieldJson.invoiceTypeName.displayName,
       sortNo: pageFieldJson.invoiceTypeName.sortNo,
       dataIndex: 'invoiceTypeName',
-      className: 'text-center',
       key: 'invoiceTypeName',
       width: 150,
     },
@@ -305,7 +306,6 @@ export function writeOffTableProps(DOMAIN, dispatch, loading, form, mode, prePay
       title: pageFieldJson.inspectionName.displayName,
       sortNo: pageFieldJson.inspectionName.sortNo,
       dataIndex: 'inspectionName',
-      className: 'text-center',
       key: 'inspectionName',
       width: 200,
     },
@@ -329,9 +329,13 @@ export function writeOffTableProps(DOMAIN, dispatch, loading, form, mode, prePay
   const columnsFilterList = columnsList.filter(
     field => !field.key || pageFieldJson[field.key].visibleFlag === 1
   );
-
+  // 无发票核销是否选中
+  let noInvoiceVerificationCheck = false;
+  if (noInvoiceVerification === true) {
+    noInvoiceVerificationCheck = true;
+  }
   const tableProps = {
-    readOnly: mode === 'view',
+    readOnly: mode === 'view' ? true : noInvoiceVerificationCheck ? true : false,
     rowKey: 'id',
     showCopy: false,
     // loading: loading.effects[`${DOMAIN}/queryPurchase`],
@@ -402,9 +406,16 @@ export function writeOffTableProps(DOMAIN, dispatch, loading, form, mode, prePay
   return tableProps;
 }
 
+// 付款明细
 export function payDetailTableProps(DOMAIN, dispatch, loading, form, mode, prePayWriteOffEdit) {
   const { payDetailList, formData, pageConfig } = prePayWriteOffEdit;
   const pageFieldJson = {};
+  const { noDocVerification } = formData;
+  // 无单据核销是否选中
+  let noDocVerificationCheck = false;
+  if (noDocVerification === true) {
+    noDocVerificationCheck = true;
+  }
   if (pageConfig) {
     if (pageConfig.pageBlockViews && pageConfig.pageBlockViews.length > 1) {
       const currentBlockConfig =
@@ -500,7 +511,6 @@ export function payDetailTableProps(DOMAIN, dispatch, loading, form, mode, prePa
       sortNo: pageFieldJson.paymentStage.sortNo,
       key: 'paymentStage',
       dataIndex: 'paymentStage',
-      className: 'text-center',
       width: 200,
       render: (value, row, index) => (
         <Input
@@ -517,8 +527,8 @@ export function payDetailTableProps(DOMAIN, dispatch, loading, form, mode, prePa
       sortNo: pageFieldJson.currentPaymentAmt.sortNo,
       key: 'currentPaymentAmt',
       dataIndex: 'currentPaymentAmt',
-      className: 'text-center',
-      width: 200,
+      className: 'text-right',
+      width: 140,
       render: (value, row, index) => (
         <InputNumber
           min={0}
@@ -538,8 +548,8 @@ export function payDetailTableProps(DOMAIN, dispatch, loading, form, mode, prePa
       sortNo: pageFieldJson.paymentAmt.sortNo,
       key: 'paymentAmt',
       dataIndex: 'paymentAmt',
-      className: 'text-center',
-      width: 200,
+      className: 'text-right',
+      width: 140,
     },
     {
       title: pageFieldJson.docTypeName.displayName,
@@ -582,16 +592,38 @@ export function payDetailTableProps(DOMAIN, dispatch, loading, form, mode, prePa
       sortNo: pageFieldJson.milestoneName.sortNo,
       dataIndex: 'milestoneName',
       key: 'milestoneName',
-      className: 'text-center',
       width: 200,
     },
     {
       title: `${pageFieldJson.contractNodeName.displayName}`,
       sortNo: `${pageFieldJson.contractNodeName.sortNo}`,
       dataIndex: 'contractNodeName',
-      className: 'text-center',
       key: 'contractNodeName',
       width: 200,
+    },
+    {
+      title: `${pageFieldJson.recvAmt.displayName}`,
+      sortNo: `${pageFieldJson.recvAmt.sortNo}`,
+      key: 'recvAmt',
+      dataIndex: 'recvAmt',
+      className: 'text-center',
+      width: 100,
+    },
+    {
+      title: `${pageFieldJson.actualRecvAmt.displayName}`,
+      sortNo: `${pageFieldJson.actualRecvAmt.sortNo}`,
+      key: 'actualRecvAmt',
+      dataIndex: 'actualRecvAmt',
+      className: 'text-center',
+      width: 100,
+    },
+    {
+      title: `${pageFieldJson.text.displayName}`,
+      sortNo: `${pageFieldJson.text.sortNo}`,
+      key: 'text',
+      dataIndex: 'text',
+      className: 'text-center',
+      width: 100,
     },
   ];
   const columnsFilterList = columnsList.filter(
@@ -599,13 +631,18 @@ export function payDetailTableProps(DOMAIN, dispatch, loading, form, mode, prePa
   );
 
   const tableProps = {
-    readOnly: mode === 'view' ? true : formData.docType === 'CONTRACT' ? true : false,
+    readOnly:
+      mode === 'view'
+        ? true
+        : noDocVerificationCheck || formData.docType === 'CONTRACT'
+          ? true
+          : false,
     rowKey: 'id',
     showCopy: false,
     // loading: loading.effects[`${DOMAIN}/queryPurchase`],
     pagination: false,
     scroll: {
-      x: 1700,
+      x: 2000,
     },
     dataSource: payDetailList,
     onAdd: newRow => {

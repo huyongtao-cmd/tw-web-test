@@ -2,10 +2,6 @@ import { businessPageDetailByNo } from '@/services/sys/system/pageConfig';
 import { commonModelReducers } from '@/utils/production/modelUtils';
 import update from 'immutability-helper';
 import { isNil } from 'ramda';
-import { outputHandle, OutputProps } from '@/utils/production/outputUtil';
-import { closeThenGoto } from '@/layouts/routerControl';
-import { projectFlowRq } from '@/services/workbench/project';
-import createMessage from '@/components/core/AlertMessage';
 
 const defaultState = {
   formData: {},
@@ -23,13 +19,6 @@ export default {
   state: defaultState,
 
   effects: {
-    *flow({ payload }, { call, put, select }) {
-      const response = yield outputHandle(projectFlowRq, payload);
-      if (response.ok) {
-        createMessage({ type: 'success', description: '提交成功' });
-        closeThenGoto(`/user/flow/process?type=procs`);
-      }
-    },
     // 获取配置字段
     *getPageConfig({ payload }, { call, put, select }) {
       const { status, response } = yield call(businessPageDetailByNo, payload);

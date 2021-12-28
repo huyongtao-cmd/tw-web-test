@@ -309,6 +309,7 @@ class FileManagerEnhance extends Component {
    * 此处根据判别原有fileList来确定是在操作刚选择的文件还是在操作已有的文件列表
    */
   updateFileList = file => {
+    const { api } = this.props;
     const { uid, status } = file;
     const { fileList } = this.state;
     const exist = fileList.some(f => f.uid === file.uid);
@@ -320,9 +321,18 @@ class FileManagerEnhance extends Component {
       this.setState({ fileList: newList });
       this.kickOnChange(status, newList);
     } else {
-      this.setState({
-        fileList: [file, ...fileList],
-      });
+      if (
+        api === '/api/person/v1/res/headImg/sfs/token' ||
+        api === '/api/person/v1/res/selfVideo/sfs/token'
+      ) {
+        this.setState({
+          fileList: [file],
+        });
+      } else {
+        this.setState({
+          fileList: [file, ...fileList],
+        });
+      }
       this.kickOnChange(status, [file, ...fileList]);
     }
   };

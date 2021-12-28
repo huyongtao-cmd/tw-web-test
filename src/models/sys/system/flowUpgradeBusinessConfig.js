@@ -7,7 +7,7 @@ import {
   getSingleEventHandle,
   deleteEventHandle,
 } from '@/services/sys/flowUpgrade';
-// import { getCmsInfo } from '@/services/gen/app';
+import { getCmsInfo } from '@/services/gen/app';
 import createMessage from '@/components/core/AlertMessage';
 import { closeThenGoto } from '@/layouts/routerControl';
 
@@ -52,18 +52,18 @@ export default {
         }
       }
     },
-    // *getFlowTemInfo({ payload }, { call, put }) {
-    //   const response = yield call(getCmsInfo, 'FLOW_TEMP_CODE');
-    //   const responseCms = response.response;
-    //   if (responseCms && responseCms.ok) {
-    //     yield put({
-    //       type: 'updateState',
-    //       payload: {
-    //         cmsInfo: responseCms.datum ? responseCms.datum.contents : '',
-    //       },
-    //     });
-    //   }
-    // },
+    *getFlowTemInfo({ payload }, { call, put }) {
+      const response = yield call(getCmsInfo, 'FLOW_TEMP_CODE');
+      const responseCms = response.response;
+      if (responseCms && responseCms.ok) {
+        yield put({
+          type: 'updateState',
+          payload: {
+            cmsInfo: responseCms.datum ? responseCms.datum.contents : '',
+          },
+        });
+      }
+    },
     *getResolveField({ payload }, { call, put }) {
       const { status, response } = yield call(getResolveFieldFn, payload);
       if (status === 200) {

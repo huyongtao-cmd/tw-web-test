@@ -240,6 +240,20 @@ class OppoInfo extends PureComponent {
       >
         {formData.oppoLevelDesc}
       </Description>,
+      <Description
+        term={pageFieldJson.isNeedPartner.displayName}
+        key="isNeedPartner"
+        sortno={pageFieldJson.isNeedPartner.sortNo}
+      >
+        {formData.isNeedPartner === 1 ? '是' : '否'}
+      </Description>,
+      <Description
+        term={pageFieldJson.partnerDesc.displayName}
+        key="partnerDesc"
+        sortno={pageFieldJson.partnerDesc.sortNo}
+      >
+        {formData.partnerDesc}
+      </Description>,
     ];
     const filterList2 = saleFields
       .filter(field => !field.key || pageFieldJson[field.key].visibleFlag === 1)

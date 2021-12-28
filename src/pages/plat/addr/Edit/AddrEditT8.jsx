@@ -2,8 +2,8 @@ import React from 'react';
 
 import Title from '@/components/layout/Title';
 import FieldList from '@/components/layout/FieldList';
+import { UdcSelect } from '@/pages/gen/field';
 // import Loading from '@/components/core/DataLoading';
-import BaseSelect from '@/components/production/basic/BaseSelect.tsx';
 
 import { AddrEditContext } from './index';
 // import { Input } from 'antd';
@@ -22,7 +22,7 @@ const AddrEditT8 = props => (
             initialValue: formData.abCat1,
           }}
         >
-          <BaseSelect parentKey="FUNCTION:AB_CAT1" placeholder="请选择类型1" />
+          <UdcSelect code="TSK:AB_CAT1" placeholder="请选择类型1" />
         </Field>
         <Field
           name="abCat2"
@@ -31,7 +31,7 @@ const AddrEditT8 = props => (
             initialValue: formData.abCat2,
           }}
         >
-          <BaseSelect parentKey="FUNCTION:AB_CAT2" placeholder="请选择类型2" />
+          <UdcSelect code="TSK:AB_CAT2" placeholder="请选择类型2" />
         </Field>
         <Field
           name="abCat3"
@@ -40,7 +40,7 @@ const AddrEditT8 = props => (
             initialValue: formData.abCat3,
           }}
         >
-          <BaseSelect parentKey="FUNCTION:AB_CAT3" placeholder="请选择类型3" />
+          <UdcSelect code="TSK:AB_CAT3" placeholder="请选择类型3" />
         </Field>
         <Field
           name="abCat4"
@@ -49,7 +49,7 @@ const AddrEditT8 = props => (
             initialValue: formData.abCat4,
           }}
         >
-          <BaseSelect parentKey="FUNCTION:AB_CAT4" placeholder="请选择类型4" />
+          <UdcSelect code="TSK:AB_CAT4" placeholder="请选择类型4" />
         </Field>
         <Field
           name="abCat5"
@@ -58,7 +58,7 @@ const AddrEditT8 = props => (
             initialValue: formData.abCat5,
           }}
         >
-          <BaseSelect parentKey="FUNCTION:AB_CAT5" placeholder="请选择类型5" />
+          <UdcSelect code="TSK:AB_CAT5" placeholder="请选择类型5" />
         </Field>
         <Field
           name="abCat6"
@@ -67,7 +67,7 @@ const AddrEditT8 = props => (
             initialValue: formData.abCat6,
           }}
         >
-          <BaseSelect parentKey="FUNCTION:AB_CAT6" placeholder="请选择类型6" />
+          <UdcSelect code="TSK:AB_CAT6" placeholder="请选择类型6" />
         </Field>
         <Field
           name="abCat7"
@@ -76,7 +76,7 @@ const AddrEditT8 = props => (
             initialValue: formData.abCat7,
           }}
         >
-          <BaseSelect parentKey="FUNCTION:AB_CAT7" placeholder="请选择类型7" />
+          <UdcSelect code="TSK:AB_CAT7" placeholder="请选择类型7" />
         </Field>
         <Field
           name="abCat8"
@@ -85,7 +85,7 @@ const AddrEditT8 = props => (
             initialValue: formData.abCat8,
           }}
         >
-          <BaseSelect parentKey="FUNCTION:AB_CAT8" placeholder="请选择类型8" />
+          <UdcSelect code="TSK:AB_CAT8" placeholder="请选择类型8" />
         </Field>
         <Field
           name="abCat9"
@@ -94,7 +94,7 @@ const AddrEditT8 = props => (
             initialValue: formData.abCat9,
           }}
         >
-          <BaseSelect parentKey="FUNCTION:AB_CAT9" placeholder="请选择类型9" />
+          <UdcSelect code="TSK:AB_CAT9" placeholder="请选择类型9" />
         </Field>
         <Field
           name="abCat10"
@@ -103,7 +103,7 @@ const AddrEditT8 = props => (
             initialValue: formData.abCat10,
           }}
         >
-          <BaseSelect parentKey="FUNCTION:AB_CAT10" placeholder="请选择类型10" />
+          <UdcSelect code="TSK:AB_CAT10" placeholder="请选择类型10" />
         </Field>
         <Field
           name="abCat11"
@@ -112,7 +112,7 @@ const AddrEditT8 = props => (
             initialValue: formData.abCat11,
           }}
         >
-          <BaseSelect parentKey="FUNCTION:AB_CAT11" placeholder="请选择类型11" />
+          <UdcSelect code="TSK:AB_CAT11" placeholder="请选择类型11" />
         </Field>
         <Field
           name="abCat12"
@@ -121,7 +121,7 @@ const AddrEditT8 = props => (
             initialValue: formData.abCat12,
           }}
         >
-          <BaseSelect parentKey="FUNCTION:AB_CAT12" placeholder="请选择类型12" />
+          <UdcSelect code="TSK:AB_CAT12" placeholder="请选择类型12" />
         </Field>
         <Field
           name="abCat13"
@@ -130,7 +130,7 @@ const AddrEditT8 = props => (
             initialValue: formData.abCat13,
           }}
         >
-          <BaseSelect parentKey="FUNCTION:AB_CAT13" placeholder="请选择类型13" />
+          <UdcSelect code="TSK:AB_CAT13" placeholder="请选择类型13" />
         </Field>
         <Field
           name="abCat14"
@@ -139,7 +139,7 @@ const AddrEditT8 = props => (
             initialValue: formData.abCat14,
           }}
         >
-          <BaseSelect parentKey="FUNCTION:AB_CAT14" placeholder="请选择类型14" />
+          <UdcSelect code="TSK:AB_CAT14" placeholder="请选择类型14" />
         </Field>
         <Field
           name="abCat15"
@@ -148,7 +148,7 @@ const AddrEditT8 = props => (
             initialValue: formData.abCat15,
           }}
         >
-          <BaseSelect parentKey="FUNCTION:AB_CAT15" placeholder="请选择类型15" />
+          <UdcSelect code="TSK:AB_CAT15" placeholder="请选择类型15" />
         </Field>
       </FieldList>
     )}

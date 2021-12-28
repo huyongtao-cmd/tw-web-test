@@ -3,7 +3,7 @@ import { connect } from 'dva';
 import classNames from 'classnames';
 import router from 'umi/router';
 import VideoFlv from '@/components/common/VideoFlv';
-import { Button, Card, Table, Divider, Row, Col, Tag, Modal } from 'antd';
+import { Button, Card, Table, Divider, Row, Col, Tag, Modal, Avatar } from 'antd';
 import { mountToTab, closeThenGoto } from '@/layouts/routerControl';
 import { fromQs } from '@/utils/stringUtils';
 import Title from '@/components/layout/Title';
@@ -107,6 +107,7 @@ class ResDetailQuery extends Component {
       dispatch({ type: `platResProfileOrg/queryEval`, payload: { resId } });
       dispatch({ type: `platResProfilePersonel/query`, payload: { resId } });
       dispatch({ type: `platResEntryExitDetail/query`, payload: { resId } });
+      dispatch({ type: `${DOMAIN}/getOwerPhotoFileFn`, payload: { id: resId } });
       this.fetchData();
     });
   }
@@ -235,6 +236,18 @@ class ResDetailQuery extends Component {
           </Description>,
           <Description term={pageFieldJson.jobGrade.displayName} key="jobGrade">
             {formData.jobGrade}
+          </Description>,
+          <Description term={pageFieldJson.managementGrade.displayName} key="managementGrade">
+            {formData.managementGrade}
+          </Description>,
+          <Description term={pageFieldJson.positionSequence.displayName} key="positionSequence">
+            {formData.positionSequenceName}
+          </Description>,
+          <Description
+            term={pageFieldJson.professionalSequence.displayName}
+            key="professionalSequence"
+          >
+            {formData.professionalSequenceName}
           </Description>,
           <Description term={pageFieldJson.empNo.displayName} key="empNo">
             {formData.empNo}
@@ -545,7 +558,7 @@ class ResDetailQuery extends Component {
   render() {
     const {
       loading,
-      platResQuery: { formData, videoUrl, pageConfig },
+      platResQuery: { formData, videoUrl, pageConfig, owerPhotoFile },
       platResProfileBackground: { edubgDataSource, workbgDataSource, certDataSource },
       platResProfileProjectExperience: { dataSource: proExpDataSource },
       platResProfileFinance: { abAccDataSource },
@@ -576,7 +589,7 @@ class ResDetailQuery extends Component {
     const contentList = {
       // 基本信息（HR、本人）
       basic: (
-        <div>
+        <div className={styles.contentBox}>
           <DescriptionList
             size="large"
             title="个人信息" // TODO: 国际化
@@ -676,6 +689,14 @@ class ResDetailQuery extends Component {
               {formData.passportIssueplace}
             </Description>
           </DescriptionList>
+          <div>
+            <Avatar
+              shape="square"
+              className={styles.avatar}
+              src={owerPhotoFile !== '' ? `data:image/jpeg;base64,${owerPhotoFile}` : ''}
+              alt="avatar"
+            />
+          </div>
           <Divider dashed />
           <DescriptionList
             size="large"
@@ -749,16 +770,16 @@ class ResDetailQuery extends Component {
             title="备注信息" // TODO: 国际化
             col={1}
           >
-            <DescriptionList size="large" col={1}>
-              <Description term="能力备注">
-                <pre style={{ width: 798 }}>{formData.remark}</pre>
-              </Description>
-            </DescriptionList>
-            <DescriptionList size="large" col={1}>
-              <Description term="其它备注">
-                <pre style={{ width: 798 }}>{formData.remark1}</pre>
-              </Description>
-            </DescriptionList>
+            {/* <DescriptionList size="large" col={1}> */}
+            <Description term="能力备注">
+              <pre style={{ width: 798 }}>{formData.remark}</pre>
+            </Description>
+            {/* </DescriptionList> */}
+            {/* <DescriptionList size="large" col={1}> */}
+            <Description term="其它备注">
+              <pre style={{ width: 798 }}>{formData.remark1}</pre>
+            </Description>
+            {/* </DescriptionList> */}
           </DescriptionList>
         </div>
       ),

@@ -18,6 +18,7 @@ import {
 } from '@/services/sale/purchaseContract/purchaseContract';
 import { procurDemandDetailRq } from '@/services/user/Contract/purchaseDemandDeal';
 import { channelCostConDetailRq, subDetailRq } from '@/services/user/Contract/ChannelFee';
+import { findContractInfoByProjectIdRq } from '@/services/user/project/project';
 import {
   selectAbOus,
   selectAllAbOu,
@@ -547,6 +548,49 @@ export default {
         yield put({
           type: 'sceneCommon',
           payload: response || {},
+        });
+      }
+    },
+
+    // 子合同详情 - 从销售合同列表创建采购合同
+    *findContractInfoByProjectId({ payload }, { call, put }) {
+      const { projectId, ...newPayload } = payload;
+      const { status, response } = yield call(findContractInfoByProjectIdRq, { projectId });
+      if (status === 100) {
+        // 主动取消请求
+        return;
+      }
+      if (response && response.ok) {
+        const { datum = {} } = response;
+
+        yield put({
+          type: 'updateForm',
+          payload: {
+            platType: 'EXTERNAL',
+            purchaseType: 'PROJECT', // 采购合同类型 - 项目采购
+            businessType: fromQs().businessType, // 业务类型
+            purchaseLegalName: datum.mainContractName, // 公司名称
+            purchaseLegalId: datum.mainContractOuId, // 公司ID
+            purchaseLegalNo: datum.mainContractAbNo, // 法人号
+            signDate: moment().format('YYYY-MM-DD'), // 签约日期
+            applicationDate: moment().format('YYYY-MM-DD'), // 申请日期
+            currCode: 'CNY', // 币种
+            relatedSalesContractName: datum.contarctName, // 销售合同名称
+            relatedSalesContractId: datum.id, // 销售合同ID
+            relatedSalesContract: datum.id, // 销售合同ID（后端以该字段进行匹配）
+            relatedProjectName: datum.projName, // 项目名称
+            relatedProjectId: datum.projId, // 项目ID
+            // purchaseBuId: extInfo.baseBuId, // 采购BUId
+            // purchaseBuName: extInfo.baseBuName, // 采购BUName
+            // purchaseInchargeResId: extInfo.resId, // 采购负责人Id
+            // purchaseInchargeResName: extInfo.resName, // 采购负责人名称
+            ...newPayload,
+          },
+        });
+      } else {
+        createMessage({
+          type: 'error',
+          description: response.reason || '获取渠道费用确认单详情失败',
         });
       }
     },

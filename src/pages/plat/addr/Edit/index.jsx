@@ -24,6 +24,8 @@ import AddrEditT8 from './AddrEditT8'; // eslint-disable-line
 import AddrEditT9 from './AddrEditT9'; // eslint-disable-line
 import AddrEditT10 from './AddrEditT10'; // eslint-disable-line
 import AddrEditT11 from './AddrEditT11'; // eslint-disable-line
+// import Title from '@/components/layout/Title';
+// import Loading from '@/components/core/DataLoading';
 
 const DOMAIN = 'platAddrEdit'; // 自己替换
 const AddrEditContext = createContext();
@@ -40,7 +42,7 @@ const AddrEditContext = createContext();
 @Form.create({
   onFieldsChange(props, changedFields) {
     if (changedFields && Object.values(changedFields)[0]) {
-      const { dispatch, formData, personData, ouData, custData, supplierData, coopData } = props;
+      const { dispatch, formData, personData, ouData, custData, coopData } = props;
       const { name, value } = Object.values(changedFields)[0];
       // console.log('changedFields ->', { [name]: value });
       // 前3个tab页跟类别码是表单形式保存的，中间4个是行编辑，在自己的组件内保存。
@@ -67,18 +69,6 @@ const AddrEditContext = createContext();
             type: `${DOMAIN}/updateState`,
             payload: {
               custData: update(custData, {
-                [name]: {
-                  $set: value,
-                },
-              }),
-            },
-          });
-          break;
-        case 'supply':
-          dispatch({
-            type: `${DOMAIN}/updateState`,
-            payload: {
-              supplierData: update(supplierData, {
                 [name]: {
                   $set: value,
                 },
@@ -127,6 +117,7 @@ const AddrEditContext = createContext();
     }
   },
 })
+@mountToTab()
 class AddrEdit extends React.PureComponent {
   /**
    * 页面样式显示完成后，或者关键数据完成加载后要做的事情
@@ -151,6 +142,12 @@ class AddrEdit extends React.PureComponent {
     dispatch({
       type: `${DOMAIN}/queryAbOuSel`,
       payload: { no },
+    });
+
+    // 合作伙伴标签数据
+    dispatch({
+      type: `${DOMAIN}/getTagTree`,
+      payload: { key: 'COOP_TAG' },
     });
   }
 
@@ -295,6 +292,24 @@ class AddrEdit extends React.PureComponent {
     // }
   };
 
+  onCheck = (checkedKeys, info, parm3, param4) => {
+    const { dispatch } = this.props;
+    const allCheckedKeys = checkedKeys.concat(info.halfCheckedKeys);
+    this.updateModelState({ checkedKeys, allCheckedKeys });
+    dispatch({
+      type: `${DOMAIN}/updateForm`,
+      payload: { tagIds: allCheckedKeys.length > 0 ? allCheckedKeys.join(',') : '' },
+    });
+  };
+
+  updateModelState = params => {
+    const { dispatch } = this.props;
+    dispatch({
+      type: `${DOMAIN}/updateState`,
+      payload: params,
+    });
+  };
+
   // --------------- 私有函数区域结束 -----------------
 
   /**
@@ -377,10 +392,10 @@ class AddrEdit extends React.PureComponent {
                 key: 'supply',
                 tab: <AddrEditT10.Title />,
               },
-              /*{
+              {
                 key: 'coop',
                 tab: <AddrEditT11.Title />,
-              },*/
+              },
             ]}
             onTabChange={this.onTabChange}
           >
@@ -395,7 +410,7 @@ class AddrEdit extends React.PureComponent {
               code: <AddrEditT8 />,
               cust: <AddrEditT9 />,
               supply: <AddrEditT10 />,
-              coop: <AddrEditT11 />,
+              coop: <AddrEditT11 onClick={this.onCheck} />,
             }[tabkey] || <Loading />}
           </Card>
         </AddrEditContext.Provider>

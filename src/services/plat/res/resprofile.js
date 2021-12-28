@@ -101,6 +101,9 @@ const {
   entryExitList, // 入离职记录
   resAbility, // 资源单项能力和复核能力
   offerEntryMyCapaset, // 拉取复合能力
+  batchEditLevel,
+  getOwerPhotoFile,
+  batchUploadOwerPhotoApi,
 } = api.plat;
 
 // =====资源start========
@@ -142,6 +145,11 @@ export async function update(params) {
   return request.put(toUrl(resBasicByStatusUpdate, { id: params.id }), {
     body: params,
   });
+}
+2222;
+
+export async function getOwerPhotoFileRq(id) {
+  return request.get(toQs(getOwerPhotoFile, id));
 }
 
 // 提交个人信息修改申请
@@ -499,6 +507,21 @@ export async function hrcheckListRq(params) {
 // 资源列表 保存离职信息
 export async function initLeaveChecksRq(params) {
   return request.post(toUrl(initLeaveChecks, params));
+}
+
+// 批量修改专业级别、管理级别
+export async function batchEditLevelRq(params) {
+  const { ids, value } = params;
+  return request.post(toUrl(batchEditLevel, { ids: ids.join(',') }), {
+    body: value,
+  });
+}
+
+// 批量上传电子照片
+export async function batchUploadOwerPhotoFun(params) {
+  return request.post(batchUploadOwerPhotoApi, {
+    body: params,
+  });
 }
 
 // 资源列表 离职确认（继续）

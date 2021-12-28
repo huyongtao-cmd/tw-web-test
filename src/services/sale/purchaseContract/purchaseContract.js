@@ -57,6 +57,22 @@ export async function purchaseActive(params) {
   );
 }
 
+// 关闭
+export async function purchaseClose(params) {
+  return request.post(
+    toUrl(purchaseContract.purchaseClose, {
+      id: params,
+    })
+  );
+}
+
+// 变更提交
+export async function purchaseChangeSave(params) {
+  return request.post(purchaseContract.purchaseChangeSave, {
+    body: params,
+  });
+}
+
 // 变更提交
 export async function purchaseChangeSubmit(params) {
   return request.post(purchaseContract.purchaseChangeSubmit, {
@@ -68,6 +84,15 @@ export async function purchaseChangeSubmit(params) {
 export async function purchaseChangeBypurchaseId(params) {
   return request.get(
     toUrl(purchaseContract.purchaseChangeBypurchaseId, {
+      id: params,
+    })
+  );
+}
+
+// 变更查询，通过采购合同编号
+export async function purchaseChangeByContractNo(params) {
+  return request.get(
+    toUrl(purchaseContract.purchaseChangeByContractNo, {
       id: params,
     })
   );

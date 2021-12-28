@@ -194,7 +194,7 @@ class PaymentApplyList extends PureComponent {
       columns: [
         {
           title: '申请单单号',
-          width: 200,
+          width: 120,
           dataIndex: 'paymentNo',
           align: 'center',
           render: (val, row, index) => (
@@ -211,31 +211,26 @@ class PaymentApplyList extends PureComponent {
         {
           title: '付款申请单名称',
           dataIndex: 'purchaseName',
-          align: 'center',
           width: 200,
         },
         {
           title: '申请单类型',
           width: 200,
           dataIndex: 'paymentApplicationTypeName',
-          align: 'center',
         },
         {
           title: '付款公司',
           dataIndex: 'paymentCompany1Name',
-          align: 'center',
           width: 300,
         },
         {
           title: '供应商',
-          align: 'center',
           dataIndex: 'supplierLegalNoName',
           width: 300,
         },
         {
           title: '关联单据类型',
           dataIndex: 'docTypeName',
-          align: 'center',
           width: 100,
         },
         {
@@ -247,26 +242,19 @@ class PaymentApplyList extends PureComponent {
         {
           title: '付款申请单状态',
           dataIndex: 'stateName',
-          align: 'center',
           width: 90,
         },
         {
           title: '金额',
           dataIndex: 'currPaymentAmt',
-          align: 'center',
+          align: 'right',
           width: 100,
         },
         {
           title: '税率',
           dataIndex: 'rate',
-          align: 'center',
+          align: 'right',
           width: 90,
-        },
-        {
-          title: '币种',
-          dataIndex: 'currCodeName',
-          align: 'center',
-          width: 100,
         },
         {
           title: '申请日期',
@@ -279,18 +267,17 @@ class PaymentApplyList extends PureComponent {
           title: '关联销售合同',
           dataIndex: 'relatedSalesContract',
           align: 'center',
-          width: 200,
+          width: 140,
         },
         {
           title: '关联项目号',
           dataIndex: 'relatedProjectNo',
           align: 'center',
-          width: 200,
+          width: 140,
         },
         {
           title: '创建人',
           dataIndex: 'createUserName',
-          align: 'center',
           width: 100,
         },
         {
@@ -328,10 +315,10 @@ class PaymentApplyList extends PureComponent {
           cb: (selectedRowKeys, selectedRows, queryParams) => {
             const { id, paymentApplicationType, state, apprStatus } = selectedRows[0];
             if (paymentApplicationType === 'ADVANCEPAY') {
-              if (state === 'PAID') {
+              if (state === 'PAID' || state === 'WRITEOFFP_PART') {
                 router.push(`/sale/purchaseContract/prePayWriteOff/edit?mode=create&preId=${id}`);
               } else {
-                createMessage({ type: 'warn', description: '状态为已付款状态才能核销' });
+                createMessage({ type: 'warn', description: '状态为已付款、部分付款状态才能核销' });
               }
             } else {
               createMessage({ type: 'warn', description: '只有预付款才能发起核销' });

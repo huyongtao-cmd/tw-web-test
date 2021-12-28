@@ -1,4 +1,5 @@
 import { queryResInfo } from '@/services/user/center/myTeam';
+import { queryUserTasks } from '@/services/user/task/task';
 import { fromQs } from '@/utils/stringUtils';
 
 const defaultSearchForm = {
@@ -27,6 +28,17 @@ export default {
           },
         });
       }
+    },
+    *query({ payload }, { call, put }) {
+      const { response } = yield call(queryUserTasks, payload);
+      const list = Array.isArray(response.rows) ? response.rows : [];
+      yield put({
+        type: 'updateState',
+        payload: {
+          dataSource: list,
+          total: response.total,
+        },
+      });
     },
   },
   reducers: {

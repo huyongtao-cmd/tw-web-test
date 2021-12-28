@@ -11,7 +11,6 @@ import { Selection, BuVersion } from '@/pages/gen/field';
 import { mountToTab } from '@/layouts/routerControl';
 import createMessage from '@/components/core/AlertMessage';
 import { BuHistoryVersion } from '../Modal';
-import BaseSelect from '@/components/production/basic/BaseSelect';
 
 const DOMAIN = 'orgbu';
 @connect(({ dispatch, loading, orgbu }) => ({
@@ -113,7 +112,7 @@ class OrgBu extends PureComponent {
           options: {
             initialValue: searchForm.buType,
           },
-          tag: <BaseSelect parentKey="FUNCTION:BU:TYPE" placeholder="请选择BU类型" />,
+          tag: <Selection.UDC code="ORG.BU_TYPE" placeholder="请选择BU类型" />,
         },
       ],
       leftButtons:
@@ -259,9 +258,10 @@ class OrgBu extends PureComponent {
         {
           title: 'BU编号',
           dataIndex: 'buNo',
+          width: 100,
           sorter: true,
           align: 'center',
-          // fixed: 'left',
+          fixed: 'left',
           render: (buNo, rowData) => {
             const href = `/org/bu/particulars?buId=${rowData.id}`;
             return (
@@ -274,8 +274,9 @@ class OrgBu extends PureComponent {
         {
           title: 'BU名称',
           dataIndex: 'buName',
+          width: 200,
           sorter: true,
-          // fixed: 'left',
+          fixed: 'left',
         },
         {
           title: '父BU',
@@ -287,6 +288,7 @@ class OrgBu extends PureComponent {
           dataIndex: 'buStatus',
           sorter: true,
           align: 'center',
+          width: 200,
           render: (value, row, index) => row.buStatusDesc,
         },
         {

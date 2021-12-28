@@ -3,7 +3,8 @@ import { connect } from 'dva';
 import router from 'umi/router';
 import Link from 'umi/link';
 import moment from 'moment';
-import { Input, DatePicker, Select } from 'antd';
+import { Input, DatePicker, Select, Modal, Form, InputNumber } from 'antd';
+import FieldList from '@/components/layout/FieldList';
 import { mountToTab } from '@/layouts/routerControl';
 import PageHeaderWrapper from '@/components/layout/PageHeaderWrapper';
 import DataTable from '@/components/common/DataTable';
@@ -11,10 +12,13 @@ import { selectIamUsers } from '@/services/gen/list';
 import { Selection } from '@/pages/gen/field';
 import createMessage from '@/components/core/AlertMessage';
 import { createConfirm } from '@/components/core/Confirm';
+import { isEmpty, isNil } from 'ramda';
 import BatchEditModal from './modal/batchEditModal';
 
 const DOMAIN = 'invoiceList';
 const { RangePicker } = DatePicker;
+
+const { Field } = FieldList;
 const particularColumns = [
   { dataIndex: 'code', title: '编号', span: 8 },
   { dataIndex: 'name', title: '名称', span: 16 },
@@ -25,10 +29,13 @@ const particularColumns = [
   user,
 }))
 @mountToTab()
+@Form.create()
 class InvoiceList extends PureComponent {
   state = {
     batchEditVisible: false,
     ownerSelectedKeys: [],
+    visible: false,
+    modalData: {},
   };
 
   /**
@@ -626,6 +633,26 @@ class InvoiceList extends PureComponent {
             });
           },
         },
+        {
+          key: 'changeTaxRate',
+          icon: 'form',
+          className: 'tw-btn-primary',
+          title: '更改税额',
+          loading: false,
+          hidden: this?.props?.match?.path !== '/plat/expense/invoices',
+          disabled: selectedRows => selectedRows.length !== 1,
+          minSelections: 0,
+          cb: (selectedRowKeys, selectedRows, queryParams) => {
+            const { taxRate: t1 } = selectedRows[0];
+            this.setState({
+              visible: true,
+              modalData: {
+                ...selectedRows[0],
+                taxRate: t1 ? t1.replace('%', '') : null,
+              },
+            });
+          },
+        },
       ],
     };
   };
@@ -635,8 +662,10 @@ class InvoiceList extends PureComponent {
       loading,
       dispatch,
       invoiceList: { list = [], total = 0, searchForm, pageConfig },
+      form: { getFieldDecorator, setFieldsValue, getFieldValue },
     } = this.props;
-    const { batchEditVisible, ownerSelectedKeys } = this.state;
+    const { batchEditVisible, ownerSelectedKeys, visible, modalData = {} } = this.state;
+    const { amountTax, totalTax, taxRate } = modalData;
 
     return (
       <PageHeaderWrapper title="发票池">
@@ -648,6 +677,113 @@ class InvoiceList extends PureComponent {
             closeModal={this.batchEditModal}
           />
         ) : null}
+        <Modal
+          title="更改税额"
+          visible={visible}
+          onOk={() => {
+            const { taxRate: t1 } = modalData;
+            dispatch({
+              type: `${DOMAIN}/updateInvoice`,
+              payload: {
+                ...modalData,
+                taxRate: t1 + '%',
+              },
+            }).then(res => {
+              if (res.ok) {
+                this.setState({
+                  visible: false,
+                });
+              }
+            });
+          }}
+          onCancel={() => {
+            this.setState({
+              visible: false,
+            });
+          }}
+          width="600px"
+        >
+          <FieldList layout="horizontal" getFieldDecorator={getFieldDecorator} col={1}>
+            <Field
+              name="amountTax"
+              label="发票总金额"
+              decorator={{
+                initialValue: amountTax,
+                rules: [
+                  {
+                    required: true,
+                    message: '必填',
+                  },
+                ],
+              }}
+            >
+              <InputNumber
+                className="x-fill-100"
+                onChange={e => {
+                  this.setState({
+                    modalData: {
+                      ...modalData,
+                      amountTax: e,
+                    },
+                  });
+                }}
+              />
+            </Field>
+            <Field
+              name="taxRate"
+              label="发票税率"
+              decorator={{
+                initialValue: taxRate,
+                rules: [
+                  {
+                    required: true,
+                    message: '必填',
+                  },
+                ],
+              }}
+            >
+              <InputNumber
+                className="x-fill-100"
+                min={0}
+                max={100}
+                formatter={value => `${value}%`}
+                onChange={e => {
+                  this.setState({
+                    modalData: {
+                      ...modalData,
+                      taxRate: e,
+                    },
+                  });
+                }}
+              />
+            </Field>
+            <Field
+              name="totalTax"
+              label="发票税额"
+              decorator={{
+                initialValue: totalTax,
+                rules: [
+                  {
+                    required: true,
+                    message: '必填',
+                  },
+                ],
+              }}
+            >
+              <InputNumber
+                className="x-fill-100"
+                onChange={e => {
+                  this.setState({
+                    modalData: {
+                      ...modalData,
+                      totalTax: e,
+                    },
+                  });
+                }}
+              />
+            </Field>
+          </FieldList>
+        </Modal>
       </PageHeaderWrapper>
     );
   }

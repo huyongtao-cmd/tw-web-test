@@ -9,7 +9,15 @@ const {
   invoiceDtl,
   getInvoicesFromBaiwang,
   delInvoiceUrl,
+  updateInvoice,
 } = api.user.invoice;
+
+// 修改发票信息
+export async function updateInvoiceRq(params) {
+  return request.put(updateInvoice, {
+    body: params,
+  });
+}
 
 // 根据筛选条件获取会议室列表
 export async function getInvoiceListRq(params) {

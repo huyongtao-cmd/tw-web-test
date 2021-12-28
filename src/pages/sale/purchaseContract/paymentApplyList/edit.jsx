@@ -36,29 +36,26 @@ const tabConf = [
   },
 ];
 
-const contentListSelected = (form, operationKey, mode) => {
-  console.info('contentListSelected');
+const contentListSelected = (form, operationKey, mode, entrance) => {
   const contentList = {
     prePayInfo: <PrePayInfo form={form} mode={mode} />,
     DEPARTMENT: <BearDepInfo form={form} mode={mode} />,
     WITHDRAW: <CashOutInfo form={form} mode={mode} />,
-    billInfo: <BillInfo form={form} mode={mode} />,
+    billInfo: <BillInfo form={form} mode={mode} entrance={entrance} />,
   };
-  console.info('operationKey' + operationKey);
   return contentList[operationKey];
 };
-@connect(({ loading, paymentApplyEdit, dispatch, user }) => ({
+@connect(({ loading, paymentApplyEdit, dispatch, user, emergencyPayment }) => ({
   loading,
   paymentApplyEdit,
   dispatch,
   user,
+  emergencyPayment,
 }))
 @Form.create({
   onFieldsChange(props, changedFields) {
-    console.info(+'onFieldsChange');
     if (isEmpty(changedFields)) return;
     const { name, value } = Object.values(changedFields)[0];
-    // console.log('>>>>', name, value);
     if (name === 'signDate' || name === 'activateDate') {
       // antD 时间组件返回的是moment对象 转成字符串提交
       props.dispatch({
@@ -79,12 +76,12 @@ class Edit extends Component {
     super(props);
     this.state = {
       operationKey: 'prePayInfo',
+      loadings: false,
     };
   }
 
   componentDidMount() {
-    console.info('componentDidMount');
-    const { mode, scene, docNo, id = '' } = fromQs();
+    const { mode, scene, docNo, id = '', status } = fromQs();
     const {
       dispatch,
       user: {
@@ -106,7 +103,6 @@ class Edit extends Component {
   }
 
   onOperationTabChange = key => {
-    console.info('onOperationTabChange');
     this.setState({
       operationKey: key,
     });
@@ -114,19 +110,47 @@ class Edit extends Component {
 
   // 保存
   handleSave = () => {
-    console.info('handleSave');
     const {
       form: { validateFieldsAndScroll },
+      emergencyPayment,
       dispatch,
       paymentApplyEdit,
+      user: {
+        user: {
+          extInfo: { resId },
+        },
+      },
     } = this.props;
     // const { mode, scene = 10, docNo = 'PCN200615150001' } = fromQs();
-    const { mode, scene, docNo } = fromQs();
-    const { payDetailList, formData } = paymentApplyEdit;
+    const { mode, scene, docNo, id = '', status, entrance } = fromQs();
+    const { payDetailList, formData, payRecordList } = paymentApplyEdit;
+    const {
+      flowNo,
+      remark,
+      paymentNo,
+      purchaseName,
+      purchasePaymentName,
+      purchaseInchargeResId,
+    } = emergencyPayment.formData;
+    let PaymentAmt = 0; // 付款记录总金额
     validateFieldsAndScroll((error, values) => {
       if (!error) {
         if (payDetailList.length !== 0) {
           if (formData.currPaymentAmt > 0) {
+            if (entrance === 'flow' && payRecordList.length === 0) {
+              createMessage({ type: 'error', description: '请填写付款单记录' });
+              return;
+            }
+            // 付款记录核销总计
+            if (payRecordList.length > 0) {
+              payRecordList.map(item => {
+                PaymentAmt = add(PaymentAmt, item.paymentAmt);
+              });
+            }
+            if (entrance === 'flow' && formData.currPaymentAmt !== PaymentAmt) {
+              createMessage({ type: 'error', description: '付款金额应与付款记录金额不一致' });
+              return;
+            }
             dispatch({
               type: `${DOMAIN}/save`,
               payload: {
@@ -135,9 +159,34 @@ class Edit extends Component {
             }).then(resq => {
               if (resq !== '') {
                 createMessage({ type: 'success', description: '保存成功' });
-                closeThenGoto(
-                  `/sale/purchaseContract/paymentApplyList/index?refresh=${Math.random()}`
-                );
+                if (entrance === 'flow') {
+                  dispatch({
+                    type: `emergencyPayment/submit`,
+                    payload: {
+                      applyResId: undefined,
+                      flowNo,
+                      paymentNo: undefined,
+                      purchaseInchargeResId,
+                      purchasePaymentName: purchaseName,
+                      purchasePaymentNo: paymentNo,
+                      remark,
+                    },
+                  });
+                  // 获取自定义配置
+                  dispatch({
+                    type: `${DOMAIN}/getPageConfig`,
+                    payload: { pageNo: `PAYMENT_APPLY_EDIT:${CONFIGSCENE[scene]}`, resId, mode },
+                  }).then(res => {
+                    dispatch({
+                      type: `${DOMAIN}/query`,
+                      payload: { resId, mode, docNo, id, scene },
+                    });
+                  });
+                } else {
+                  closeThenGoto(
+                    `/sale/purchaseContract/paymentApplyList/index?refresh=${Math.random()}`
+                  );
+                }
               } else {
                 createMessage({ type: 'error', description: '保存失败' });
               }
@@ -153,14 +202,16 @@ class Edit extends Component {
   };
 
   // 提交
-  handleSubmit = () => {
-    console.info('handleSubmit');
+  handleSubmit = async () => {
+    // await this.setState({
+    //   loadings: true,
+    // });
     const {
       form: { validateFieldsAndScroll },
       dispatch,
       paymentApplyEdit,
     } = this.props;
-    const { mode, scene, docNo } = fromQs();
+    const { mode, scene, docNo, status } = fromQs();
     const { payDetailList, formData } = paymentApplyEdit;
     validateFieldsAndScroll((error, values) => {
       if (!error) {
@@ -186,23 +237,28 @@ class Edit extends Component {
                         `/sale/purchaseContract/paymentApplyList/index?refresh=${Math.random()}`
                       );
                     } else {
+                      // this.setState({ loadings: false });
                       createMessage({ type: 'error', description: resq.reason || '提交失败' });
                     }
                   });
                 } else {
+                  // this.setState({ loadings: false });
                   mode === 'create' &&
                     closeThenGoto(
                       `/sale/purchaseContract/paymentApplyList/edit?mode=edit&id=${res}&scene=${scene}`
                     );
                 }
               } else {
+                // this.setState({ loadings: false });
                 createMessage({ type: 'error', description: '提交失败' });
               }
             });
           } else {
+            // this.setState({ loadings: false });
             createMessage({ type: 'warn', description: '本次付款/核销金额必须要大于0' });
           }
         } else {
+          // this.setState({ loadings: false });
           createMessage({ type: 'warn', description: '付款明细不能为空' });
         }
       }
@@ -210,11 +266,10 @@ class Edit extends Component {
   };
 
   render() {
-    const { operationKey } = this.state;
+    const { operationKey, loadings } = this.state;
     const { form, paymentApplyEdit, loading } = this.props;
     const { formData, pageConfig } = paymentApplyEdit;
-    const { mode } = fromQs();
-
+    const { mode, status, entrance } = fromQs();
     // 获取工作流组件相关数据
     let docId;
     let procDefKey;
@@ -256,26 +311,54 @@ class Edit extends Component {
         >
           {mode !== 'view' && (
             <Card className="tw-card-rightLine">
-              <Button
-                className="tw-btn-primary"
-                icon="save"
-                size="large"
-                loading={loading.effects[`${DOMAIN}/save`]}
-                disabled={false}
-                onClick={this.handleSave}
-              >
-                <Title id="misc.save" defaultMessage="保存" />
-              </Button>
-              <Button
-                className="tw-btn-primary"
-                icon="save"
-                size="large"
-                disabled={false}
-                loading={loading.effects[`${DOMAIN}/submit`]}
-                onClick={this.handleSubmit}
-              >
-                <Title id="misc.submit" defaultMessage="提交" />
-              </Button>
+              {entrance && entrance === 'flow' ? (
+                <>
+                  <Button
+                    className="tw-btn-primary"
+                    size="large"
+                    loading={loading.effects[`${DOMAIN}/save`]}
+                    disabled={false}
+                    onClick={this.handleSave}
+                  >
+                    <Title id="misc.confirm" defaultMessage="确认" />
+                  </Button>
+                  <Button
+                    className="tw-btn-primary"
+                    size="large"
+                    disabled={false}
+                    onClick={() => {
+                      closeThenGoto('/sale/purchaseContract/emergencyPayment');
+                    }}
+                  >
+                    <Title id="misc.close" defaultMessage="关闭" />
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    className="tw-btn-primary"
+                    icon="save"
+                    size="large"
+                    loading={loading.effects[`${DOMAIN}/save`]}
+                    disabled={false}
+                    onClick={this.handleSave}
+                  >
+                    <Title id="misc.save" defaultMessage="保存" />
+                  </Button>
+                  <Button
+                    className="tw-btn-primary"
+                    size="large"
+                    disabled={false}
+                    loading={
+                      loading.effects[`${DOMAIN}/save`] || loading.effects[`${DOMAIN}/submit`]
+                    }
+                    // loading={loadings}
+                    onClick={this.handleSubmit}
+                  >
+                    <Title id="misc.submit" defaultMessage="提交" />
+                  </Button>
+                </>
+              )}
             </Card>
           )}
           <Card
@@ -285,7 +368,7 @@ class Edit extends Component {
             tabList={tabConf}
             onTabChange={this.onOperationTabChange}
           >
-            {contentListSelected(form, operationKey, mode)}
+            {contentListSelected(form, operationKey, mode, entrance)}
           </Card>
           {mode === 'view' &&
             docId &&

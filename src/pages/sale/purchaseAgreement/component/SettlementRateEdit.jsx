@@ -71,6 +71,7 @@ class Edit extends PureComponent {
       salePurchaseAgreementsEdit: { resSetRateEntities, resSetRateDeletedKeys, pageConfig },
       loading,
       dispatch,
+      isEdit,
     } = this.props;
 
     const onCellChanged = (rowIndex, rowField) => rowFieldValue => {
@@ -142,7 +143,7 @@ class Edit extends PureComponent {
             placeholder={`请输入${pageFieldJson.startAtm.displayName}`}
             formatter={limitDecimals}
             parser={limitDecimals}
-            disabled={pageFieldJson.startAtm.fieldMode !== 'EDITABLE'}
+            disabled={pageFieldJson.startAtm.fieldMode !== 'EDITABLE' || isEdit}
           />
         ),
       },
@@ -182,7 +183,7 @@ class Edit extends PureComponent {
             placeholder={`请输入${pageFieldJson.endAtm.displayName}`}
             formatter={limitDecimals}
             parser={limitDecimals}
-            disabled={pageFieldJson.endAtm.fieldMode !== 'EDITABLE'}
+            disabled={pageFieldJson.endAtm.fieldMode !== 'EDITABLE' || isEdit}
           />
         ),
       },
@@ -212,7 +213,7 @@ class Edit extends PureComponent {
             formatter={val => `${limitDecimals(val)}%`}
             parser={val => limitDecimals(val.replace('%', ''))}
             onChange={onCellChanged(index, 'serviceRate')}
-            disabled={pageFieldJson.serviceRate.fieldMode !== 'EDITABLE'}
+            disabled={pageFieldJson.serviceRate.fieldMode !== 'EDITABLE' || isEdit}
           />
         ),
       },
@@ -237,7 +238,7 @@ class Edit extends PureComponent {
             value={value}
             placeholder={`请输入${pageFieldJson.remark.displayName}`}
             onChange={onCellChanged(index, 'remark')}
-            disabled={pageFieldJson.remark.fieldMode !== 'EDITABLE'}
+            disabled={pageFieldJson.remark.fieldMode !== 'EDITABLE' || isEdit}
           />
         ),
       },
@@ -255,6 +256,7 @@ class Edit extends PureComponent {
       //   x: 1700,
       // },
       dataSource: resSetRateEntities,
+      readOnly: isEdit,
       // rowSelection: {
       //   getCheckboxProps: record => ({
       //     disabled: record.lineNo === -1,

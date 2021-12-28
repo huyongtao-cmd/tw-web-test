@@ -98,7 +98,7 @@ class PrePayCreate extends React.Component {
       .join('-');
 
     return (
-      <PageHeaderWrapper title="预付款申请新增">
+      <PageHeaderWrapper title="员工借款申请新增">
         <Card className="tw-card-rightLine">
           <Button
             className="tw-btn-primary"
@@ -130,7 +130,7 @@ class PrePayCreate extends React.Component {
         <Card
           className="tw-card-adjust"
           bordered={false}
-          title={<Title icon="profile" text="预付款申请新增" />}
+          title={<Title icon="profile" text="员工借款申请新增" />}
         >
           <div className="tw-card-title">基本信息</div>
           <FieldList layout="horizontal" getFieldDecorator={getFieldDecorator} col={2}>
@@ -394,6 +394,7 @@ class PrePayCreate extends React.Component {
                 code="ACC:PREPAY_TYPE"
                 placeholder="请选择业务类型"
                 disabled={!isNil(getFieldValue('feeApplyId'))}
+                resTransform={prepayType => prepayType.filter(v => v.sphd3 === '1')}
                 onValueChange={value => {
                   dispatch({
                     type: `${DOMAIN}/updateForm`,

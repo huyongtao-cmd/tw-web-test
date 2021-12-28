@@ -47,8 +47,8 @@ const FieldListLayout = {
 class BillInfo extends PureComponent {
   // 表单是否可填控制
   pageFieldMode = fieldMode => {
-    const { mode } = this.props;
-    const isEdit = mode === 'view' ? true : fieldMode === 'UNEDITABLE';
+    const { mode, entrance } = this.props;
+    const isEdit = mode === 'view' || entrance !== 'flow' ? true : fieldMode === 'UNEDITABLE';
     return isEdit;
   };
 

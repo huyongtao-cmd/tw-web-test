@@ -1,7 +1,7 @@
 import React, { PureComponent } from 'react';
 import router from 'umi/router';
 import { connect } from 'dva';
-import { Card, Divider, Button, Tooltip, Table, Row, Col, Tag, Modal } from 'antd';
+import { Card, Divider, Button, Tooltip, Table, Row, Col, Tag, Modal, Avatar } from 'antd';
 import { formatMessage } from 'umi/locale';
 import { mountToTab } from '@/layouts/routerControl';
 import VideoFlv from '@/components/common/VideoFlv';
@@ -112,6 +112,7 @@ class UserDashboard extends PureComponent {
       dispatch({ type: `platResProfileOrg/queryBuResExam`, payload: { resId } });
       dispatch({ type: `platResProfileOrg/queryResProjlog`, payload: { resId } });
       dispatch({ type: `platResProfileOrg/queryEval`, payload: { resId } });
+      dispatch({ type: `${DOMAIN}/getOwerPhotoFileFn`, payload: { id: resId } });
       this.fetchData();
       key && this.setState({ operationkey: key });
     });
@@ -223,8 +224,12 @@ class UserDashboard extends PureComponent {
           <Description term={pageFieldJson.resType2.displayName} key="resType2">
             {formData.resType2Name}
           </Description>,
-          <Description term="职级">{formData.jobGrade}</Description>,
+          <Description term="专业级别">{formData.jobGrade}</Description>,
+          <Description term="管理级别">{formData.managementGrade}</Description>,
+          <Description term="职位序列">{formData.positionSequenceName}</Description>,
+          <Description term="专业序列">{formData.professionalSequenceName}</Description>,
           <Description term="是否出差">{formData.busitripFlagName}</Description>,
+          <Description term="主服务地">{formData.baseCityName}</Description>,
           <Description term="服务方式">{formData.serviceTypeName}</Description>,
           <Description term="服务时间段">{formData.serviceClock}</Description>,
           <Description term="所属公司">{formData.ouName}</Description>,
@@ -234,13 +239,12 @@ class UserDashboard extends PureComponent {
           <Description term="合同签订日期">{formData.contractSignDate}</Description>,
           <Description term="合同到期日期">{formData.contractExpireDate}</Description>,
           <Description term="试用期开始日期">{formData.probationBeginDate}</Description>,
-          <Description erm="试用期结束日期">{formData.probationEndDate}</Description>,
+          <Description term="试用期结束日期">{formData.probationEndDate}</Description>,
           <Description term="话费额度">{formData.telfeeQuota}</Description>,
           <Description term="电脑额度">{formData.compfeeQuota}</Description>,
           <Description term="安全级别">{formData.accessLevel}</Description>,
           <Description term="人事状态">{formData.hrStatusName}</Description>,
           <Description term="实习入职日期">{formData.internDate}</Description>,
-          <Description term="主服务地">{formData.baseCityName}</Description>,
         ];
       }
       const filterList = fields
@@ -470,7 +474,7 @@ class UserDashboard extends PureComponent {
       dispatch,
       loading,
       user: { currentUser },
-      userCenterInfo: { formData, videoUrl, computerDataSource },
+      userCenterInfo: { formData, videoUrl, computerDataSource, owerPhotoFile },
       platResProfileBackground: { edubgDataSource, workbgDataSource, certDataSource },
       platResProfileProjectExperience: { dataSource: proExpDataSource },
       platResProfileFinance: { abAccDataSource },
@@ -490,10 +494,11 @@ class UserDashboard extends PureComponent {
     const element = operationkey === 'organizeInfo' ? this.renderPage1('organizeInfo') : null;
     // loading完成之前将按钮设为禁用
     const disabledBtn = loading.effects[`${DOMAIN}/query`];
+
     const contentList = {
       // 基本信息（HR、本人）
       basic: (
-        <div>
+        <div className={styles.contentBox}>
           <DescriptionList
             size="large"
             title="个人信息" // TODO: 国际化
@@ -604,6 +609,14 @@ class UserDashboard extends PureComponent {
               />
             </Description> */}
           </DescriptionList>
+          <div>
+            <Avatar
+              shape="square"
+              className={styles.avatar}
+              src={owerPhotoFile !== '' ? `data:image/jpeg;base64,${owerPhotoFile}` : ''}
+              alt="avatar"
+            />
+          </div>
           <Divider dashed />
           <DescriptionList
             size="large"

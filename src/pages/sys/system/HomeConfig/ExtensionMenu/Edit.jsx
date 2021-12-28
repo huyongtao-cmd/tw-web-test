@@ -126,7 +126,7 @@ class MenuEdit extends PureComponent {
                 rules: [{ required: true, message: '请输入特殊编码' }],
               }}
             >
-              <Input placeholder="请输入特殊编码" />
+              <Input placeholder="请输入特殊编码，如需跳转到外链，请输入_blank后缀" />
             </Field>
             <Field
               name="menuLink"

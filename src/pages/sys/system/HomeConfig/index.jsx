@@ -27,7 +27,7 @@ class HomeConfig extends PureComponent {
 
   fetchData = params => {
     const { dispatch } = this.props;
-    // dispatch({ type: `${DOMAIN}/query` });
+    dispatch({ type: `${DOMAIN}/query` });
   };
 
   onCellChange = (rowData, rowField) => rowFieldValue => {

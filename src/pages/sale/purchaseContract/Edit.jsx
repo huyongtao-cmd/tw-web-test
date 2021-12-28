@@ -72,6 +72,7 @@ class Edit extends Component {
       businessType,
       acceptanceType,
       contractId,
+      projectId,
       fromTab,
     } = fromQs();
     dispatch({
@@ -167,6 +168,17 @@ class Edit extends Component {
                 purchaseInchargeResName: extInfo.resName, // 采购负责人名称
               },
             });
+          } else if (from === 'projectList') {
+            dispatch({
+              type: `${DOMAIN}/findContractInfoByProjectId`,
+              payload: {
+                projectId,
+                purchaseBuId: extInfo.baseBuId, // 采购BUId
+                purchaseBuName: extInfo.baseBuName, // 采购BUName
+                purchaseInchargeResId: extInfo.resId, // 采购负责人Id
+                purchaseInchargeResName: extInfo.resName, // 采购负责人名称
+              },
+            });
           }
         } else if (businessType === 'SUNDRY') {
           dispatch({
@@ -181,6 +193,17 @@ class Edit extends Component {
               type: `${DOMAIN}/subDetail`,
               payload: {
                 contractId,
+                purchaseBuId: extInfo.baseBuId, // 采购BUId
+                purchaseBuName: extInfo.baseBuName, // 采购BUName
+                purchaseInchargeResId: extInfo.resId, // 采购负责人Id
+                purchaseInchargeResName: extInfo.resName, // 采购负责人名称
+              },
+            });
+          } else if (from === 'projectList') {
+            dispatch({
+              type: `${DOMAIN}/findContractInfoByProjectId`,
+              payload: {
+                projectId,
                 purchaseBuId: extInfo.baseBuId, // 采购BUId
                 purchaseBuName: extInfo.baseBuName, // 采购BUName
                 purchaseInchargeResId: extInfo.resId, // 采购负责人Id

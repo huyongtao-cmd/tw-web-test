@@ -28,7 +28,15 @@ import { getLink } from '@/pages/sale/purchaseContract/linkConfig';
 
 const { Option } = Select;
 let sceneval = '';
-export function writeOffTableProps(DOMAIN, dispatch, loading, form, readOnly, paymentApplyDetail) {
+export function writeOffTableProps(
+  DOMAIN,
+  dispatch,
+  loading,
+  form,
+  mode,
+  readOnly,
+  paymentApplyDetail
+) {
   const { invoiceVerDetail, pageConfig, formData } = paymentApplyDetail;
   const { scene } = formData;
   sceneval = formData.paymentApplicationType;
@@ -226,7 +234,7 @@ export function writeOffTableProps(DOMAIN, dispatch, loading, form, readOnly, pa
           <div>
             <Select
               defaultValue={row.searchType}
-              disabled={readOnly}
+              disabled={readOnly || mode === 'view'}
               onChange={onCellChanged(index, 'searchType')}
             >
               <Option value="1">本人</Option>
@@ -243,7 +251,7 @@ export function writeOffTableProps(DOMAIN, dispatch, loading, form, readOnly, pa
                 }
                 value={value}
                 showSearch
-                disabled={readOnly}
+                disabled={readOnly || mode === 'view'}
                 filterOption={(input, option) =>
                   option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }
@@ -254,7 +262,7 @@ export function writeOffTableProps(DOMAIN, dispatch, loading, form, readOnly, pa
               <InvoicesSelect
                 invoiceNo={row.invoiceNo || '2'}
                 value={value}
-                disabled={readOnly}
+                disabled={readOnly || mode === 'view'}
                 onChange={onCellChanged(index, 'invoiceNo')}
               />
             )}
@@ -273,7 +281,7 @@ export function writeOffTableProps(DOMAIN, dispatch, loading, form, readOnly, pa
       render: (value, row, index) => (
         <Input
           className="x-fill-100"
-          disabled={readOnly}
+          disabled={readOnly || mode === 'view'}
           value={value}
           onChange={onCellChanged(index, 'theAmt')}
         />
@@ -340,7 +348,7 @@ export function writeOffTableProps(DOMAIN, dispatch, loading, form, readOnly, pa
   );
 
   const tableProps = {
-    readOnly,
+    readOnly: mode === 'view' ? true : readOnly ? true : false,
     rowKey: 'id',
     showCopy: false,
     // loading: loading.effects[`${DOMAIN}/queryPurchase`],
@@ -415,6 +423,7 @@ export function payDetailTableProps(
   dispatch,
   loading,
   form,
+  mode,
   docTypeMode, // 关联数据单类型是采购合同则只需要展示
   readOnly,
   paymentApplyDetail
@@ -528,7 +537,9 @@ export function payDetailTableProps(
               ? true
               : formData.docType === 'CONTRACT'
                 ? true
-                : false
+                : mode === 'view'
+                  ? true
+                  : false
           }
           placeholder={`请输入${pageFieldJson.paymentStage.displayName}`}
           onChange={onCellChanged(index, 'paymentStage')}
@@ -546,7 +557,7 @@ export function payDetailTableProps(
         <InputNumber
           className="x-fill-100"
           value={value}
-          disabled={pageFieldMode(pageFieldJson.currentPaymentAmt.fieldMode)}
+          disabled={pageFieldMode(pageFieldJson.currentPaymentAmt.fieldMode) || mode === 'view'}
           placeholder={`请输入${pageFieldJson.currentPaymentAmt.displayName}`}
           onChange={onCellChanged(index, 'currentPaymentAmt')}
         />
@@ -599,7 +610,7 @@ export function payDetailTableProps(
         return (
           <DatePicker
             format="YYYY-MM-DD"
-            disabled={pageFieldMode(pageFieldJson.paymentDate.fieldMode)}
+            disabled={pageFieldMode(pageFieldJson.paymentDate.fieldMode) || mode === 'view'}
             value={value ? moment(value) : ''}
             className="x-fill-100"
             onChange={onCellChanged(index, 'paymentDate')}
@@ -622,6 +633,30 @@ export function payDetailTableProps(
       className: 'text-center',
       width: 200,
     },
+    {
+      title: `${pageFieldJson.recvAmt.displayName}`,
+      sortNo: `${pageFieldJson.recvAmt.sortNo}`,
+      key: 'recvAmt',
+      dataIndex: 'recvAmt',
+      className: 'text-center',
+      width: 100,
+    },
+    {
+      title: `${pageFieldJson.actualRecvAmt.displayName}`,
+      sortNo: `${pageFieldJson.actualRecvAmt.sortNo}`,
+      key: 'actualRecvAmt',
+      dataIndex: 'actualRecvAmt',
+      className: 'text-center',
+      width: 100,
+    },
+    {
+      title: `${pageFieldJson.text.displayName}`,
+      sortNo: `${pageFieldJson.text.sortNo}`,
+      key: 'text',
+      dataIndex: 'text',
+      className: 'text-center',
+      width: 100,
+    },
   ];
   const columnsFilterList = columnsList.filter(
     field => !field.key || pageFieldJson[field.key].visibleFlag === 1
@@ -632,13 +667,15 @@ export function payDetailTableProps(
         ? true
         : formData.docType === 'CONTRACT'
           ? true
-          : false,
+          : mode === 'view'
+            ? true
+            : false,
     rowKey: 'id',
     showCopy: false,
     // loading: loading.effects[`${DOMAIN}/queryPurchase`],
     pagination: false,
     scroll: {
-      x: 1500,
+      x: 1800,
     },
     dataSource: payDetailList || [],
     onAdd: newRow => {

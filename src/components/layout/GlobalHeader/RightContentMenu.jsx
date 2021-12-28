@@ -78,6 +78,10 @@ export default class GlobalHeaderRight extends PureComponent {
     const haveELearningLink = !isNil(ELearningLink);
     if (mUrl) {
       // 头部右侧菜单收缩后点击跳转
+      if (mCode.includes('blank')) {
+        window.open(mUrl);
+        return;
+      }
       if (mCode === 'appDownload') {
         window.open('/download');
         return;
@@ -113,6 +117,7 @@ export default class GlobalHeaderRight extends PureComponent {
       theme,
       notifyCount,
       extensionInfo = [],
+      headImgFile,
     } = this.props;
     const menu = (
       <Menu className={styles.menu} selectedKeys={[]} onClick={onMenuClick}>
@@ -220,7 +225,19 @@ export default class GlobalHeaderRight extends PureComponent {
             &nbsp;
             <Dropdown overlay={menu}>
               <span className={`${styles.action} ${styles.account}`}>
-                <Avatar size="small" src={user.avatar ? user.avatar : avatarImg} alt="avatar" />
+                {/* <img
+                src={ `data:image/jpeg;base64,${headImgFile}`}
+                // 
+                alt="icon"
+                className={styles.iconStyle}
+              /> */}
+                <Avatar
+                  size="small"
+                  className={styles.avatar}
+                  src={headImgFile !== '' ? `data:image/jpeg;base64,${headImgFile}` : avatarImg}
+                  alt="avatar"
+                />
+                {/* <Avatar size="small" src={user.avatar ? user.avatar : avatarImg} alt="avatar" /> */}
                 <span className={styles.name} data-user-id={user.info.id}>
                   {user.info.name}
                 </span>

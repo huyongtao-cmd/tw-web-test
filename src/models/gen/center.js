@@ -14,12 +14,15 @@ import {
   selectTrainingAllRq,
   updateNewPushFlagRq,
   updateShowFlagRq,
+  getYeedocFlowListRq,
+  saveOrUpdateYeedocFlowRq,
 } from '@/services/gen/center';
-import { scheduleListSelectRq } from '@/services/workbench/project';
 import createMessage from '@/components/core/AlertMessage';
 import { getNotify } from '@/services/user/flow/flow';
+import { recentworkExtrwork } from '@/services/user/project/project';
 import { isNil } from 'ramda';
-import { outputHandle, OutputProps } from '@/utils/production/outputUtil';
+import Utf8 from 'crypto-js/enc-utf8';
+import Base64 from 'crypto-js/enc-base64';
 
 /**
  * 系统用户信息状态
@@ -45,11 +48,59 @@ export default {
     visible1: false,
     visible2: false,
     visible3: false,
-    schedulePointList: [],
-    scheduleCCList: [],
+    yeeDocTodoList: [], // 待办
+    yeeDocBackList: [], // 退回
+    yeeDocDoneList: [], // 知会
   },
 
   effects: {
+    *saveOrUpdateYeedocFlow({ payload }, { call, put }) {
+      const { status, response } = yield call(saveOrUpdateYeedocFlowRq, payload);
+      if (status === 100) {
+        // 主动取消请求
+        return {};
+      }
+      if (response.ok) {
+        return response;
+      }
+      createMessage({ type: 'error', description: '更新获取信息失败' });
+      return {};
+    },
+    *getYeedocFlowList({ payload }, { call, put }) {
+      // console.warn(payload)
+      const { status, response } = yield call(getYeedocFlowListRq, payload);
+      if (status === 100) {
+        // 主动取消请求
+        return {};
+      }
+      if (response.ok) {
+        //获取token对象
+        const token = localStorage.getItem('token_auth');
+        // 对生成的token(ticket)进行加密：使用 Base64
+        const ticket = Base64.stringify(Utf8.parse(token));
+        const newDatum = Array.isArray(response.datum)
+          ? response.datum.map(v => ({
+              ...v,
+              docName: `YEEDOC-${v.flowName}`,
+              startTime: v.time,
+              todoInfo: { taskNames: v.currentNode, workerNames: v.currentResName },
+              flowFrom: 'YEEDOC',
+              flowUrl: v.flowUrl + '&ticket=' + ticket,
+            }))
+          : [];
+        yield put({
+          type: 'updateState',
+          payload: {
+            yeeDocTodoList: newDatum.filter(v => v.type === '0'), // 待办
+            yeeDocBackList: newDatum.filter(v => v.type === '2'), // 退回
+            yeeDocDoneList: newDatum.filter(v => v.type === '1'), // 知会
+          },
+        });
+        return response;
+      }
+      createMessage({ type: 'error', description: '获取信息失败' });
+      return {};
+    },
     *selectTrainingAll({ payload }, { call, put }) {
       const { status, response } = yield call(selectTrainingAllRq);
       if (status === 100) {
@@ -141,18 +192,7 @@ export default {
       createMessage({ type: 'error', description: response.reason || '获取逾期培训提醒失败' });
       return {};
     },
-    *queryScheduleList({ payload }, { call, put }) {
-      const { response } = yield call(scheduleListSelectRq);
-      if (response && response.ok) {
-        yield put({
-          type: 'updateState',
-          payload: {
-            schedulePointList: response.data.pointSchedule,
-            scheduleCCList: response.data.ccSchedule,
-          },
-        });
-      }
-    },
+
     *queryMyInfo(_, { call, put }) {
       const { response } = yield call(queryMyInfo);
       if (response && response.ok) {
@@ -299,6 +339,11 @@ export default {
 
     *changeTicketInfo({ payload }, { call, put }) {
       const { response } = yield call(changeTicketInfo, payload);
+      yield put({ type: 'recentWork' });
+    },
+
+    *extrwork({ payload }, { call, put }) {
+      const { response } = yield call(recentworkExtrwork, payload);
       yield put({ type: 'recentWork' });
     },
   },

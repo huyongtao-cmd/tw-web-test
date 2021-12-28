@@ -48,9 +48,8 @@ class BasicSelect<T> extends React.Component<Props, any> {
   }
 
   shouldComponentUpdate(nextProps: Readonly<Props>, nextState: Readonly<any>, nextContext: any): boolean {
-    // const props = ['onChange'];
-    // const propsEqualsFlag = !equals(omit(props,this.props),omit(props,nextProps));
-    const propsEqualsFlag = !equals(this.props,nextProps);
+    const props = ['onChange'];
+    const propsEqualsFlag = !equals(omit(props,this.props),omit(props,nextProps));
     const stateEqualsFlag = !equals(this.state,nextState);
     return propsEqualsFlag || stateEqualsFlag;
   }

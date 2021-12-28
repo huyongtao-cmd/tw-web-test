@@ -11,6 +11,7 @@ import { closeThenGoto } from '@/layouts/routerControl';
 import createMessage from '@/components/core/AlertMessage';
 import moment from 'moment';
 import { selectUserProj } from '@/services/gen/list';
+import { queryExtrworkByResId } from '@/services/user/project/project';
 import { businessPageDetailByNo } from '@/services/sys/system/pageConfig';
 
 const defaultFormData = {};
@@ -136,6 +137,28 @@ export default {
       return response;
     },
 
+    // 加班计划列表
+    *queryExtrWork({ payload }, { call, put }) {
+      const { response } = yield call(queryExtrworkByResId, payload);
+      const data = Array.isArray(response.rows) ? response.rows : [];
+      let newdata = [];
+      if (data.length > 0) {
+        newdata = data.map(item =>
+          Object.assign({}, item, {
+            name: item.workBegDate + '~' + item.workEndDate,
+            code: item.id + '',
+          })
+        );
+      }
+      yield put({
+        type: 'updateState',
+        payload: {
+          extrWorkList: newdata,
+          extrWorkSource: newdata,
+        },
+      });
+      return response;
+    },
     *getPageConfig({ payload }, { call, put, select }) {
       const { status, response } = yield call(businessPageDetailByNo, payload);
       if (status === 200) {

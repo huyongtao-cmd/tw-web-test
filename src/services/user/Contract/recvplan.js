@@ -6,6 +6,7 @@ const {
   recvplanListSave,
   queryRecvplanList,
   recvPlanListPersonal,
+  myReceiveList,
   recvPurchasePersonal,
   recvDistInfo,
   recvDistInfoSave,
@@ -27,6 +28,11 @@ export async function recvplanList(params) {
 // 合同收款计划查询 - 个人工作台权限下的查询
 export async function getRecvplanListPersonal(params) {
   return request.get(toQs(recvPlanListPersonal, params));
+}
+
+// 合同收款计划查询 - 我的收款
+export async function getMyReceiveList(params) {
+  return request.get(toQs(myReceiveList, params));
 }
 
 // 付款计划查询 - 个人工作台权限下的查询

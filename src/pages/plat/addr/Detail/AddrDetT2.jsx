@@ -22,8 +22,8 @@ const AddrDetT2 = props => (
           {personData.birthday && formatDT(personData.birthday)}
         </Description>
         <Description term="国籍">{personData.nationalityName}</Description>
-        <Description term="籍贯">{personData.birthplace}</Description>
-        <Description term="民族">{personData.nation}</Description>
+        <Description term="籍贯">{personData.birthplaceName}</Description>
+        <Description term="民族">{personData.nationName}</Description>
         <Description term="婚姻状况">{personData.maritalName}</Description>
         <Description term="证件有效期从">
           {personData.idValidFrom && formatDT(personData.idValidFrom)}

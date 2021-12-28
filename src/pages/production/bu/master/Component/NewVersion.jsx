@@ -261,7 +261,7 @@ class OrgBu extends PureComponent {
           width: 100,
           sorter: true,
           align: 'center',
-          // fixed: 'left',
+          fixed: 'left',
           render: (buNo, rowData) => {
             const href = `/workTable/buManage/master/particulars?buId=${rowData.id}`;
             return (
@@ -276,7 +276,7 @@ class OrgBu extends PureComponent {
           dataIndex: 'buName',
           width: 200,
           sorter: true,
-          // fixed: 'left',
+          fixed: 'left',
         },
         {
           title: '父BU',

@@ -5,22 +5,23 @@ import router from 'umi/router';
 import { Input, Radio, Modal } from 'antd';
 import { mountToTab } from '@/layouts/routerControl';
 import SyntheticField from '@/components/common/SyntheticField';
-import FieldList from '@/components/layout/FieldList';
 import PageHeaderWrapper from '@/components/layout/PageHeaderWrapper';
 import DataTable from '@/components/common/DataTable';
 import createMessage from '@/components/core/AlertMessage';
-import { Selection, YearPicker, BuVersion } from '@/pages/gen/field';
-import { isNil } from 'ramda';
+import ExcelImportExport from '@/components/common/ExcelImportExport';
+import { Selection, YearPicker, BuVersion, DatePicker } from '@/pages/gen/field';
+import { isEmpty, isNil } from 'ramda';
+import Base64 from 'crypto-js/enc-base64';
+import Utf8 from 'crypto-js/enc-utf8';
 
 import { createConfirm } from '@/components/core/Confirm';
 
-import { selectBus } from '@/services/org/bu/bu';
 import {
   selectCust,
   checkCreateProjById,
-  selectSalesRegionBuMultiCol,
+  checkSubmitVirtualContract,
 } from '@/services/user/Contract/sales';
-import { selectActiveBu, selectUsersWithBu } from '@/services/gen/list';
+import { selectUsersWithBu } from '@/services/gen/list';
 import { getBuVersionAndBuParams } from '@/utils/buVersionUtils';
 
 const DOMAIN = 'userContractSaleList';
@@ -29,22 +30,24 @@ const applyColumns = [
   { dataIndex: 'name', title: '名称', span: 12 },
 ];
 
-const { Field } = FieldList;
-
 const RadioGroup = Radio.Group;
 
-@connect(({ loading, userContractSaleList, dispatch }) => ({
+@connect(({ loading, userContractSaleList, dispatch, user }) => ({
   dispatch,
   loading: loading.effects[`${DOMAIN}/query`],
   userContractSaleList,
+  user,
 }))
 @mountToTab()
 class SaleList extends PureComponent {
   state = {
-    addProjectBtnDisable: true, // 创建项目按钮显示标识，默认灰掉
+    // addProjectBtnDisable: true, // 创建项目按钮显示标识，默认灰掉
 
-    title: '',
+    // title: '',
     visible: false,
+    importTagVisible: false,
+    uploadingTag: false,
+    failedListTag: [],
   };
 
   componentDidMount() {
@@ -58,15 +61,19 @@ class SaleList extends PureComponent {
   }
 
   fetchData = async params => {
+    const { createTime = [], ...restParams } = params;
+    if (Array.isArray(createTime) && createTime.length === 2) {
+      [restParams.createTimeStart, restParams.createTimeTo] = createTime;
+    }
     const { dispatch } = this.props;
     dispatch({
       type: `${DOMAIN}/query`,
       payload: {
-        ...params,
-        ...getBuVersionAndBuParams(params.regionBuId, 'regionBuId', 'regionBuVersionId'),
-        ...getBuVersionAndBuParams(params.signBuId, 'signBuId', 'signBuVersionId'),
-        ...getBuVersionAndBuParams(params.deliBuId, 'deliBuId', 'deliBuVersionId'),
-        ...getBuVersionAndBuParams(params.preSaleBuId, 'preSaleBuId', 'preSaleBuVersionId'),
+        ...restParams,
+        ...getBuVersionAndBuParams(restParams.regionBuId, 'regionBuId', 'regionBuVersionId'),
+        ...getBuVersionAndBuParams(restParams.signBuId, 'signBuId', 'signBuVersionId'),
+        ...getBuVersionAndBuParams(restParams.deliBuId, 'deliBuId', 'deliBuVersionId'),
+        ...getBuVersionAndBuParams(restParams.preSaleBuId, 'preSaleBuId', 'preSaleBuVersionId'),
       },
     });
   };
@@ -81,13 +88,56 @@ class SaleList extends PureComponent {
       }
       if (response.ok) {
         // 合同id、主子类型、合同状态
-        const { id, mainType, contractStatus } = selectedRows[0];
+        const { id, mainType, contractStatus, platType } = selectedRows[0];
         // 主子类型为“子合同” 且 合同状态为‘激活状态’时，可创建项目
-        if (mainType === 'SUB' && contractStatus === 'ACTIVE') {
+        if (
+          (mainType === 'SUB' && contractStatus === 'ACTIVE') ||
+          (mainType === 'SUB' &&
+            contractStatus === 'ACTIVE_WAITING' &&
+            platType === 'NO_CONTRACT_VIRTUAL_CONTRACT')
+        ) {
           router.push(`/user/Project/projectCreate?contractId=${id}`);
+        } else {
+          createMessage({
+            type: 'error',
+            description:
+              response.reason === null || response.reason.length < 1
+                ? '该合同无法创建项目'
+                : response.reason,
+          });
         }
       } else {
-        createMessage({ type: 'error', description: response.reason || '该合同无法创建项目' });
+        createMessage({
+          type: 'error',
+          description:
+            response.reason === null || response.reason.length < 1
+              ? '该合同无法创建项目'
+              : response.reason,
+        });
+      }
+    });
+  };
+
+  // 提交虚拟合同
+  submitVirtualContract = (selectedRowKeys, selectedRows, queryParams) => {
+    checkSubmitVirtualContract({ id: selectedRowKeys[0] }).then(data => {
+      const { status, response } = data;
+      if (status === 100) {
+        // 主动取消请求
+        return;
+      }
+      if (response.ok) {
+        // 合同id、主子类型、合同状态
+        const { id, mainType, contractStatus, platType } = selectedRows[0];
+        router.push(`/sale/contract/submitVirtualSub?id=${id}`);
+      } else {
+        createMessage({
+          type: 'error',
+          description:
+            response.reason === null || response.reason.length < 1
+              ? '该合同已经不是新建状态，无法提交虚拟合同，请刷新页面'
+              : response.reason,
+        });
       }
     });
   };
@@ -122,14 +172,62 @@ class SaleList extends PureComponent {
     });
   };
 
+  toggleImportTagVisible = () => {
+    const { importTagVisible } = this.state;
+    this.setState({ importTagVisible: !importTagVisible });
+  };
+
+  /**
+   * 客户标签导入
+   * @param fileList
+   */
+  handleUploadTag = fileList => {
+    this.setState({
+      uploadingTag: true,
+    });
+
+    const fileData = new FormData();
+    fileList.forEach(file => {
+      fileData.append('file', file);
+    });
+
+    const { dispatch } = this.props;
+    dispatch({
+      type: `${DOMAIN}/uploadTag`,
+      payload: fileData,
+    }).then(res => {
+      this.setState({
+        uploadingTag: false,
+      });
+      if (res.ok) {
+        createMessage({ type: 'success', description: '上传成功' });
+        this.toggleImportTagVisible();
+        return null;
+      }
+      if (
+        res.datum &&
+        Array.isArray(res.datum.failExcelData) &&
+        !isEmpty(res.datum.failExcelData)
+      ) {
+        createMessage({ type: 'error', description: res.datum.msg || '上传失败' });
+        this.setState({
+          failedListTag: res.datum.failExcelData,
+        });
+      } else {
+        createMessage({ type: 'error', description: res.datum.msg || '上传失败,返回结果为空' });
+        this.toggleImportTagVisible();
+      }
+      return null;
+    });
+  };
+
   render() {
     const {
       dispatch,
       loading,
       userContractSaleList: { dataSource, total, searchForm, pageConfig = {} },
     } = this.props;
-
-    const { addProjectBtnDisable, title, visible } = this.state;
+    const { visible, importTagVisible, failedListTag, uploadingTag } = this.state;
 
     if (!pageConfig.pageBlockViews || pageConfig.pageBlockViews.length < 1) {
       return <div />;
@@ -184,11 +282,11 @@ class SaleList extends PureComponent {
         // 主子类型为“子合同” 且 合同状态为‘激活状态’时，可创建项目
         if (mainType === 'SUB' && contractStatus === 'ACTIVE') {
           this.setState({
-            addProjectBtnDisable: false,
+            // addProjectBtnDisable: false,
           });
         } else {
           this.setState({
-            addProjectBtnDisable: true,
+            // addProjectBtnDisable: true,
           });
         }
       },
@@ -434,23 +532,36 @@ class SaleList extends PureComponent {
             </RadioGroup>
           ),
         },
+        {
+          title: '创建日期',
+          dataIndex: 'createTime',
+          options: {
+            initialValue: searchForm.createTime,
+          },
+          tag: <DatePicker.RangePicker format="YYYY-MM-DD" />,
+        },
       ]
         .filter(
           field => !field.key || (queryJson[field.key] && queryJson[field.key].visibleFlag === 1)
         )
-        .map(field => ({
-          ...field,
-          // dataIndex: queryJson[field.key].fieldKey,
-          title: queryJson[field.key].displayName,
-          sortNo: queryJson[field.key].sortNo,
-          tag: {
-            ...field.tag,
-            props: {
-              ...field.tag.props,
-              placeholder: `请输入${queryJson[field.key].displayName}`,
-            },
-          },
-        }))
+        .map(
+          field =>
+            field.key
+              ? {
+                  ...field,
+                  // dataIndex: queryJson[field.key].fieldKey,
+                  title: queryJson[field.key].displayName,
+                  sortNo: queryJson[field.key].sortNo,
+                  tag: {
+                    ...field.tag,
+                    props: {
+                      ...field.tag.props,
+                      placeholder: `请输入${queryJson[field.key].displayName}`,
+                    },
+                  },
+                }
+              : field
+        )
         .sort((f1, f2) => f1.sortNo - f2.sortNo),
       leftButtons: [
         {
@@ -464,6 +575,14 @@ class SaleList extends PureComponent {
             selectedRows.length !== 1 || selectedRows[0].contractStatus === 'APPROVING',
           minSelections: 0,
           cb: (selectedRowKeys, selectedRows, queryParams) => {
+            //无合同入场虚拟合同
+            if (
+              selectedRows[0].platType === 'NO_CONTRACT_VIRTUAL_CONTRACT' &&
+              selectedRows[0].contractStatus === 'APPROVING'
+            ) {
+              createMessage({ type: 'warn', description: '审批中的无合同入场虚拟合同不能修改！' });
+              return;
+            }
             // TODO: 激活的合同是否能够修改？(暂时设为能)
             // if (selectedRows[0].contractStatus !== 'CREATE') {
             //   createMessage({ type: 'error', description: '该状态的合同不可修改!' });
@@ -489,8 +608,35 @@ class SaleList extends PureComponent {
           disabled: selectedRowKeys => selectedRowKeys.length !== 1,
           minSelections: 0,
           cb: (selectedRowKeys, selectedRows, queryParams) => {
+            //无合同入场虚拟合同
+            if (
+              selectedRows[0].platType === 'NO_CONTRACT_VIRTUAL_CONTRACT' &&
+              selectedRows[0].contractStatus === 'APPROVING'
+            ) {
+              createMessage({ type: 'warn', description: '审批中的无合同入场虚拟合同不能激活！' });
+              return;
+            }
+            if (
+              selectedRows[0].platType === 'NO_CONTRACT_VIRTUAL_CONTRACT' &&
+              selectedRows[0].contractStatus === 'CREATE'
+            ) {
+              createMessage({
+                type: 'warn',
+                description: '新建状态的无合同入场虚拟合同不能激活！',
+              });
+              return;
+            }
+
             // 合同id、主子类型、合同状态、主合同状态
-            const { id, mainType, contractStatus, mainContractStatus } = selectedRows[0];
+            const {
+              id,
+              mainType,
+              contractStatus,
+              mainContractStatus,
+              platType,
+              mainContractId,
+              contractNo,
+            } = selectedRows[0];
             // 主子类型为“子合同” ，合同状态为‘新建状态’，并且其主合同状态为‘激活状态’时，可激活合同状态
             if (contractStatus === 'CLOSE') {
               createMessage({ type: 'warn', description: '合同已关闭！' });
@@ -522,6 +668,14 @@ class SaleList extends PureComponent {
                 if (contractStatus === 'APPROVING') {
                   createMessage({ type: 'warn', description: '审批中的合同不能激活！' });
                 }
+                if (
+                  contractStatus === 'ACTIVE_WAITING' &&
+                  platType === 'NO_CONTRACT_VIRTUAL_CONTRACT'
+                ) {
+                  router.push(
+                    `/sale/contract/editSub?mainId=${mainContractId}&id=${id}&contractNo=${contractNo}`
+                  );
+                }
               } else {
                 createMessage({ type: 'warn', description: '请先激活父合同！' });
               }
@@ -548,9 +702,30 @@ class SaleList extends PureComponent {
           disabled: selectedRowKeys => selectedRowKeys.length !== 1,
           minSelections: 0,
           cb: (selectedRowKeys, selectedRows, queryParams) => {
+            //无合同入场虚拟合同
+            if (
+              selectedRows[0].platType === 'NO_CONTRACT_VIRTUAL_CONTRACT' &&
+              selectedRows[0].contractStatus === 'APPROVING'
+            ) {
+              createMessage({ type: 'warn', description: '审批中的无合同入场虚拟合同不能暂挂！' });
+              return;
+            }
+            if (
+              selectedRows[0].platType === 'NO_CONTRACT_VIRTUAL_CONTRACT' &&
+              selectedRows[0].contractStatus === 'CREATE'
+            ) {
+              createMessage({
+                type: 'warn',
+                description: '新建状态的无合同入场虚拟合同不能暂挂！',
+              });
+              return;
+            }
             // 合同id、主子类型、合同状态、主合同状态
-            const { id, mainType, contractStatus, mainContractStatus } = selectedRows[0];
-            if (contractStatus === 'ACTIVE') {
+            const { id, mainType, contractStatus, mainContractStatus, platType } = selectedRows[0];
+            if (
+              contractStatus === 'ACTIVE' ||
+              (contractStatus === 'ACTIVE_WAITING' && platType === 'NO_CONTRACT_VIRTUAL_CONTRACT')
+            ) {
               dispatch({
                 type: `${DOMAIN}/active`,
                 payload: { id, status: 'PENDING', searchForm: queryParams },
@@ -571,6 +746,22 @@ class SaleList extends PureComponent {
           disabled: selectedRowKeys => selectedRowKeys.length === 0,
           minSelections: 0,
           cb: (selectedRowKeys, selectedRows, queryParams) => {
+            //无合同入场虚拟合同
+            if (
+              selectedRows[0].platType === 'NO_CONTRACT_VIRTUAL_CONTRACT' &&
+              selectedRows[0].contractStatus === 'APPROVING'
+            ) {
+              createMessage({ type: 'warn', description: '审批中的无合同入场虚拟合同不能删除！' });
+              return;
+            }
+            if (
+              selectedRows[0].platType === 'NO_CONTRACT_VIRTUAL_CONTRACT' &&
+              selectedRows[0].contractStatus === 'ACTIVE_WAITING'
+            ) {
+              createMessage({ type: 'warn', description: '待激活的无合同入场虚拟合同不能删除！' });
+              return;
+            }
+
             let flag = true;
             selectedRows.map(v => {
               if (v.contractStatus !== 'CREATE') {
@@ -596,15 +787,127 @@ class SaleList extends PureComponent {
           },
         },
         {
+          key: 'close',
+          title: btnJson.close.buttonName || '关闭',
+          className: 'tw-btn-error',
+          loading: false,
+          hidden: !btnJson.close.visible,
+          disabled: selectedRowKeys => selectedRowKeys.length !== 1,
+          minSelections: 0,
+          cb: (selectedRowKeys, selectedRows, queryParams) => {
+            // 获取当前登录人的信息
+            const { user } = this.props;
+
+            if (selectedRows[0].contractStatus === 'CLOSE') {
+              createMessage({
+                type: 'warn',
+                description: '该合同已关闭！',
+              });
+              return;
+            }
+            if (
+              selectedRows[0].contractStatus !== 'CLOSE' &&
+              selectedRows[0].contractStatus === 'ACTIVE' &&
+              (user.user.roles.indexOf('SYS_ADMIN') !== -1 ||
+                user.user.roles.indexOf('SALE_CONTRACT_BUTTON_CLOSE') !== -1)
+            ) {
+              const { id } = selectedRows[0];
+              createConfirm({
+                content: '是否确认关闭?',
+                onOk: () =>
+                  dispatch({
+                    type: `${DOMAIN}/active`,
+                    payload: { id, status: 'CLOSE', searchForm: queryParams },
+                  }),
+              });
+            } else {
+              createMessage({
+                type: 'warn',
+                description: '当前登录用户拥有关闭权限且当前合同状态为激活时才允许关闭',
+              });
+            }
+          },
+        },
+        {
+          key: 'delete',
+          title: btnJson.delete.buttonName || '作废',
+          className: 'tw-btn-error',
+          icon: 'file-excel',
+          loading: false,
+          hidden: !btnJson.delete.visible,
+          disabled: selectedRowKeys => selectedRowKeys.length !== 1,
+          minSelections: 0,
+          cb: (selectedRowKeys, selectedRows, queryParams) => {
+            // 获取当前登录人的信息
+            const { user } = this.props;
+
+            if (selectedRows[0].contractStatus === 'DELETE') {
+              createMessage({
+                type: 'warn',
+                description: '该合同已作废！',
+              });
+              return;
+            }
+            if (
+              selectedRows[0].contractStatus !== 'DELETE' &&
+              (user.user.roles.indexOf('SYS_ADMIN') !== -1 ||
+                user.user.roles.indexOf('SALE_CONTRACT_BUTTON_DELETE') !== -1)
+            ) {
+              const { id } = selectedRows[0];
+              createConfirm({
+                content: '是否确认作废?',
+                onOk: () =>
+                  dispatch({
+                    type: `${DOMAIN}/active`,
+                    payload: { id, status: 'DELETE', searchForm: queryParams },
+                  }),
+              });
+            } else {
+              createMessage({
+                type: 'warn',
+                description: '当前登录用户拥有作废权限时才允许作废',
+              });
+            }
+          },
+        },
+        {
           key: 'addProject',
           title: btnJson.addProject.buttonName || '创建项目',
           className: 'tw-btn-info',
           icon: 'plus-circle',
           loading: false,
           hidden: !btnJson.addProject.visible,
-          disabled: false,
+          disabled: selectedRows =>
+            selectedRows.length !== 1 ||
+            !(
+              (selectedRows[0].mainType === 'SUB' && selectedRows[0].contractStatus === 'ACTIVE') ||
+              (selectedRows[0].mainType === 'SUB' &&
+                selectedRows[0].contractStatus === 'ACTIVE_WAITING' &&
+                selectedRows[0].platType === 'NO_CONTRACT_VIRTUAL_CONTRACT')
+            ),
           minSelections: 0,
           cb: (selectedRowKeys, selectedRows, queryParams) => {
+            //无合同入场虚拟合同
+            if (
+              selectedRows[0].platType === 'NO_CONTRACT_VIRTUAL_CONTRACT' &&
+              selectedRows[0].contractStatus === 'APPROVING'
+            ) {
+              createMessage({
+                type: 'warn',
+                description: '审批中的无合同入场虚拟合同不能创建项目！',
+              });
+              return;
+            }
+            if (
+              selectedRows[0].platType === 'NO_CONTRACT_VIRTUAL_CONTRACT' &&
+              selectedRows[0].contractStatus === 'CREATE'
+            ) {
+              createMessage({
+                type: 'warn',
+                description: '新建状态的无合同入场虚拟合同不能创建项目！',
+              });
+              return;
+            }
             this.addProjectEvent(selectedRowKeys, selectedRows, queryParams);
           },
         },
@@ -619,6 +922,28 @@ class SaleList extends PureComponent {
           disabled: selectedRows => selectedRows.length !== 1 || selectedRows[0].mainType !== 'SUB',
           minSelections: 0,
           cb: (selectedRowKeys, selectedRows, queryParams) => {
+            //无合同入场虚拟合同
+            if (
+              selectedRows[0].platType === 'NO_CONTRACT_VIRTUAL_CONTRACT' &&
+              selectedRows[0].contractStatus === 'APPROVING'
+            ) {
+              createMessage({
+                type: 'warn',
+                description: '审批中的无合同入场虚拟合同不能新建项目采购！',
+              });
+              return;
+            }
+            if (
+              selectedRows[0].platType === 'NO_CONTRACT_VIRTUAL_CONTRACT' &&
+              selectedRows[0].contractStatus === 'CREATE'
+            ) {
+              createMessage({
+                type: 'warn',
+                description: '新建状态的无合同入场虚拟合同不能新建项目采购！',
+              });
+              return;
+            }
+
             if (isNil(selectedRows[0].projNo)) {
               createMessage({ type: 'warn', description: '合同未关联项目，不能新建项目采购！' });
               return;
@@ -628,6 +953,48 @@ class SaleList extends PureComponent {
             this.setState({
               visible: true,
             });
+          },
+        },
+        {
+          key: 'importTagExcel',
+          title: btnJson.importTagExcel.buttonName || '导入合同标签',
+          className: 'tw-btn-info',
+          icon: 'file-excel',
+          loading: false,
+          hidden: !btnJson.importTagExcel.visible,
+          disabled: false,
+          minSelections: 0,
+          cb: (selectedRowKeys, selectedRows, queryParams) => {
+            this.toggleImportTagVisible();
+          },
+        },
+        {
+          key: 'submitVirtualContract',
+          title: btnJson.submitVirtualContract.buttonName || '提交虚拟合同',
+          className: 'tw-btn-info',
+          icon: 'plus-circle',
+          loading: false,
+          hidden: !btnJson.submitVirtualContract.visible,
+          disabled: selectedRows =>
+            selectedRows.length !== 1 ||
+            selectedRows[0].mainType !== 'SUB' ||
+            selectedRows[0].platType !== 'NO_CONTRACT_VIRTUAL_CONTRACT',
+          minSelections: 0,
+          cb: (selectedRowKeys, selectedRows, queryParams) => {
+            // 合同id、主子类型、合同状态、主合同状态
+            const { id, mainType, contractStatus, mainContractStatus, platType } = selectedRows[0];
+            if (
+              mainType === 'SUB' &&
+              platType === 'NO_CONTRACT_VIRTUAL_CONTRACT' &&
+              contractStatus === 'CREATE'
+            ) {
+              this.submitVirtualContract(selectedRowKeys, selectedRows, queryParams);
+            } else {
+              createMessage({
+                type: 'warn',
+                description: '只有新建状态的、无合同入场虚拟合同类型的子合同可以提交虚拟合同！',
+              });
+            }
           },
         },
 
@@ -801,6 +1168,32 @@ class SaleList extends PureComponent {
           align: 'center',
         },
         {
+          title: '电子合同',
+          key: 'linkUrl',
+          dataIndex: 'linkUrl',
+          align: 'center',
+          sorter: true,
+          render: (value, rowData) => {
+            const { linkUrl } = rowData;
+            //获取token对象
+            const token = localStorage.getItem('token_auth');
+            // 对生成的token(ticket)进行加密：使用 Base64
+            const ticket = Base64.stringify(Utf8.parse(token));
+            const linkUrlT = linkUrl + '&ticket=' + ticket;
+            return (
+              // <Link className="tw-link" to={linkUrlT} target="_blank">
+              <div
+                onClick={() => window.open(linkUrlT)}
+                style={{ color: '#008FDB', cursor: 'pointer' }}
+              >
+                {linkUrl ? '电子合同' : ''}
+              </div>
+
+              // </Link>
+            );
+          },
+        },
+        {
           title: '签单日期',
           key: 'signDate',
           dataIndex: pageFieldJson.signDate.fieldKey,
@@ -887,20 +1280,56 @@ class SaleList extends PureComponent {
           align: 'center',
           sorter: false,
         },
+        {
+          title: '合同来源',
+          dataIndex: 'source',
+          align: 'center',
+          render: val => (val === 'yeedoc' ? 'YEEDOC' : 'TW'),
+        },
       ]
         .filter(
           col => !col.key || (pageFieldJson[col.key] && pageFieldJson[col.key].visibleFlag === 1)
         )
-        .map(col => ({
-          ...col,
-          title: pageFieldJson[col.key].displayName,
-          sortNo: pageFieldJson[col.key].sortNo,
-        }))
+        .map(
+          col =>
+            col.key
+              ? {
+                  ...col,
+                  title: pageFieldJson[col.key].displayName,
+                  sortNo: pageFieldJson[col.key].sortNo,
+                }
+              : col
+        )
         .sort((f1, f2) => f1.sortNo - f2.sortNo),
     };
 
+    // 合同标签相关
+    const excelImportTagProps = {
+      templateUrl: location.origin + `/template/contractTagTemplate.xlsx`, // eslint-disable-line
+      option: {
+        fileName: '合同标签导入失败记录',
+        datas: [
+          {
+            sheetName: '合同标签数据导入失败记录', // 表名
+            sheetFilter: ['errorMsg', 'contractNo', 'contractName', 'tagId', 'tagName'], // 列过滤
+            sheetHeader: ['失败原因', '合同编号', '合同名称', '标签ID', '标签名称'], // 第一行标题
+            columnWidths: [12, 4, 6, 6], // 列宽 需与列顺序对应。
+          },
+        ],
+      },
+      controlModal: {
+        visible: importTagVisible,
+        failedList: failedListTag,
+        uploading: uploadingTag,
+      },
+    };
     return (
       <PageHeaderWrapper title="创建销售列表">
+        <ExcelImportExport
+          {...excelImportTagProps}
+          closeModal={this.toggleImportTagVisible}
+          handleUpload={this.handleUploadTag}
+        />
         <DataTable {...tableProps} />
         <Modal title="业务类型" visible={visible} onOk={this.handleOk} onCancel={this.handleCancel}>
           <Selection.UDC

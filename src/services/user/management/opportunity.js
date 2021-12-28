@@ -5,6 +5,7 @@ import { toQs, toUrl } from '@/utils/stringUtils';
 const { custMultiColSelect, productMultiColSelect, suppMultiColSelect, management } = api.user;
 const {
   opportunities,
+  opportunitiesNoP,
   opportunitie,
   oppoCases,
   oppoCaseSave,
@@ -257,6 +258,11 @@ export async function costeUpdateRq(params) {
 // 查询列表
 export async function findOppos(params) {
   return request.get(toQs(opportunities, params));
+}
+
+// 查询列表 无参数
+export async function findOpposNoP() {
+  return request.get(opportunitiesNoP);
 }
 
 // 查询单条信息

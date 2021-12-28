@@ -12,6 +12,8 @@ import createMessage from '@/components/core/AlertMessage';
 import { createConfirm } from '@/components/core/Confirm';
 import moment from 'moment';
 import { add as mathAdd, sub, div, mul, checkIfNumber, genFakeId } from '@/utils/mathUtils';
+import role from '../../../models/sys/system/role';
+import { closePurchase } from '../../../services/user/Contract/sales';
 
 const DOMAIN = 'salePurchaseList';
 const applyColumns = [
@@ -19,18 +21,19 @@ const applyColumns = [
   { dataIndex: 'name', title: '名称', span: 14 },
 ];
 
-@connect(({ loading, salePurchaseList, dispatch }) => ({
+@connect(({ loading, salePurchaseList, dispatch, user }) => ({
   dispatch,
   loading:
     loading.effects[`${DOMAIN}/queryList`] ||
     loading.effects[`${DOMAIN}/active`] ||
     loading.effects[`${DOMAIN}/pending`] ||
-    loading.effects[`${DOMAIN}/close`] ||
+    loading.effects[`${DOMAIN}/over`] ||
     loading.effects[`${DOMAIN}/remove`] ||
     loading.effects[`${DOMAIN}/getPageConfig`] ||
     loading.effects[`${DOMAIN}/fetchPrincipal`] ||
     false,
   salePurchaseList,
+  user,
 }))
 // @mountToTab()
 class PurchasesList extends PureComponent {
@@ -41,6 +44,8 @@ class PurchasesList extends PureComponent {
     contractTypeVisible: false,
     closeReason: '',
     contractType: null,
+    // eslint-disable-next-line react/no-unused-state
+    visible: false,
   };
 
   componentDidMount() {
@@ -95,7 +100,7 @@ class PurchasesList extends PureComponent {
     const { dispatch } = this.props;
     const { closeId, closeNo, closeReason } = this.state;
     dispatch({
-      type: `${DOMAIN}/close`,
+      type: `${DOMAIN}/over`,
       payload: {
         id: genFakeId(-1),
         contractId: closeId,
@@ -146,6 +151,9 @@ class PurchasesList extends PureComponent {
       dispatch,
       loading,
       salePurchaseList: { listData: dataSource, total, treeData, searchForm, pageConfig },
+      user: {
+        user: { roles = [] }, // 取当前登录人的角色
+      },
     } = this.props;
     // 页面配置数据处理
     if (!pageConfig.pageBlockViews || pageConfig.pageBlockViews.length < 1) {
@@ -158,7 +166,13 @@ class PurchasesList extends PureComponent {
       pageFieldJson[field.fieldKey] = field;
     });
 
-    const { closeReasonVisible, contractTypeVisible, closeReason, contractType } = this.state;
+    const {
+      closeReasonVisible,
+      contractTypeVisible,
+      closeReason,
+      contractType,
+      visible,
+    } = this.state;
     const tableProps = {
       columnsCache: DOMAIN,
       dispatch,
@@ -405,13 +419,13 @@ class PurchasesList extends PureComponent {
           className: 'tw-btn-info',
           icon: 'form',
           loading: false,
-          hidden: false,
+          hidden: roles.indexOf('PLAT_PURCHASE_CONTRAC_ADMIN') === -1,
           disabled: selectedRows => selectedRows.length !== 1,
           minSelections: 0,
           cb: (selectedRowKeys, selectedRows, queryParams) => {
             if (selectedRows[0].contractStatus === 'ACTIVE') {
               const { id } = selectedRows[0];
-              router.push(`/sale/purchaseContract/Edit?id=${id}&mode=change&from=list`);
+              router.push(`/sale/purchaseContract/changeEdit?id=${id}&mode=change&from=list`);
             } else {
               createMessage({ type: 'warn', description: '采购合同状态为激活时才允许变更' });
             }
@@ -444,32 +458,32 @@ class PurchasesList extends PureComponent {
             }
           },
         },
-        {
-          key: 'pending',
-          className: 'tw-btn-error',
-          title: '暂挂',
-          icon: 'rollback',
-          loading: false,
-          hidden: false,
-          disabled: selectedRows => selectedRows.length !== 1,
-          minSelections: 0,
-          cb: (selectedRowKeys, selectedRows, queryParams) => {
-            if (
-              selectedRows[0].contractStatus === 'ACTIVE' ||
-              selectedRows[0].contractStatus === 'INACTIVE'
-            ) {
-              dispatch({
-                type: `${DOMAIN}/pending`,
-                payload: selectedRowKeys[0],
-              });
-            } else {
-              createMessage({
-                type: 'warn',
-                description: '采购合同状态为激活或未激活时才允许暂挂',
-              });
-            }
-          },
-        },
+        // {
+        //   key: 'pending',
+        //   className: 'tw-btn-error',
+        //   title: '暂挂',
+        //   icon: 'rollback',
+        //   loading: false,
+        //   hidden: false,
+        //   disabled: selectedRows => selectedRows.length !== 1,
+        //   minSelections: 0,
+        //   cb: (selectedRowKeys, selectedRows, queryParams) => {
+        //     if (
+        //       selectedRows[0].contractStatus === 'ACTIVE' ||
+        //       selectedRows[0].contractStatus === 'INACTIVE'
+        //     ) {
+        //       dispatch({
+        //         type: `${DOMAIN}/pending`,
+        //         payload: selectedRowKeys[0],
+        //       });
+        //     } else {
+        //       createMessage({
+        //         type: 'warn',
+        //         description: '采购合同状态为激活或未激活时才允许暂挂',
+        //       });
+        //     }
+        //   },
+        // },
         {
           key: 'end',
           title: '终止',
@@ -493,6 +507,37 @@ class PurchasesList extends PureComponent {
             }
           },
         },
+        //  关闭合同
+        {
+          key: 'close',
+          className: 'tw-btn-error',
+          title: `关闭`,
+          loading: false,
+          hidden: false,
+          disabled: selectedRows => selectedRows.length !== 1,
+          minSelections: 0,
+          cb: (selectedRowKeys, selectedRows, queryParams) => {
+            const {
+              salePurchaseList: { user },
+            } = this.props;
+            if (
+              selectedRows[0].contractStatus === 'ACTIVE' &&
+              (user.roles.indexOf('SYS_ADMIN') !== -1 ||
+                user.roles.indexOf('PURCHASE_BUTTON_CLOSE') !== -1)
+            ) {
+              dispatch({
+                type: `${DOMAIN}/close`,
+                payload: selectedRowKeys[0],
+              });
+            } else {
+              createMessage({
+                type: 'warn',
+                description: '当前登录用户拥有关闭权限且采购合同状态为激活时才允许关闭',
+              });
+            }
+          },
+        },
+
         {
           key: 'delete',
           title: '删除',
@@ -532,7 +577,8 @@ class PurchasesList extends PureComponent {
         {
           title: '采购合同编号',
           dataIndex: 'contractNo',
-          width: 200,
+          align: 'center',
+          width: 140,
           render: (value, row) => {
             const { id } = row;
             const href = `/sale/purchaseContract/Detail?id=${id}&pageMode=purchase&from=list`;
@@ -546,49 +592,42 @@ class PurchasesList extends PureComponent {
         {
           title: '采购合同名称',
           dataIndex: 'contractName',
-          align: 'center',
           width: 300,
         },
         {
           title: '采购合同状态',
           dataIndex: 'contractStatusDesc',
-          align: 'center',
-          width: 160,
+          textWrap: 'word-break',
+          width: 60,
         },
         {
           title: '采购合同类型',
           dataIndex: 'purchaseTypeDesc',
-          align: 'center',
-          width: 200,
+          width: 140,
         },
         {
           title: '业务类型',
           dataIndex: 'businessTypeDesc',
-          align: 'center',
-          width: 200,
+          width: 100,
         },
         {
           title: '采购公司',
           dataIndex: 'purchaseLegalName',
-          align: 'center',
           width: 260,
         },
         {
           title: '采购BU',
           dataIndex: 'purchaseBuName',
-          align: 'center',
           width: 200,
         },
         {
           title: '采购负责人',
           dataIndex: 'purchaseInchargeResName',
-          align: 'center',
-          width: 120,
+          width: 90,
         },
         {
           title: '供应商',
           dataIndex: 'supplierLegalName',
-          align: 'center',
           width: 260,
         },
         {
@@ -601,7 +640,6 @@ class PurchasesList extends PureComponent {
         {
           title: '开票方',
           dataIndex: 'invoiceName',
-          align: 'center',
           width: 300,
         },
         // {
@@ -613,19 +651,16 @@ class PurchasesList extends PureComponent {
         {
           title: '关联销售合同',
           dataIndex: 'relatedSalesContractName',
-          align: 'center',
-          width: 200,
+          width: 180,
         },
         {
           title: '相关项目',
           dataIndex: 'relatedProjectName',
-          align: 'center',
           width: 200,
         },
         {
           title: '创建人',
           dataIndex: 'createUserName',
-          align: 'center',
           width: 100,
         },
         {

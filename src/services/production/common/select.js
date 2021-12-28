@@ -37,10 +37,6 @@ export async function businessAccItemPaging(param) {
 export async function tenantSelectPaging(param) {
   return request.get(toQs(common.tenantSelectPagingUri, param));
 }
-// 租户流程类型下拉选择
-export async function tenantSelectProc(param) {
-  return request.get(toQs(common.selectTenantProc, param));
-}
 
 // UDC下拉选择
 export async function udcSelect(param) {

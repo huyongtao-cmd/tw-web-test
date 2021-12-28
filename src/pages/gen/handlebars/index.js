@@ -41,6 +41,7 @@ const handlebarsMap = {
   ACC_A103: paymentApply, // 付款申请单:预付款核销
   ACC_A104: paymentApply, // 付款申请单:研发采购
   ACC_A105: paymentApply, // 付款申请单:行政运营类采购
+  ACC_A106: paymentApply, // 付款申请单:行政运营类采购(协议)
   ACC_A107: paymentApply, // 付款申请单:公司管理类
   ACC_A108: paymentApply, // 付款申请单:资源赋能类采购
   ACC_A110: paymentApply, // 付款申请单:预付款：预付款（产品贸易类）/预付款（服务贸易类）/预付款（其它）

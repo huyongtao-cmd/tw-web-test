@@ -8,7 +8,6 @@ import FieldList from '@/components/layout/FieldList';
 import { formatDT } from '@/utils/tempUtils/DateTime';
 
 import { AddrEditContext } from './index';
-import BaseSelect from '@/components/production/basic/BaseSelect.tsx';
 
 const { Field } = FieldList;
 
@@ -65,7 +64,7 @@ const AddrEditT2 = props => (
             ],
           }}
         >
-          <BaseSelect parentKey="FUNCTION:RESOURCE:ID_TYPE" placeholder="证件类型" />
+          <UdcSelect code="COM:ID_TYPE" placeholder="请选择证件类型" />
         </Field>
         <Field
           name="idNo"
@@ -95,8 +94,7 @@ const AddrEditT2 = props => (
             ],
           }}
         >
-          <BaseSelect parentKey="COMMON:GENDER" placeholder="性别" />
-          {/*<UdcCheck multiple={false} code="COM.GENDER" placeholder="性别" />*/}
+          <UdcCheck multiple={false} code="COM.GENDER" placeholder="性别" />
         </Field>
         <Field
           name="birthday"
@@ -122,8 +120,7 @@ const AddrEditT2 = props => (
             initialValue: personData.nationality,
           }}
         >
-          <BaseSelect parentKey="FUNCTION:RESOURCE:COUNTRY" placeholder="国籍" />
-          {/*<UdcSelect code="COM:COUNTRY" placeholder="国籍" />*/}
+          <UdcSelect code="COM:COUNTRY" placeholder="国籍" />
         </Field>
         <Field
           name="birthplace"
@@ -150,8 +147,7 @@ const AddrEditT2 = props => (
             initialValue: personData.marital,
           }}
         >
-          <BaseSelect parentKey="FUNCTION:RESOURCE:MARRIAGE" placeholder="婚姻状况" />
-          {/*<UdcCheck code="COM:MARRIAGE" placeholder="婚姻状况" />*/}
+          <UdcCheck code="COM:MARRIAGE" placeholder="婚姻状况" />
         </Field>
         <Field
           name="idValidFrom"

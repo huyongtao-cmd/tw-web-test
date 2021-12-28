@@ -227,7 +227,68 @@ class PlatInfo extends PureComponent {
           ],
         }}
       >
-        <Input placeholder={`请输入${pageFieldJson.hrStatus.displayName}`} />
+        {/* <Input placeholder={`请输入${pageFieldJson.hrStatus.displayName}`} /> */}
+        <UdcSelect
+          code="RES:JOB_GRADE"
+          placeholder={`请选择${pageFieldJson.positionSequence.displayName}`}
+        />
+      </Field>,
+      <Field
+        name="managementGrade"
+        key="managementGrade"
+        label={pageFieldJson.managementGrade.displayName}
+        decorator={{
+          initialValue: platFormData.managementGrade,
+          rules: [
+            {
+              required: false,
+              message: `请选择${pageFieldJson.managementGrade.displayName}`,
+            },
+          ],
+        }}
+      >
+        <UdcSelect
+          code="RES:MANAGEMENT_GRADE"
+          placeholder={`请选择${pageFieldJson.managementGrade.displayName}`}
+        />
+      </Field>,
+      <Field
+        name="positionSequence"
+        key="positionSequence"
+        label={pageFieldJson.positionSequence.displayName}
+        decorator={{
+          initialValue: platFormData.positionSequence,
+          rules: [
+            {
+              required: false,
+              message: `请选择${pageFieldJson.positionSequence.displayName}`,
+            },
+          ],
+        }}
+      >
+        <UdcSelect
+          code="RES:POSITION_SEQUENCE"
+          placeholder={`请选择${pageFieldJson.positionSequence.displayName}`}
+        />
+      </Field>,
+      <Field
+        name="professionalSequence"
+        key="professionalSequence"
+        label={pageFieldJson.professionalSequence.displayName}
+        decorator={{
+          initialValue: platFormData.professionalSequence,
+          rules: [
+            {
+              required: false,
+              message: `请选择${pageFieldJson.professionalSequence.displayName}`,
+            },
+          ],
+        }}
+      >
+        <UdcSelect
+          code="RES:PROFESSIONAL_SEQUENCE"
+          placeholder={`请选择${pageFieldJson.professionalSequence.displayName}`}
+        />
       </Field>,
       <Field
         name="empNo"

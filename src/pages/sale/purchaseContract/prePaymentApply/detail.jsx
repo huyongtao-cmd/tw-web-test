@@ -13,7 +13,7 @@ import createMessage from '@/components/core/AlertMessage';
 import { fromQs } from '@/utils/stringUtils';
 import { add as mathAdd, checkIfNumber, div, mul, sub } from '@/utils/mathUtils';
 import { formatDT } from '@/utils/tempUtils/DateTime';
-import { isEmpty, takeLast, add, isNil, gte, lte } from 'ramda';
+import { isEmpty, takeLast, add, isNil, gte, lte, clone } from 'ramda';
 import { toIsoDate } from '@/utils/timeUtils';
 import BpmWrapper from '@/pages/gen/BpmMgmt/BpmWrapper';
 import BpmConnection from '@/pages/gen/BpmMgmt/BpmConnection';
@@ -139,7 +139,7 @@ class Edit extends Component {
       dispatch,
       prePaymentApplyDetail,
     } = this.props;
-    const { taskId, remark, result } = parmas;
+    const { taskId, remark, result, branch } = parmas;
     const { payDetailList, formData } = prePaymentApplyDetail;
     if (payDetailList.length !== 0) {
       if (formData.currPaymentAmt > 0) {
@@ -164,6 +164,7 @@ class Edit extends Component {
                         taskId,
                         remark,
                         result,
+                        branch,
                       },
                     },
                   }).then(resq => {
@@ -198,58 +199,81 @@ class Edit extends Component {
       prePaymentApplyDetail,
     } = this.props;
     const { taskId, remark, result } = parmas;
-    const { payDetailList, formData } = prePaymentApplyDetail;
-    if (payDetailList.length !== 0) {
-      if (formData.currPaymentAmt > 0) {
-        dispatch({
-          type: `${DOMAIN}/save`,
-          payload: {
-            scene: parmas.scene,
-          },
-        }).then(res => {
-          if (res) {
-            if (taskId) {
-              dispatch({
-                type: `${DOMAIN}/reSubmit`,
-                payload: {
-                  id: res,
-                  flow: {
-                    taskId,
-                    remark,
-                    result,
-                  },
-                },
-              }).then(resq => {
-                if (resq.ok) {
-                  createMessage({ type: 'success', description: '提交成功' });
-                  const url = getUrl().replace('edit', 'view');
-                  closeThenGoto(url);
-                } else {
-                  createMessage({ type: 'error', description: '提交失败' });
-                }
-              });
-            } else {
-              dispatch({
-                type: `${DOMAIN}/submit`,
-                payload: { id: res },
-              }).then(resq => {
-                if (resq.ok) {
-                  createMessage({ type: 'success', description: '提交成功' });
-                  const url = getUrl().replace('edit', 'view');
-                  closeThenGoto(url);
-                } else {
-                  createMessage({ type: 'error', description: '提交失败' });
-                }
-              });
-            }
-          }
+    const { payDetailList, formData, paymentPlanAdvPayList } = prePaymentApplyDetail;
+    validateFieldsAndScroll((error, values) => {
+      if (!error) {
+        // 付款计划参考-预付款 合计付款金额 不能大于 预付款的本次付款金额
+        let currentPaymentAmtAdvPaySum = 0;
+        paymentPlanAdvPayList.forEach(paymentPlanAdvPay => {
+          currentPaymentAmtAdvPaySum = add(
+            currentPaymentAmtAdvPaySum,
+            paymentPlanAdvPay.currentPaymentAmt
+          );
         });
-      } else {
-        createMessage({ type: 'warn', description: '本次付款/核销金额必须要大于0' });
+        if (
+          currentPaymentAmtAdvPaySum !== formData.currPaymentAmt &&
+          formData.docType === 'CONTRACT'
+        ) {
+          // this.setState({ loadings: false });
+          createMessage({
+            type: 'warn',
+            description: '【付款计划参考】本次付款金额合计值与本单据付款金额不一致',
+          });
+          return;
+        }
+        if (payDetailList.length !== 0) {
+          if (formData.currPaymentAmt > 0) {
+            dispatch({
+              type: `${DOMAIN}/save`,
+              payload: {
+                scene: parmas.scene,
+              },
+            }).then(res => {
+              if (res) {
+                if (taskId) {
+                  dispatch({
+                    type: `${DOMAIN}/reSubmit`,
+                    payload: {
+                      id: res,
+                      flow: {
+                        taskId,
+                        remark,
+                        result,
+                      },
+                    },
+                  }).then(resq => {
+                    if (resq.ok) {
+                      createMessage({ type: 'success', description: '提交成功' });
+                      const url = getUrl().replace('edit', 'view');
+                      closeThenGoto(url);
+                    } else {
+                      createMessage({ type: 'error', description: '提交失败' });
+                    }
+                  });
+                } else {
+                  dispatch({
+                    type: `${DOMAIN}/submit`,
+                    payload: { id: res },
+                  }).then(resq => {
+                    if (resq.ok) {
+                      createMessage({ type: 'success', description: '提交成功' });
+                      const url = getUrl().replace('edit', 'view');
+                      closeThenGoto(url);
+                    } else {
+                      createMessage({ type: 'error', description: '提交失败' });
+                    }
+                  });
+                }
+              }
+            });
+          } else {
+            createMessage({ type: 'warn', description: '本次付款/核销金额必须要大于0' });
+          }
+        } else {
+          createMessage({ type: 'warn', description: '付款明细不能为空' });
+        }
       }
-    } else {
-      createMessage({ type: 'warn', description: '付款明细不能为空' });
-    }
+    });
   };
 
   render() {
@@ -260,6 +284,36 @@ class Edit extends Component {
     const { taskKey } = fieldsConfig;
     const param = fromQs();
     const { taskId, prcId } = param;
+
+    const submitBtn =
+      loading.effects[`${DOMAIN}/paymentSlipBatchOperation`] ||
+      loading.effects[`${DOMAIN}/save`] ||
+      loading.effects[`${DOMAIN}/reSubmit`] ||
+      loading.effects[`${DOMAIN}/submit`];
+
+    // 处理申请人修改节点的按钮
+    let wrappedFieldsConfig = fieldsConfig;
+    if (
+      fieldsConfig &&
+      fieldsConfig.taskKey &&
+      (fieldsConfig.taskKey.indexOf('ACCOUNTANCY') > -1 ||
+        fieldsConfig.taskKey.indexOf('CASHIER_CONFIRM') > -1)
+    ) {
+      wrappedFieldsConfig = clone(fieldsConfig);
+      wrappedFieldsConfig.buttons.push({
+        type: 'button',
+        key: 'FLOW_PASS',
+        title: '申请人修改',
+        className: 'tw-btn-primary',
+        branches: [
+          {
+            id: 1,
+            code: 'AGAIN_SUBMIT',
+            name: '申请人修改',
+          },
+        ],
+      });
+    }
 
     // 获取工作流组件相关数据
     const { id, scene, paymentApplicationType } = formData;
@@ -291,8 +345,9 @@ class Edit extends Component {
     return (
       <PageHeaderWrapper title="预付款申请审批">
         <BpmWrapper
+          buttonLoading={submitBtn}
           fields={formData}
-          fieldsConfig={fieldsConfig}
+          fieldsConfig={wrappedFieldsConfig}
           flowForm={flowForm}
           scope={procDefKey}
           onBpmChanges={value => {
@@ -302,15 +357,19 @@ class Edit extends Component {
             });
           }}
           onBtnClick={({ operation, formData: formD, bpmForm }) => {
-            const { key } = operation;
+            const { key, title } = operation;
             const payload = {
               taskId: param.taskId,
               remark: bpmForm.remark,
+              branch: bpmForm.branch,
             };
             // 通过
             if (key === 'FLOW_PASS') {
               // 相关bu处理人
-              if (taskKey.indexOf('ACCOUNTANCY') !== -1) {
+              if (
+                (taskKey.indexOf('ACCOUNTANCY') !== -1 && title !== '申请人修改') ||
+                taskKey.indexOf('APPLY_RES_EDIT') !== -1
+              ) {
                 payload.result = 'APPROVED';
                 payload.scene = formData.scene;
                 validateFieldsAndScroll((error, values) => {

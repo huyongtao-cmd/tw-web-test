@@ -3,9 +3,9 @@ import { Input, Switch } from 'antd';
 import update from 'immutability-helper';
 
 import Title from '@/components/layout/Title';
+import { UdcSelect } from '@/pages/gen/field';
 import { genFakeId } from '@/utils/mathUtils';
 import EditableDataTable from '@/components/common/EditableDataTable';
-import BaseSelect from '@/components/production/basic/BaseSelect.tsx';
 
 import { AddrEditContext, DOMAIN } from './index';
 
@@ -119,9 +119,10 @@ const AddrEditT6 = props => (
             dataIndex: 'taxRate',
             align: 'center',
             render: (value, row, index) => (
-              <BaseSelect
+              <UdcSelect
+                size="small"
                 value={value}
-                parentKey="FUNCTION:TAX:RATE"
+                code="COM:TAX_RATE"
                 placeholder="请选择税率"
                 onChange={onCellChanged(index, 'taxRate')}
               />
@@ -132,9 +133,10 @@ const AddrEditT6 = props => (
             dataIndex: 'invType',
             align: 'center',
             render: (value, row, index) => (
-              <BaseSelect
+              <UdcSelect
+                size="small"
                 value={value}
-                parentKey="FUNCTION:INV_TYPE"
+                code="COM:INV_TYPE"
                 placeholder="请选择开票类型"
                 onChange={onCellChanged(index, 'invType')}
               />
@@ -217,9 +219,10 @@ const AddrEditT6 = props => (
             //   ],
             // },
             render: (value, row, index) => (
-              <BaseSelect
+              <UdcSelect
+                size="small"
                 value={value}
-                parentKey="COMMON_CURRENCY"
+                code="COM:CURRENCY_KIND"
                 placeholder="请选择币种"
                 onChange={onCellChanged(index, 'currCode')}
               />

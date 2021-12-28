@@ -16,6 +16,8 @@ import { mountToTab } from '@/layouts/routerControl';
 import { fromQs } from '@/utils/stringUtils';
 import { selectContract, selectFinperiod } from '@/services/user/Contract/sales';
 import { selectInternalOus } from '@/services/gen/list';
+import TreeSearch from '@/components/common/TreeSearch';
+import Loading from '@/components/core/DataLoading';
 
 const DOMAIN = 'userContractCreateMain';
 const { Field } = FieldList;
@@ -29,6 +31,7 @@ const subjCol = [
 ];
 
 @connect(({ loading, userContractCreateMain, dispatch }) => ({
+  treeLoading: loading.effects[`${DOMAIN}/getTagTree`],
   loading,
   userContractCreateMain,
   dispatch,
@@ -76,6 +79,11 @@ class CreateMain extends PureComponent {
         payload: leadId,
       });
     }
+    // 合同标签数据
+    dispatch({
+      type: `${DOMAIN}/getTagTree`,
+      payload: { key: 'CONTRACT_TAG' },
+    });
     // 加载页面配置
     dispatch({
       type: `${DOMAIN}/getPageConfig`,
@@ -176,10 +184,29 @@ class CreateMain extends PureComponent {
     }
   };
 
+  onCheck = (checkedKeys, info, parm3, param4) => {
+    const { dispatch } = this.props;
+    const allCheckedKeys = checkedKeys.concat(info.halfCheckedKeys);
+    this.updateModelState({ checkedKeys, allCheckedKeys });
+    dispatch({
+      type: `${DOMAIN}/updateForm`,
+      payload: { tagIds: allCheckedKeys.length > 0 ? allCheckedKeys.join(',') : '' },
+    });
+  };
+
+  updateModelState = params => {
+    const { dispatch } = this.props;
+    dispatch({
+      type: `${DOMAIN}/updateState`,
+      payload: params,
+    });
+  };
+
   render() {
     const {
       loading,
       dispatch,
+      treeLoading,
       userContractCreateMain: {
         formData,
         smallClass = [],
@@ -202,9 +229,13 @@ class CreateMain extends PureComponent {
         salesRegionBuData = [],
         salesRegionBuDataSource = [],
         pageConfig = {},
+        tagTree,
+        flatTags,
+        checkedKeys,
       },
       form: { getFieldDecorator },
     } = this.props;
+
     const readOnly = true;
     const isInternal = formData.sourceType === 'INTERNAL';
 
@@ -240,6 +271,7 @@ class CreateMain extends PureComponent {
       contractStatus,
       closeReason,
       currCode,
+      tagIds,
       remark,
       createUserId,
       createTime,
@@ -676,6 +708,38 @@ class CreateMain extends PureComponent {
                   placeholder={`请选择${currCode.displayName}`}
                   disabled={currCode.fieldMode !== 'EDITABLE'}
                 />
+              </Field>
+            )}
+
+            {tagIds.visibleFlag === 1 && (
+              <Field
+                name="tagIds"
+                label={tagIds.displayName}
+                decorator={{
+                  initialValue: formData.tagIds,
+                  rules: [
+                    {
+                      required: tagIds.requiredFlag,
+                      message: `请选择${tagIds.displayName}`,
+                    },
+                  ],
+                }}
+                {...FieldListLayout}
+              >
+                {!treeLoading ? (
+                  <TreeSearch
+                    checkable
+                    // checkStrictly
+                    showSearch={false}
+                    placeholder="请输入关键字"
+                    treeData={tagTree}
+                    defaultExpandedKeys={tagTree.map(item => `${item.id}`)}
+                    checkedKeys={checkedKeys}
+                    onCheck={this.onCheck}
+                  />
+                ) : (
+                  <Loading />
+                )}
               </Field>
             )}
 

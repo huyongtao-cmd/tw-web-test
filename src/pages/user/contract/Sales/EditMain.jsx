@@ -20,6 +20,8 @@ import { mountToTab, closeThenGoto } from '@/layouts/routerControl';
 import { UdcSelect, UdcCheck, FileManagerEnhance, Selection } from '@/pages/gen/field';
 import { selectInternalOus } from '@/services/gen/list';
 import { selectContract, selectFinperiod } from '@/services/user/Contract/sales';
+import TreeSearch from '@/components/common/TreeSearch';
+import Loading from '@/components/core/DataLoading';
 
 const DOMAIN = 'userContractEditMain';
 const { Field } = FieldList;
@@ -38,6 +40,7 @@ const subjCol2 = [
 ];
 
 @connect(({ loading, userContractEditMain, dispatch }) => ({
+  treeLoading: loading.effects[`${DOMAIN}/getTagTree`],
   loading,
   userContractEditMain,
   dispatch,
@@ -94,6 +97,11 @@ class EditMain extends PureComponent {
     //   type: `${DOMAIN}/querySub`,
     //   payload: mainId,
     // });
+    // 合同标签数据
+    dispatch({
+      type: `${DOMAIN}/getTagTree`,
+      payload: { key: 'CONTRACT_TAG' },
+    });
     this.fetchData();
     dispatch({ type: `${DOMAIN}/oppo` });
     dispatch({ type: `${DOMAIN}/cust` });
@@ -215,14 +223,37 @@ class EditMain extends PureComponent {
     }
   };
 
+  onCheck = (checkedKeys, info, parm3, param4) => {
+    const { dispatch } = this.props;
+    const allCheckedKeys = checkedKeys.concat(info.halfCheckedKeys);
+    this.updateModelState({ checkedKeys, allCheckedKeys });
+    dispatch({
+      type: `${DOMAIN}/updateForm`,
+      payload: { tagIds: allCheckedKeys.length > 0 ? allCheckedKeys.join(',') : '' },
+    });
+  };
+
+  updateModelState = params => {
+    const { dispatch } = this.props;
+    dispatch({
+      type: `${DOMAIN}/updateState`,
+      payload: params,
+    });
+  };
+
   render() {
     const {
       loading,
       dispatch,
+      treeLoading,
+
       userContractEditMain: {
         formData,
         subList,
         subListTotal,
+        tagTree,
+        flatTags,
+        checkedKeys,
         smallClass = [],
         oppoData = [],
         oppoDataSource = [],
@@ -246,6 +277,19 @@ class EditMain extends PureComponent {
       },
       form: { getFieldDecorator },
     } = this.props;
+
+    //标签
+    let checkedKeysTemp = checkedKeys;
+    if (checkedKeysTemp.length < 1) {
+      if (formData.tagIds) {
+        const arrayTemp = formData.tagIds.split(',');
+        checkedKeysTemp = arrayTemp.filter(item => {
+          const menu = flatTags[item];
+          return menu && (menu.children === null || menu.children.length === 0);
+        });
+      }
+    }
+
     const { sourceType } = this.state;
     const readOnly = true;
     const disabledBtn =
@@ -268,6 +312,9 @@ class EditMain extends PureComponent {
     pageFieldViewsList.forEach(field => {
       pageFieldJsonList[field.fieldKey] = field;
     });
+    const { source } = formData;
+    // const sourceDisabled = source === 'yeedoc';
+    const sourceDisabled = false;
 
     const {
       contractName,
@@ -285,6 +332,7 @@ class EditMain extends PureComponent {
       contractStatus,
       closeReason,
       currCode,
+      tagIds,
       remark,
       createUserId,
       createTime,
@@ -447,7 +495,7 @@ class EditMain extends PureComponent {
       >
         <Input
           placeholder={`请输入${contractName.displayName}`}
-          disabled={contractName.fieldMode !== 'EDITABLE'}
+          disabled={contractName.fieldMode !== 'EDITABLE' || sourceDisabled}
         />
       </Field>,
 
@@ -459,7 +507,7 @@ class EditMain extends PureComponent {
           initialValue: formData.contractNo,
         }}
       >
-        <Input disabled={readOnly} placeholder="系统生成" />
+        <Input disabled={readOnly || sourceDisabled} placeholder="系统生成" />
       </Field>,
 
       <Field
@@ -473,7 +521,7 @@ class EditMain extends PureComponent {
         <AsyncSelect
           source={() => selectInternalOus().then(resp => resp.response)}
           placeholder={`请选择${ouId.displayName}`}
-          disabled={ouId.fieldMode !== 'EDITABLE'}
+          disabled={ouId.fieldMode !== 'EDITABLE' || sourceDisabled}
         />
       </Field>,
 
@@ -487,7 +535,7 @@ class EditMain extends PureComponent {
       >
         <Input
           placeholder={`请输入${userdefinedNo.displayName}`}
-          disabled={userdefinedNo.fieldMode !== 'EDITABLE'}
+          disabled={userdefinedNo.fieldMode !== 'EDITABLE' || sourceDisabled}
         />
       </Field>,
 
@@ -508,7 +556,7 @@ class EditMain extends PureComponent {
         <SelectWithCols
           labelKey="name"
           placeholder={`请选择${oppoId.displayName}`}
-          disabled={oppoId.fieldMode !== 'EDITABLE'}
+          disabled={oppoId.fieldMode !== 'EDITABLE' || sourceDisabled}
           columns={subjCol}
           dataSource={oppoDataSource}
           selectProps={{
@@ -542,7 +590,7 @@ class EditMain extends PureComponent {
         <AsyncSelect
           source={() => selectContract().then(resp => resp.response)}
           placeholder={`请选择${relatedContractId.displayName}`}
-          disabled={relatedContractId.fieldMode !== 'EDITABLE'}
+          disabled={relatedContractId.fieldMode !== 'EDITABLE' || sourceDisabled}
         />
       </Field>,
 
@@ -563,7 +611,7 @@ class EditMain extends PureComponent {
           showSearch
           onColumnsChange={value => {}}
           placeholder={`请选择${custId.displayName}`}
-          disabled={custId.fieldMode !== 'EDITABLE'}
+          disabled={custId.fieldMode !== 'EDITABLE' || sourceDisabled}
         />
       </Field>,
 
@@ -578,7 +626,7 @@ class EditMain extends PureComponent {
         <UdcSelect
           code="TSK.CONTRACT_CUSTPROP"
           placeholder={`请选择${newContractFlag.displayName}`}
-          disabled={newContractFlag.fieldMode !== 'EDITABLE'}
+          disabled={newContractFlag.fieldMode !== 'EDITABLE' || sourceDisabled}
         />
       </Field>,
 
@@ -592,7 +640,7 @@ class EditMain extends PureComponent {
       >
         <DatePicker
           placeholder={`请选择${signDate.displayName}`}
-          disabled={signDate.fieldMode !== 'EDITABLE'}
+          disabled={signDate.fieldMode !== 'EDITABLE' || sourceDisabled}
           format="YYYY-MM-DD"
           className="x-fill-100"
         />
@@ -608,7 +656,7 @@ class EditMain extends PureComponent {
       >
         <Input
           placeholder={`请输入${specialConcerned.displayName}`}
-          disabled={specialConcerned.fieldMode !== 'EDITABLE'}
+          disabled={specialConcerned.fieldMode !== 'EDITABLE' || sourceDisabled}
         />
       </Field>,
 
@@ -618,6 +666,7 @@ class EditMain extends PureComponent {
           dataKey={formData.id}
           listType="text"
           disabled={false}
+          preview={sourceDisabled}
         />
       </Field>,
 
@@ -629,7 +678,7 @@ class EditMain extends PureComponent {
         }}
         {...FieldListLayout}
       >
-        <Input disabled={readOnly} />
+        <Input disabled={readOnly || sourceDisabled} />
       </Field>,
 
       <Field
@@ -641,7 +690,7 @@ class EditMain extends PureComponent {
         {...FieldListLayout}
       >
         <UdcSelect
-          disabled={contractStatus.fieldMode !== 'EDITABLE'}
+          disabled={contractStatus.fieldMode !== 'EDITABLE' || sourceDisabled}
           code="TSK.CONTRACT_STATUS"
           placeholder={`请选择${contractStatus.displayName}`}
         />
@@ -658,7 +707,7 @@ class EditMain extends PureComponent {
         <UdcSelect
           code="TSK.CONTRACT_CLOSE_REASON"
           placeholder={`请输入${closeReason.displayName}`}
-          disabled={closeReason.fieldMode !== 'EDITABLE'}
+          disabled={closeReason.fieldMode !== 'EDITABLE' || sourceDisabled}
         />
       </Field>,
 
@@ -673,8 +722,35 @@ class EditMain extends PureComponent {
         <UdcSelect
           code="COM.CURRENCY_KIND"
           placeholder={`请选择${currCode.displayName}`}
-          disabled={currCode.fieldMode !== 'EDITABLE'}
+          disabled={currCode.fieldMode !== 'EDITABLE' || sourceDisabled}
         />
+      </Field>,
+      // 合同标签
+      <Field
+        name="tagIds"
+        key="tagIds"
+        // fieldCol={1}
+        // labelCol={{ span: 4 }}
+        // wrapperCol={{ span: 20 }}
+        decorator={{
+          initialValue: formData.tagIds || '',
+        }}
+        {...FieldListLayout}
+      >
+        {!treeLoading ? (
+          <TreeSearch
+            checkable
+            // checkStrictly
+            showSearch={false}
+            placeholder="请输入关键字"
+            treeData={tagTree}
+            defaultExpandedKeys={tagTree.map(item => `${item.id}`)}
+            checkedKeys={checkedKeysTemp}
+            onCheck={this.onCheck}
+          />
+        ) : (
+          <Loading />
+        )}
       </Field>,
 
       <Field
@@ -689,19 +765,23 @@ class EditMain extends PureComponent {
       >
         <Input.TextArea
           placeholder={`请输入${remark.displayName}`}
-          disabled={remark.fieldMode !== 'EDITABLE'}
+          disabled={remark.fieldMode !== 'EDITABLE' || sourceDisabled}
           rows={3}
         />
       </Field>,
 
       <Field key="createUserId" presentational {...FieldListLayout}>
-        <Input value={formData.createUserName} disabled={readOnly} placeholder="系统生成" />
+        <Input
+          value={formData.createUserName}
+          disabled={readOnly || sourceDisabled}
+          placeholder="系统生成"
+        />
       </Field>,
 
       <Field key="createTime" presentational {...FieldListLayout}>
         <Input
           value={formData.createTime ? formatDT(formData.createTime) : null}
-          disabled={readOnly}
+          disabled={readOnly || sourceDisabled}
           placeholder="系统生成"
         />
       </Field>,
@@ -741,7 +821,7 @@ class EditMain extends PureComponent {
       >
         <Input
           placeholder={`请输入${custProj.displayName}`}
-          disabled={custProj.fieldMode !== 'EDITABLE'}
+          disabled={custProj.fieldMode !== 'EDITABLE' || sourceDisabled}
         />
       </Field>,
 
@@ -754,7 +834,7 @@ class EditMain extends PureComponent {
       >
         <Input
           placeholder={`请输入${saleContent.displayName}`}
-          disabled={saleContent.fieldMode !== 'EDITABLE'}
+          disabled={saleContent.fieldMode !== 'EDITABLE' || sourceDisabled}
         />
       </Field>,
 
@@ -769,7 +849,7 @@ class EditMain extends PureComponent {
           code="TSK.SALE_TYPE1"
           onChange={this.handleChange}
           placeholder={`请选择${saleType1.displayName}`}
-          disabled={saleType1.fieldMode !== 'EDITABLE'}
+          disabled={saleType1.fieldMode !== 'EDITABLE' || sourceDisabled}
         />
       </Field>,
 
@@ -783,7 +863,7 @@ class EditMain extends PureComponent {
         <AsyncSelect
           source={smallClass}
           placeholder={`请输入${saleType2.displayName}`}
-          disabled={saleType2.fieldMode !== 'EDITABLE'}
+          disabled={saleType2.fieldMode !== 'EDITABLE' || sourceDisabled}
         />
       </Field>,
 
@@ -796,7 +876,7 @@ class EditMain extends PureComponent {
       >
         <Input
           placeholder={`请输入${deliveryAddress.displayName}`}
-          disabled={deliveryAddress.fieldMode !== 'EDITABLE'}
+          disabled={deliveryAddress.fieldMode !== 'EDITABLE' || sourceDisabled}
         />
       </Field>,
 
@@ -810,7 +890,7 @@ class EditMain extends PureComponent {
         <AsyncSelect
           source={() => selectFinperiod().then(resp => resp.response)}
           placeholder={`请选择${finPeriodId.displayName}`}
-          disabled={finPeriodId.fieldMode !== 'EDITABLE'}
+          disabled={finPeriodId.fieldMode !== 'EDITABLE' || sourceDisabled}
           showSearch
           filterOption={(input, option) =>
             option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
@@ -827,7 +907,7 @@ class EditMain extends PureComponent {
       >
         <InputNumber
           placeholder={`请输入${amt.displayName}`}
-          disabled={amt.fieldMode !== 'EDITABLE'}
+          disabled={amt.fieldMode !== 'EDITABLE' || sourceDisabled}
           className="x-fill-100"
         />
       </Field>,
@@ -841,7 +921,7 @@ class EditMain extends PureComponent {
       >
         <InputNumber
           placeholder={`请输入${extraAmt.displayName}`}
-          disabled={extraAmt.fieldMode !== 'EDITABLE'}
+          disabled={extraAmt.fieldMode !== 'EDITABLE' || sourceDisabled}
           className="x-fill-100"
         />
       </Field>,
@@ -855,7 +935,7 @@ class EditMain extends PureComponent {
       >
         <InputNumber
           placeholder={`请输入${effectiveAmt.displayName}`}
-          disabled={effectiveAmt.fieldMode !== 'EDITABLE'}
+          disabled={effectiveAmt.fieldMode !== 'EDITABLE' || sourceDisabled}
           className="x-fill-100"
         />
       </Field>,
@@ -869,7 +949,7 @@ class EditMain extends PureComponent {
       >
         <InputNumber
           placeholder={`请输入${grossProfit.displayName}`}
-          disabled={grossProfit.fieldMode !== 'EDITABLE'}
+          disabled={grossProfit.fieldMode !== 'EDITABLE' || sourceDisabled}
           className="x-fill-100"
         />
       </Field>,
@@ -890,7 +970,7 @@ class EditMain extends PureComponent {
         <SelectWithCols
           labelKey="name"
           placeholder={`请选择${regionBuId.displayName}`}
-          disabled={regionBuId.fieldMode !== 'EDITABLE'}
+          disabled={regionBuId.fieldMode !== 'EDITABLE' || sourceDisabled}
           onChange={this.handleRegionBu}
           columns={subjCol}
           dataSource={salesRegionBuDataSource}
@@ -915,7 +995,7 @@ class EditMain extends PureComponent {
       </Field>,
 
       <Field key="regionPrincipalResName" presentational {...FieldListLayout}>
-        <Input value={formData.regionPrincipalResName} disabled={readOnly} />
+        <Input value={formData.regionPrincipalResName} disabled={readOnly && source !== 'yeedoc'} />
       </Field>,
     ]
       .filter(
@@ -947,40 +1027,11 @@ class EditMain extends PureComponent {
       <Field
         key="signBuId"
         decorator={{
-          initialValue:
-            formData.signBuId && formData.signBuId
-              ? {
-                  name: formData.signBuName,
-                  code: formData.signBuId,
-                }
-              : null,
+          initialValue: formData.signBuId,
         }}
         {...FieldListLayout}
       >
-        <SelectWithCols
-          labelKey="name"
-          placeholder={`请选择${signBuId.displayName}`}
-          disabled={signBuId.fieldMode !== 'EDITABLE'}
-          columns={subjCol}
-          dataSource={signBuDataSource}
-          selectProps={{
-            showSearch: true,
-            onSearch: value => {
-              dispatch({
-                type: `${DOMAIN}/updateState`,
-                payload: {
-                  signBuDataSource: buData.filter(
-                    d =>
-                      d.code.indexOf(value) > -1 ||
-                      d.name.toLowerCase().indexOf(value.toLowerCase()) > -1
-                  ),
-                },
-              });
-            },
-            allowClear: true,
-            style: { width: '100%' },
-          }}
-        />
+        <Selection.ColumnsForBu disabled={sourceDisabled} />
       </Field>,
 
       <Field
@@ -1000,7 +1051,7 @@ class EditMain extends PureComponent {
           labelKey="name"
           valueKey="code"
           placeholder={`请选择${salesmanResId.displayName}`}
-          disabled={salesmanResId.fieldMode !== 'EDITABLE'}
+          disabled={salesmanResId.fieldMode !== 'EDITABLE' || sourceDisabled}
           columns={subjCol}
           dataSource={salesmanResDataSource}
           selectProps={{
@@ -1026,40 +1077,11 @@ class EditMain extends PureComponent {
       <Field
         key="deliBuId"
         decorator={{
-          initialValue:
-            formData.deliBuId && formData.deliBuName
-              ? {
-                  code: formData.deliBuId,
-                  name: formData.deliBuName,
-                }
-              : null,
+          initialValue: formData.deliBuId,
         }}
         {...FieldListLayout}
       >
-        <SelectWithCols
-          labelKey="name"
-          placeholder={`请选择${deliBuId.displayName}`}
-          disabled={deliBuId.fieldMode !== 'EDITABLE'}
-          columns={subjCol}
-          dataSource={deliBuDataSource}
-          selectProps={{
-            showSearch: true,
-            onSearch: value => {
-              dispatch({
-                type: `${DOMAIN}/updateState`,
-                payload: {
-                  deliBuDataSource: buData.filter(
-                    d =>
-                      d.code.indexOf(value) > -1 ||
-                      d.name.toLowerCase().indexOf(value.toLowerCase()) > -1
-                  ),
-                },
-              });
-            },
-            allowClear: true,
-            style: { width: '100%' },
-          }}
-        />
+        <Selection.ColumnsForBu disabled={sourceDisabled} />
       </Field>,
 
       <Field
@@ -1079,7 +1101,7 @@ class EditMain extends PureComponent {
           labelKey="name"
           valueKey="code"
           placeholder={`请选择${deliResId.displayName}`}
-          disabled={deliResId.fieldMode !== 'EDITABLE'}
+          disabled={deliResId.fieldMode !== 'EDITABLE' || sourceDisabled}
           columns={subjCol}
           dataSource={deliResDataSource}
           selectProps={{
@@ -1105,40 +1127,11 @@ class EditMain extends PureComponent {
       <Field
         key="coBuId"
         decorator={{
-          initialValue:
-            formData.coBuId && formData.coBuName
-              ? {
-                  code: formData.coBuId,
-                  name: formData.coBuName,
-                }
-              : null,
+          initialValue: formData.coBuId,
         }}
         {...FieldListLayout}
       >
-        <SelectWithCols
-          labelKey="name"
-          placeholder={`请选择${coBuId.displayName}`}
-          disabled={coBuId.fieldMode !== 'EDITABLE'}
-          columns={subjCol}
-          dataSource={coBuDataSource}
-          selectProps={{
-            showSearch: true,
-            onSearch: value => {
-              dispatch({
-                type: `${DOMAIN}/updateState`,
-                payload: {
-                  coBuDataSource: buData.filter(
-                    d =>
-                      d.code.indexOf(value) > -1 ||
-                      d.name.toLowerCase().indexOf(value.toLowerCase()) > -1
-                  ),
-                },
-              });
-            },
-            allowClear: true,
-            style: { width: '100%' },
-          }}
-        />
+        <Selection.ColumnsForBu disabled={sourceDisabled} />
       </Field>,
 
       <Field
@@ -1158,7 +1151,7 @@ class EditMain extends PureComponent {
           labelKey="name"
           valueKey="code"
           placeholder={`请选择${coResId.displayName}`}
-          disabled={coResId.fieldMode !== 'EDITABLE'}
+          disabled={coResId.fieldMode !== 'EDITABLE' || sourceDisabled}
           columns={subjCol}
           dataSource={coResDataSource}
           selectProps={{
@@ -1184,40 +1177,11 @@ class EditMain extends PureComponent {
       <Field
         key="codeliBuId"
         decorator={{
-          initialValue:
-            formData.codeliBuId && formData.codeliBuName
-              ? {
-                  code: formData.codeliBuId,
-                  name: formData.codeliBuName,
-                }
-              : null,
+          initialValue: formData.codeliBuId,
         }}
         {...FieldListLayout}
       >
-        <SelectWithCols
-          labelKey="name"
-          placeholder={`请选择${codeliBuId.displayName}`}
-          disabled={codeliBuId.fieldMode !== 'EDITABLE'}
-          columns={subjCol}
-          dataSource={codeliBuDataSource}
-          selectProps={{
-            showSearch: true,
-            onSearch: value => {
-              dispatch({
-                type: `${DOMAIN}/updateState`,
-                payload: {
-                  codeliBuDataSource: buData.filter(
-                    d =>
-                      d.code.indexOf(value) > -1 ||
-                      d.name.toLowerCase().indexOf(value.toLowerCase()) > -1
-                  ),
-                },
-              });
-            },
-            allowClear: true,
-            style: { width: '100%' },
-          }}
-        />
+        <Selection.ColumnsForBu disabled={sourceDisabled} />
       </Field>,
 
       <Field
@@ -1237,7 +1201,7 @@ class EditMain extends PureComponent {
           labelKey="name"
           valueKey="code"
           placeholder={`请选择${codeliResId.displayName}`}
-          disabled={codeliResId.fieldMode !== 'EDITABLE'}
+          disabled={codeliResId.fieldMode !== 'EDITABLE' || sourceDisabled}
           columns={subjCol}
           dataSource={codeliResDataSource}
           selectProps={{
@@ -1270,7 +1234,7 @@ class EditMain extends PureComponent {
         <UdcSelect
           code="TSK.PLAT_TYPE"
           placeholder={`请选择${platType.displayName}`}
-          disabled={platType.fieldMode !== 'EDITABLE'}
+          disabled={platType.fieldMode !== 'EDITABLE' || sourceDisabled}
         />
       </Field>,
 
@@ -1289,7 +1253,7 @@ class EditMain extends PureComponent {
       >
         <UdcSelect
           code="TSK.MAIN_TYPE"
-          disabled={readOnly}
+          disabled={readOnly || sourceDisabled}
           placeholder={`请输入${mainType.displayName}`}
         />
       </Field>,
@@ -1311,7 +1275,7 @@ class EditMain extends PureComponent {
           labelKey="name"
           valueKey="code"
           placeholder={`请选择${pmoResId.displayName}`}
-          disabled={pmoResId.fieldMode !== 'EDITABLE'}
+          disabled={pmoResId.fieldMode !== 'EDITABLE' || sourceDisabled}
           columns={subjCol}
           dataSource={coResDataSource}
           selectProps={{
@@ -1376,7 +1340,7 @@ class EditMain extends PureComponent {
           code="TSK.SOURCE_TYPE"
           onChange={this.handleSourceType}
           placeholder={`请选择${pageFieldJsonMain.sourceType.displayName}`}
-          disabled={pageFieldJsonMain.sourceType.fieldMode !== 'EDITABLE'}
+          disabled={pageFieldJsonMain.sourceType.fieldMode !== 'EDITABLE' || sourceDisabled}
         />
       </Field>,
 
@@ -1407,7 +1371,7 @@ class EditMain extends PureComponent {
         <SelectWithCols
           labelKey="name"
           placeholder={`请选择${internalBuId.displayName}`}
-          disabled={internalBuId.fieldMode !== 'EDITABLE'}
+          disabled={internalBuId.fieldMode !== 'EDITABLE' || sourceDisabled}
           columns={subjCol}
           dataSource={internalBuDataSource}
           selectProps={{
@@ -1454,7 +1418,7 @@ class EditMain extends PureComponent {
           labelKey="name"
           valueKey="code"
           placeholder={`请选择${internalResId.displayName}`}
-          disabled={internalResId.fieldMode !== 'EDITABLE'}
+          disabled={internalResId.fieldMode !== 'EDITABLE' || sourceDisabled}
           columns={subjCol}
           dataSource={internalResDataSource}
           selectProps={{
@@ -1493,7 +1457,7 @@ class EditMain extends PureComponent {
       >
         <Input
           placeholder={`请输入${profitDesc.displayName}`}
-          disabled={profitDesc.fieldMode !== 'EDITABLE'}
+          disabled={profitDesc.fieldMode !== 'EDITABLE' || sourceDisabled}
         />
       </Field>,
 
@@ -1513,7 +1477,7 @@ class EditMain extends PureComponent {
       >
         <Input
           placeholder={`请输入${externalIden.displayName}`}
-          disabled={externalIden.fieldMode !== 'EDITABLE'}
+          disabled={externalIden.fieldMode !== 'EDITABLE' || sourceDisabled}
         />
       </Field>,
 
@@ -1533,7 +1497,7 @@ class EditMain extends PureComponent {
       >
         <Input
           placeholder={`请许${externalName.displayName}`}
-          disabled={externalName.fieldMode !== 'EDITABLE'}
+          disabled={externalName.fieldMode !== 'EDITABLE' || sourceDisabled}
         />
       </Field>,
 
@@ -1553,7 +1517,7 @@ class EditMain extends PureComponent {
       >
         <Input
           placeholder={`请输入${externalPhone.displayName}`}
-          disabled={externalPhone.fieldMode !== 'EDITABLE'}
+          disabled={externalPhone.fieldMode !== 'EDITABLE' || sourceDisabled}
         />
       </Field>,
     ]

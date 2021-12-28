@@ -2,11 +2,14 @@ import React, { PureComponent } from 'react';
 import Link from 'umi/link';
 import { connect } from 'dva';
 import moment from 'moment';
-import { Input, Tooltip } from 'antd';
+import { Card, Col, Input, Row, Tooltip } from 'antd';
 import PageHeaderWrapper from '@/components/layout/PageHeaderWrapper';
 import DataTable from '@/components/common/DataTable';
 import { Selection, DatePicker } from '@/pages/gen/field';
 import { selectAbOus } from '@/services/gen/list';
+import createMessage from '@/components/core/AlertMessage';
+import { createConfirm } from '@/components/core/Confirm';
+import api from '@/api';
 
 const DOMAIN = 'payRecordListFinanceManager';
 
@@ -19,6 +22,10 @@ const PAYMENT_APPLY_TYPE = {
   OTHERPAYMENT: 'paymentApplyList',
 };
 
+const {
+  paymentSlipExcelExport, // 根据流水号 excel导出付款记录
+} = api.sale.purchaseContract;
+
 const particularColumns = [
   { dataIndex: 'code', title: '编号', span: 8 },
   { dataIndex: 'name', title: '名称', span: 16 },
@@ -30,14 +37,39 @@ const particularColumns = [
   global,
 }))
 class PayRecordListCashier extends PureComponent {
+  constructor(props) {
+    super(props);
+    this.state = {
+      batchRemark: '',
+      selectedKey: undefined,
+    };
+  }
   componentDidMount() {
-    this.fetchData({
+    const param = {
       offset: 0,
-      limit: 10,
+      limit: 50,
       sortBy: 'id',
       sortDirection: 'DESC',
-    });
+    };
+
+    //右侧 业务数据
+    this.fetchData(param);
   }
+
+  //流水号统计列表
+  fetchDataPaySerialsNum = params => {
+    const {
+      dispatch,
+      //payRecordListFinanceManager: { searchForm },
+    } = this.props;
+    dispatch({
+      type: `${DOMAIN}/selectPaySerialsNum`,
+      payload: {
+        ...params,
+        node: 2,
+      },
+    });
+  };
 
   fetchData = params => {
     const { dispatch } = this.props;
@@ -48,6 +80,8 @@ class PayRecordListCashier extends PureComponent {
         node: 2,
       },
     });
+    //左侧 流水号统计列表
+    this.fetchDataPaySerialsNum(params);
   };
 
   // 行编辑触发事件
@@ -64,19 +98,164 @@ class PayRecordListCashier extends PureComponent {
     };
     dispatch({
       type: `${DOMAIN}/updateState`,
-      payload: { list: newDataSource },
+      payload: {
+        list: newDataSource,
+      },
     });
   };
 
+  // 确认提交
+  confirmToSubmit = (selectedRows, batchRemark, action) => {
+    const { dispatch } = this.props;
+    const temp = selectedRows.filter(v => v.financeRemark);
+    if (temp.length) {
+      // 有值的 是否全部覆盖
+      createConfirm({
+        content: `此操作会覆盖已填写财务经理备注，确定吗？`,
+        onOk: () => {
+          selectedRows.forEach(v => {
+            const ttIndex = selectedRows.findIndex(v2 => v.id === v2.id);
+            selectedRows[ttIndex].financeRemark = batchRemark;
+            this.onCellChanged(ttIndex, batchRemark, 'financeRemark');
+          });
+          dispatch({
+            type: `${DOMAIN}/submitApply`,
+            payload: {
+              entities: selectedRows,
+              action: action,
+              sourceOfRequest: 'managerList',
+            },
+          });
+        },
+      });
+    } else {
+      selectedRows.filter(v => !v.financeRemark).forEach(v => {
+        const ttIndex = selectedRows.findIndex(v2 => v.id === v2.id);
+        selectedRows[ttIndex].financeRemark = batchRemark;
+        this.onCellChanged(ttIndex, batchRemark, 'financeRemark');
+      });
+      dispatch({
+        type: `${DOMAIN}/submitApply`,
+        payload: {
+          entities: selectedRows,
+          action: action,
+          sourceOfRequest: 'managerList',
+        },
+      });
+    }
+  };
+  onRowChange = (selectedRowKeys, selectedRows) => {
+    const paySerialsNum = selectedRowKeys[0];
+    this.setState({ selectedKey: paySerialsNum }, () => {
+      this.leftTableClickSearch();
+    });
+  };
+  handleOnRow = record => {
+    const { paySerialsNum } = record;
+    return {
+      // 点击行
+      onClick: event => {
+        this.onRowChange([paySerialsNum]);
+      },
+      onDoubleClick: event => {
+        this.onRowChange([paySerialsNum]);
+      },
+    };
+  };
+  leftTableClickSearch = () => {
+    const { selectedKey } = this.state;
+    const {
+      dispatch,
+      payRecordListFinanceManager: { searchForm },
+    } = this.props;
+
+    dispatch({
+      type: `${DOMAIN}/updateState`,
+      payload: { searchForm: { paySerialsNum: selectedKey } },
+    });
+    dispatch({
+      type: `${DOMAIN}/query`,
+      payload: {
+        ...searchForm,
+        paySerialsNum: selectedKey,
+        node: 2,
+        reqType: 'paySerialsNumRowClick',
+      },
+    });
+  };
   render() {
     const {
       loading,
       dispatch,
-      payRecordListFinanceManager: { list = [], total = 0, searchForm },
+      payRecordListFinanceManager: { list = [], total = 0, searchForm, paySerialsNumTableList },
       global: { userList },
     } = this.props;
 
+    const { batchRemark, selectedKey } = this.state;
+
     const tableLoading = loading.effects[`${DOMAIN}/query`];
+
+    const tablePropsPaySerialsNum = {
+      rowKey: 'paySerialsNum',
+      showSearch: false,
+      showColumn: false,
+      showExport: false,
+      pagination: false,
+      dataSource: paySerialsNumTableList,
+      enableSelection: true,
+      rowSelection: {
+        type: 'radio',
+        selectedRowKeys: [selectedKey],
+        onChange: this.onRowChange,
+      },
+      onRow: this.handleOnRow,
+      // onRowChecked: (selectedRowKeys, selectedRows) => {
+      //   if (selectedRows.length <= 0) {
+      //     return;
+      //   }
+      //   const { paySerialsNum } = selectedRows[0];
+      //   dispatch({
+      //     type: `${DOMAIN}/updateState`,
+      //     payload: { searchForm: { paySerialsNum: paySerialsNum } },
+      //   });
+      //   dispatch({
+      //     type: `${DOMAIN}/query`,
+      //     payload: {
+      //       ...searchForm,
+      //       paySerialsNum: paySerialsNum,
+      //       node: 2,
+      //       reqType: 'paySerialsNumRowClick',
+      //     },
+      //   });
+      //   // setTimeout(() => {
+      //   //   this.selectAll()
+      //   // }, 3000);
+      // },
+      columns: [
+        {
+          title: '付款流水号',
+          dataIndex: 'paySerialsNum',
+          align: 'center',
+          width: 150,
+        },
+        {
+          title: '合计金额',
+          dataIndex: 'paymentAmtSum',
+          align: 'center',
+          width: 150,
+          render: (val, row, index) => (
+            <Link
+              className="tw-link"
+              to={`/sale/purchaseContract/${
+                PAYMENT_APPLY_TYPE[row.paymentApplicationType]
+              }/edit?mode=view&id=${row.paymentApplyId}`}
+            >
+              {val}
+            </Link>
+          ),
+        },
+      ],
+    };
 
     const tableProps = {
       rowKey: 'id',
@@ -90,15 +269,28 @@ class PayRecordListCashier extends PureComponent {
       total,
       dataSource: list,
       enableSelection: true,
+      limit: 50,
+      rowSelection: {
+        selectedRowKeys: searchForm.selectedRowKeys,
+      },
       onChange: filters => this.fetchData(filters),
       onSearchBarChange: (changedValues, allValues) => {
+        this.setState({ selectedKey: undefined });
         dispatch({
           type: `${DOMAIN}/updateSearchForm`,
           payload: allValues,
         });
       },
-      searchForm,
+      // searchForm,
       searchBarForm: [
+        {
+          title: '流水号',
+          dataIndex: 'paySerialsNum',
+          options: {
+            initialValue: searchForm.paySerialsNum || undefined,
+          },
+          tag: <Input placeholder="请输入流水号" />,
+        },
         {
           title: '付款申请单编号',
           dataIndex: 'paymentNo',
@@ -184,7 +376,13 @@ class PayRecordListCashier extends PureComponent {
           options: {
             initialValue: searchForm.state || undefined,
           },
-          tag: <Selection.UDC code="TSK:PAYMENT_SLIP_STATUS" placeholder="请选择付款记录单状态" />,
+          tag: (
+            <Selection.UDC
+              code="TSK:PAYMENT_SLIP_STATUS"
+              filters={[{ sphd1: '财务经理' }]}
+              placeholder="请选择付款记录单状态"
+            />
+          ),
         },
         {
           title: '付款日期',
@@ -196,6 +394,12 @@ class PayRecordListCashier extends PureComponent {
         },
       ],
       columns: [
+        {
+          title: '流水号',
+          dataIndex: 'paySerialsNum',
+          align: 'center',
+          width: 150,
+        },
         {
           title: '付款申请单',
           dataIndex: 'paymentNo',
@@ -399,13 +603,16 @@ class PayRecordListCashier extends PureComponent {
           disabled: selectedRowKeys =>
             !selectedRowKeys.length || loading.effects[`${DOMAIN}/query`],
           cb: (selectedRowKeys, selectedRows, queryParams) => {
-            dispatch({
-              type: `${DOMAIN}/submitApply`,
-              payload: {
-                entities: selectedRows,
-                action: 2,
-              },
-            });
+            if (batchRemark) {
+              this.confirmToSubmit(selectedRows, batchRemark, 2);
+            } else {
+              createConfirm({
+                content: `未填写批注，继续吗？`,
+                onOk: () => {
+                  this.confirmToSubmit(selectedRows, batchRemark, 2);
+                },
+              });
+            }
           },
         },
         {
@@ -418,22 +625,79 @@ class PayRecordListCashier extends PureComponent {
           disabled: selectedRowKeys =>
             !selectedRowKeys.length || loading.effects[`${DOMAIN}/query`],
           cb: (selectedRowKeys, selectedRows, queryParams) => {
-            dispatch({
-              type: `${DOMAIN}/submitApply`,
-              payload: {
-                entities: selectedRows,
-                action: 3,
-              },
-            });
+            if (batchRemark) {
+              this.confirmToSubmit(selectedRows, batchRemark, 3);
+            } else {
+              createConfirm({
+                content: `未填写批注，继续吗？`,
+                onOk: () => {
+                  this.confirmToSubmit(selectedRows, batchRemark, 3);
+                },
+              });
+            }
+          },
+        },
+        {
+          key: 'exportExcel',
+          icon: 'monitor',
+          className: 'tw-btn-primary',
+          title: '打印流水号列表',
+          loading: false,
+          hidden: false,
+          minSelections: 0,
+          disabled: selectedRowKeys =>
+            !selectedRowKeys.length || loading.effects[`${DOMAIN}/query`],
+          cb: (selectedRowKeys, selectedRows, queryParams) => {
+            const rowPaySerialsNum = selectedRows
+              .filter(v => {
+                return v.paySerialsNum;
+              })
+              .map(data => {
+                const { paySerialsNum } = data;
+                return paySerialsNum;
+              });
+            if (rowPaySerialsNum.length) {
+              createConfirm({
+                content: `即将下载Excel文件，确定吗？`,
+                onOk: () => {
+                  window.open(
+                    `${SERVER_URL}${paymentSlipExcelExport}?paySerialsNums=${rowPaySerialsNum}`
+                  );
+                },
+              });
+            } else {
+              createMessage({
+                type: 'warn',
+                description: `您选择的数据不包含流水号!`,
+              });
+            }
           },
         },
       ],
     };
 
     return (
-      <PageHeaderWrapper title="付款记录批准列表 ( 财务经理 )">
+      /*<PageHeaderWrapper title="付款记录批准列表 ( 财务经理 )">
         <DataTable {...tableProps} />
-      </PageHeaderWrapper>
+      </PageHeaderWrapper>*/
+
+      <Row title="付款记录批准列表 ( 财务经理 PRO)">
+        <Col span={5}>
+          <DataTable {...tablePropsPaySerialsNum} />
+          批注：
+          <Input
+            value={batchRemark}
+            placeholder="请输入财务经理备注"
+            className="x-fill-100"
+            onChange={e => {
+              this.setState({ batchRemark: e.target.value });
+            }}
+          />
+        </Col>
+        <Col span={19}>
+          <DataTable {...tableProps} />
+        </Col>
+      </Row>
     );
   }
 }

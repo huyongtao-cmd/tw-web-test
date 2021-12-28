@@ -7,6 +7,7 @@ import { isEmpty, isNil } from 'ramda';
 import PageHeaderWrapper from '@/components/layout/PageHeaderWrapper';
 import Title from '@/components/layout/Title';
 import { flowToRouter } from '@/utils/flowToRouter';
+import { getType } from '@/services/user/equivalent/equivalent';
 import { readNotify } from '@/services/user/flow/flow';
 import { formatDT } from '@/utils/tempUtils/DateTime';
 import styles from './styles.less';
@@ -34,7 +35,19 @@ class ProcessPanel extends React.Component {
   }
 
   requestRealType = async (data, mode) => {
-    router.push('/');
+    const { id, taskId, docId } = data;
+    const { status, response } = await getType(docId);
+    if (status === 200 && response.ok) {
+      const defKey =
+        // eslint-disable-next-line
+        response.datum === 'TASK_BY_PACKAGE'
+          ? 'ACC_A22.SUM'
+          : response.datum === 'TASK_BY_MANDAY'
+            ? 'ACC_A22.SINGLE'
+            : 'ACC_A22.COM';
+      const route = flowToRouter(defKey, { id, taskId, docId, mode });
+      router.push(route);
+    }
   };
 
   jumpLink = (data, todo = false) => {

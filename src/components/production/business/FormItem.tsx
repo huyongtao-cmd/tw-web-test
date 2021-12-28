@@ -7,7 +7,7 @@ import { omit, isNil } from 'ramda';
 import Description from '@/components/production/basic/Description';
 import Link from '@/components/production/basic/Link';
 import BaseFileManagerEnhance from '@/components/production/basic/BaseFileManagerEnhance';
-import FileUpload from '@/components/common/FileUpload'
+
 import './style/form-item.less';
 import BaseSelect from '@/components/production/basic/BaseSelect';
 
@@ -45,14 +45,13 @@ interface Props {
     | 'InternalOuSimpleSelect' // 内部公司简单下拉
     | 'BaseUdcSelect' // 老版本udc下拉
     | 'BaseFileManagerEnhance' // 附件
-    | 'FileUpload' // 上传附件
     | 'BaseInputHidden' // 隐藏字段
     | 'BaseDateRangePicker' // 日期范围
     | 'BaseDatePicker' // 日期选择
     | 'Group' // 字段组
     | 'Custom'; // 自定义字段 // 字段类型
   fieldMode?: 'EDIT' | 'DESCRIPTION' | 'DISABLED' | 'LINK'; // 字段模式
-  initialValue?: any; // 初始值  FileUpload附件上传的初始值为附件列表
+  initialValue?: any; // 初始值
   disabled?: boolean; // 是否可编辑
   question?: string; // 帮助文字
   required?: boolean; // 是否必填
@@ -102,9 +101,6 @@ class FormItem extends React.Component<Props, any> {
       }
       if (fieldType === 'BaseFileManagerEnhance') {
         return <BaseFileManagerEnhance {...itemProps} {...wrappedProps} />;
-      }
-      if (fieldType === 'FileUpload') {
-        return <FileUpload {...itemProps} fileList={rest.fileList} {...wrappedProps} />;
       }
       if (fieldType === 'Custom') {
         return React.cloneElement(children as any, { ...itemProps, ...wrappedProps });
@@ -162,9 +158,6 @@ class FormItem extends React.Component<Props, any> {
     if (fieldType) {
       if (fieldType === 'BaseFileManagerEnhance') {
         return <BaseFileManagerEnhance {...itemProps} preview />;
-      }
-      if (fieldType === 'FileUpload') {
-        return <FileUpload {...itemProps} fileList={rest.fileList} preview />;
       }
       // 获取fieldKey
       let tempFieldKey: any = '';

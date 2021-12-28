@@ -119,9 +119,9 @@ class ViewDetail extends PureComponent {
             },
             {
               title: '可用天数',
-              dataIndex: 'canUsedDays',
+              dataIndex: 'availableDays',
               align: 'center',
-              render: (value, row, index) => sub(row.totalDays, row.usedDays).toFixed(1),
+              // render: (value, row, index) => sub(row.totalDays, row.usedDays).toFixed(1),
             },
             {
               title: '备注',

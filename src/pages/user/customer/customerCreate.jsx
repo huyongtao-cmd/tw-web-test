@@ -14,6 +14,8 @@ import { mountToTab, closeThenGoto } from '@/layouts/routerControl';
 import PageHeaderWrapper from '@/components/layout/PageHeaderWrapper';
 import FieldList from '@/components/layout/FieldList';
 import { fromQs } from '@/utils/stringUtils';
+import TreeSearch from '@/components/common/TreeSearch';
+import Loading from '@/components/core/DataLoading';
 
 const RadioGroup = Radio.Group;
 const RadioButton = Radio.Button;
@@ -29,6 +31,7 @@ const particularColumns = [
 ];
 
 @connect(({ loading, dispatch, customerCreate }) => ({
+  treeLoading: loading.effects[`${DOMAIN}/getTagTree`],
   loading,
   dispatch,
   customerCreate,
@@ -71,6 +74,12 @@ class CustomerCreate extends PureComponent {
     dispatch({ type: `${DOMAIN}/res` }); // 拉取资源下拉表
     dispatch({
       type: `${DOMAIN}/clearForm`,
+    });
+
+    // 客户标签数据
+    dispatch({
+      type: `${DOMAIN}/getTagTree`,
+      payload: { key: 'CUSTOMER_TAG' },
     });
   }
 
@@ -194,12 +203,31 @@ class CustomerCreate extends PureComponent {
     });
   };
 
+  onCheck = (checkedKeys, info, parm3, param4) => {
+    const { dispatch } = this.props;
+    const allCheckedKeys = checkedKeys.concat(info.halfCheckedKeys);
+    this.updateModelState({ checkedKeys, allCheckedKeys });
+    dispatch({
+      type: `${DOMAIN}/updateForm`,
+      payload: { tagIds: allCheckedKeys.length > 0 ? allCheckedKeys.join(',') : '' },
+    });
+  };
+
+  updateModelState = params => {
+    const { dispatch } = this.props;
+    dispatch({
+      type: `${DOMAIN}/updateState`,
+      payload: params,
+    });
+  };
+
   render() {
     const {
       form,
-      customerCreate: { formData, cityList, resDataSource },
+      customerCreate: { formData, cityList, resDataSource, tagTree, checkedKeys },
       loading,
       dispatch,
+      treeLoading,
     } = this.props;
     const { getFieldDecorator } = form;
 
@@ -295,6 +323,31 @@ class CustomerCreate extends PureComponent {
               wrapperCol={{ span: 19, xxl: 20 }}
             >
               <Input.TextArea rows={3} placeholder="请输入总部地址" />
+            </Field>
+            <Field
+              name="tagIds"
+              label="客户标签"
+              fieldCol={1}
+              labelCol={{ span: 4, xxl: 3 }}
+              wrapperCol={{ span: 19, xxl: 20 }}
+              decorator={{
+                initialValue: formData.tagIds || '',
+              }}
+            >
+              {!treeLoading ? (
+                <TreeSearch
+                  checkable
+                  // checkStrictly
+                  showSearch={false}
+                  placeholder="请输入关键字"
+                  treeData={tagTree}
+                  defaultExpandedKeys={tagTree.map(item => `${item.id}`)}
+                  checkedKeys={checkedKeys}
+                  onCheck={this.onCheck}
+                />
+              ) : (
+                <Loading />
+              )}
             </Field>
             <Field
               name="custLabel1"

@@ -5,10 +5,9 @@ import {
   customerFuzzyListRq,
   signInvalidRq,
   customerUploadRq,
+  customerUploadRqTagFun,
 } from '@/services/user/management/customer';
-import router from 'umi/router';
 import createMessage from '@/components/core/AlertMessage';
-import { closeThenGoto } from '@/layouts/routerControl';
 import { selectUserMultiCol } from '@/services/user/Contract/sales';
 import { queryCascaderUdc } from '@/services/gen/app';
 import { businessPageDetailByNo } from '@/services/sys/system/pageConfig';
@@ -28,6 +27,9 @@ export default {
     fuzzyList: [],
     fuzzyTotal: 0,
     pageConfig: {},
+    checkedKeys: [], //选中的标签id
+    tagTree: [], // 标签树
+    flatTags: {},
   },
 
   effects: {
@@ -169,6 +171,21 @@ export default {
           return response;
         }
         createMessage({ type: 'success', description: '上传成功' });
+        return response;
+      }
+      return {};
+    },
+    // 客户标签上传
+    *uploadTag({ payload }, { call, put, select }) {
+      const { status, response } = yield call(customerUploadRqTagFun, payload);
+      if (status === 100) {
+        // 主动取消请求
+        return {};
+      }
+      if (status === 200) {
+        if (!response.ok) {
+          return response;
+        }
         return response;
       }
       return {};

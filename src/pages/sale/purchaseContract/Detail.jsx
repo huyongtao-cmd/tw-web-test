@@ -44,9 +44,10 @@ const contentList = {
 
 const DOMAIN = 'salePurchaseDetail';
 
-@connect(({ loading, salePurchaseDetail }) => ({
+@connect(({ loading, salePurchaseDetail, user }) => ({
   loading,
   salePurchaseDetail,
+  user,
 }))
 // @mountToTab()
 class Detail extends Component {
@@ -58,8 +59,9 @@ class Detail extends Component {
   }
 
   componentDidMount() {
-    const { dispatch } = this.props;
+    const { dispatch, user } = this.props;
     const { id, pageMode, taskId } = fromQs();
+    const currentUserId = user.user.extInfo.userId;
     dispatch({
       type: `${DOMAIN}/clearDetailData`,
     });
@@ -73,7 +75,19 @@ class Detail extends Component {
         dispatch({
           type: `${DOMAIN}/queryDetail`,
           payload: id,
-        });
+        }); /*.then(res => {
+          const { apprStatus, createUserId } = res;
+          //驳回、撤销再次编辑
+          if (
+            taskId &&
+            (apprStatus === 'REJECTED' || apprStatus === 'WITHDRAW') &&
+            currentUserId === createUserId
+          ) {
+            closeThenGoto(
+              `/sale/purchaseContract/Edit?id=${id}&taskId=${taskId}&remark=再次提交&mode=edit&from=task`
+            );
+          }
+        });*/
       } else if (pageMode === 'over') {
         dispatch({
           type: `${DOMAIN}/queryOverDetailByOverId`,
@@ -90,6 +104,7 @@ class Detail extends Component {
     });
   };
 
+  // 终止提交
   handleRetryCloseSubmit = (id, taskId, remark) => {
     const {
       dispatch,
@@ -162,6 +177,7 @@ class Detail extends Component {
             onBtnClick={({ operation, bpmForm }) => {
               const { remark, branch } = bpmForm;
               const { key, branches } = operation;
+
               if (
                 taskKey === 'TSK_S06_01_PUR_CON_SUBMIT_i' ||
                 taskKey === 'TSK_S07_01_PUR_CON_SUBMIT_i'
@@ -185,6 +201,25 @@ class Detail extends Component {
                 taskKey === 'TSK_S11_01_PUR_CON_SUBMIT_i'
               ) {
                 this.handleRetryCloseSubmit(id, taskId, remark);
+                return Promise.resolve(false);
+              }
+              // 当节点在创建人的时候，驳回or撤回 点击确认的时候 调整至编辑页
+              if (
+                taskKey === 'TSK_S12_01_SUBMIT_i' ||
+                taskKey === 'TSK_S13_01_SUBMIT_i' ||
+                taskKey === 'TSK_S14_01_SUBMIT_i' ||
+                taskKey === 'TSK_S15_01_SUBMIT_i' ||
+                taskKey === 'TSK_S16_01_SUBMIT_i' ||
+                taskKey === 'TSK_S17_01_SUBMIT_i' ||
+                taskKey === 'TSK_S18_01_SUBMIT_i' ||
+                taskKey === 'TSK_S19_01_SUBMIT_i' ||
+                taskKey === 'TSK_S20_01_SUBMIT_i' ||
+                taskKey === 'TSK_S21_01_SUBMIT_i' ||
+                taskKey === 'TSK_S22_01_SUBMIT_i'
+              ) {
+                closeThenGoto(
+                  `/sale/purchaseContract/Edit?id=${id}&taskId=${taskId}&result=${key}&remark=${remark}&mode=edit&from=task`
+                );
                 return Promise.resolve(false);
               }
               return Promise.resolve(true);

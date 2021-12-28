@@ -12,6 +12,7 @@ import {
   resPortrayalTaskRq,
   findResCapaList,
 } from '@/services/plat/res/resprofile';
+import { getAvatar } from '@/services/gen/app';
 import { queryPersonVideo } from '@/services/user/center/selfEvaluation';
 import createMessage from '@/components/core/AlertMessage';
 
@@ -63,10 +64,21 @@ export default {
       const { status, response } = yield call(resPortrayalRq, payload);
       if (status === 200) {
         if (response && response.ok) {
-          yield put({
-            type: 'updateState',
-            payload: { userInfo: response.datum },
-          });
+          const userInfoC = response.datum;
+          const { resId } = userInfoC;
+          // yield put({
+          //   type: 'updateState',
+          //   payload: { userInfo: response.datum },
+          // });
+          const res = yield call(getAvatar, resId);
+          if (res !== false) {
+            userInfoC.avatar = res;
+            yield put({
+              type: 'updateState',
+              payload: { userInfo: userInfoC },
+            });
+            // return userMsg.user;
+          }
         }
       } else {
         createMessage({ type: 'error', description: response.reason || '获取详细信息失败' });

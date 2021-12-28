@@ -1,7 +1,8 @@
 import { queryTicketList, saveTicketList } from '@/services/plat/admin/ticket';
-import { findTravelById } from '@/services/user/center/travel';
+import { findTravelById, findTravelDelsById } from '@/services/user/center/travel';
 import createMessage from '@/components/core/AlertMessage';
 import { fromQs } from '@/utils/stringUtils';
+import { genFakeId } from '@/utils/mathUtils';
 
 export default {
   namespace: 'userTravelTicket',
@@ -15,18 +16,34 @@ export default {
   },
 
   effects: {
+    // 查询出差明细列表
+    *queryTravelDels({ payload }, { call, put }) {
+      const { response } = yield call(findTravelDelsById, payload);
+      // yield put({
+      //   type: 'updateState',
+      //   payload: {
+      //     dataList: Array.isArray(response.datum)
+      //       ? response.datum.map(v => ({ ...v, id: genFakeId(-1) }))
+      //       : [],
+      //   },
+      // });
+      return Array.isArray(response.datum)
+        ? response.datum.map(v => ({ ...v, id: genFakeId(-1) }))
+        : [];
+    },
     *query({ payload }, { call, put }) {
       const {
         response: { datum, total },
       } = yield call(queryTicketList, payload);
 
-      yield put({
-        type: 'updateState',
-        payload: {
-          dataList: Array.isArray(datum) ? datum : [],
-          total,
-        },
-      });
+      // yield put({
+      //   type: 'updateState',
+      //   payload: {
+      //     dataList: Array.isArray(datum) ? datum : [],
+      //     total,
+      //   },
+      // });
+      return datum;
     },
     *save({ payload }, { call, put, select }) {
       const { dataList, delList } = yield select(({ userTravelTicket }) => userTravelTicket);

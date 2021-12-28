@@ -24,14 +24,14 @@ const limitDecimals = value => {
   return res;
 };
 
-export function purchaseTableProps(DOMAIN, dispatch, salePurchaseAgreementsEdit, form) {
+export function purchaseTableProps(DOMAIN, dispatch, salePurchaseAgreementsEdit, form, isEdit) {
   const {
     agreementDetailsEntities,
     agreementDetailsDeletedKeys,
     productClassrArr,
     pageConfig,
   } = salePurchaseAgreementsEdit;
-
+  console.log(2132131, salePurchaseAgreementsEdit);
   const currentBlockConfig = pageConfig.pageBlockViews.find(
     item => item.blockKey === 'PUR_AGREEMENT_DETAILS'
   );
@@ -374,7 +374,7 @@ export function purchaseTableProps(DOMAIN, dispatch, salePurchaseAgreementsEdit,
           transfer={{ key: 'id', code: 'id', name: 'valDesc' }}
           placeholder={`请选择${pageFieldJson.relatedProductId.displayName}`}
           onChange={onCellChanged(index, 'relatedProductId')}
-          disabled={pageFieldJson.relatedProductId.fieldMode !== 'EDITABLE'}
+          disabled={pageFieldJson.relatedProductId.fieldMode !== 'EDITABLE' || isEdit}
         />
       ),
     },
@@ -400,7 +400,7 @@ export function purchaseTableProps(DOMAIN, dispatch, salePurchaseAgreementsEdit,
           defaultValue={value}
           placeholder={`请输入${pageFieldJson.note.displayName}`}
           onBlur={onCellChanged(index, 'note')}
-          disabled={pageFieldJson.note.fieldMode !== 'EDITABLE'}
+          disabled={pageFieldJson.note.fieldMode !== 'EDITABLE' || isEdit}
         />
       ),
     },
@@ -424,7 +424,7 @@ export function purchaseTableProps(DOMAIN, dispatch, salePurchaseAgreementsEdit,
         <Input
           className="x-fill-100"
           value={value}
-          disabled={pageFieldJson.classId.fieldMode !== 'EDITABLE'}
+          disabled={pageFieldJson.classId.fieldMode !== 'EDITABLE' || isEdit}
         />
       ),
     },
@@ -448,7 +448,7 @@ export function purchaseTableProps(DOMAIN, dispatch, salePurchaseAgreementsEdit,
         <Input
           className="x-fill-100"
           value={value}
-          disabled={pageFieldJson.subClassId.fieldMode !== 'EDITABLE'}
+          disabled={pageFieldJson.subClassId.fieldMode !== 'EDITABLE' || isEdit}
         />
       ),
     },
@@ -485,7 +485,7 @@ export function purchaseTableProps(DOMAIN, dispatch, salePurchaseAgreementsEdit,
           min={0}
           onChange={onCellChanged(index, 'quantity')}
           placeholder={`请输入${pageFieldJson.quantity.displayName}`}
-          disabled={pageFieldJson.quantity.fieldMode !== 'EDITABLE'}
+          disabled={pageFieldJson.quantity.fieldMode !== 'EDITABLE' || isEdit}
           formatter={limitDecimals}
           parser={limitDecimals}
         />
@@ -525,7 +525,7 @@ export function purchaseTableProps(DOMAIN, dispatch, salePurchaseAgreementsEdit,
           min={0}
           onChange={onCellChanged(index, 'taxPrice')}
           placeholder={`请输入${pageFieldJson.taxPrice.displayName}`}
-          disabled={pageFieldJson.taxPrice.fieldMode !== 'EDITABLE'}
+          disabled={pageFieldJson.taxPrice.fieldMode !== 'EDITABLE' || isEdit}
           formatter={limitDecimals}
           parser={limitDecimals}
         />
@@ -557,7 +557,7 @@ export function purchaseTableProps(DOMAIN, dispatch, salePurchaseAgreementsEdit,
           formatter={val => `${limitDecimals(val)}%`}
           parser={val => limitDecimals(val.replace('%', ''))}
           onChange={onCellChanged(index, 'taxRate')}
-          disabled={pageFieldJson.taxRate.fieldMode !== 'EDITABLE'}
+          disabled={pageFieldJson.taxRate.fieldMode !== 'EDITABLE' || isEdit}
         />
       ),
     },
@@ -581,7 +581,7 @@ export function purchaseTableProps(DOMAIN, dispatch, salePurchaseAgreementsEdit,
         <Input
           className="x-fill-100"
           value={value}
-          disabled={pageFieldJson.taxAmt.fieldMode !== 'EDITABLE'}
+          disabled={pageFieldJson.taxAmt.fieldMode !== 'EDITABLE' || isEdit}
         />
       ),
     },
@@ -605,7 +605,7 @@ export function purchaseTableProps(DOMAIN, dispatch, salePurchaseAgreementsEdit,
         <Input
           className="x-fill-100"
           value={value}
-          disabled={pageFieldJson.taxNotAmt.fieldMode !== 'EDITABLE'}
+          disabled={pageFieldJson.taxNotAmt.fieldMode !== 'EDITABLE' || isEdit}
         />
       ),
     },
@@ -631,7 +631,7 @@ export function purchaseTableProps(DOMAIN, dispatch, salePurchaseAgreementsEdit,
           defaultValue={typeof value === 'string' ? moment(value) : value}
           onChange={onCellChanged(index, 'deliveryDate')}
           placeholder={`请选择${pageFieldJson.deliveryDate.displayName}`}
-          disabled={pageFieldJson.deliveryDate.fieldMode !== 'EDITABLE'}
+          disabled={pageFieldJson.deliveryDate.fieldMode !== 'EDITABLE' || isEdit}
         />
       ),
     },
@@ -648,6 +648,7 @@ export function purchaseTableProps(DOMAIN, dispatch, salePurchaseAgreementsEdit,
     scroll: {
       x: 1700,
     },
+    readOnly: isEdit,
     dataSource: agreementDetailsEntities,
     // rowSelection: {
     //   getCheckboxProps: record => ({

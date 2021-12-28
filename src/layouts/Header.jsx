@@ -21,8 +21,9 @@ import { getUrl } from '@/utils/flowToRouter';
 
 const { Header } = Layout;
 
-@connect(({ user: { user }, global, uiSettings, loading }) => ({
+@connect(({ user: { user, headImgFile }, global, uiSettings, loading }) => ({
   user,
+  headImgFile,
   collapsed: global.collapsed,
   isFetchingNotices: loading.effects['global/fetchNotices'],
   notices: global.notices,
@@ -62,6 +63,10 @@ class HeaderView extends PureComponent {
       if (!isNil(link)) {
         this.setState({ learningLink: link });
       }
+    });
+    dispatch({
+      type: 'user/getAvatarFn',
+      payload: {},
     });
     this.onReportChart();
     document.addEventListener('scroll', this.handScroll, { passive: true });

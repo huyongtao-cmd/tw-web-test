@@ -21,7 +21,7 @@ import {
 import { AccountSelect } from '../../suggestComponent';
 
 export function payRecordTableProps(DOMAIN, dispatch, loading, form, mode, paymentApplyDetail) {
-  const { payRecordList, formData, fieldsConfig, pageConfig } = paymentApplyDetail;
+  const { payRecordList = [], formData, fieldsConfig, pageConfig } = paymentApplyDetail;
   const pageFieldJson = {};
   if (pageConfig) {
     if (pageConfig.pageBlockViews && pageConfig.pageBlockViews.length > 1) {
@@ -39,7 +39,9 @@ export function payRecordTableProps(DOMAIN, dispatch, loading, form, mode, payme
       ? true
       : fieldsConfig.taskKey && fieldsConfig.taskKey.indexOf('ACCOUNTANCY') === -1
         ? true
-        : false;
+        : !isEmpty(payRecordList) && payRecordList[0].id > 0
+          ? true
+          : false;
   const onCellChanged = (rowIndex, rowField) => rowFieldValue => {
     const val = rowFieldValue && rowFieldValue.target ? rowFieldValue.target.value : rowFieldValue;
     if (rowField === 'psubjecteCompany') {
@@ -311,13 +313,13 @@ export function payRecordTableProps(DOMAIN, dispatch, loading, form, mode, payme
     {
       title: pageFieldJson.collectionAccount.displayName,
       dataIndex: 'collectionAccount',
-      key: 'collectionCompany',
+      key: 'collectionAccount',
       className: 'text-center',
       width: 200,
       render: (value, row, index) => {
         return (
           <AccountSelect
-            abNo={row.collectionCompany || '0'}
+            abNo={row.collectionAccount || '0'}
             value={value}
             disabled={readOnly}
             onChange={onCellChanged(index, 'collectionAccount')}

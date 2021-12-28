@@ -301,9 +301,12 @@ class ChannelFee extends PureComponent {
             align: 'center',
             width: 180,
             render: (val, row) => {
-              const href = `/sale/purchaseContract/Detail?id=${
-                row.documentId
-              }&pageMode=purchase&from=CONTRACT`;
+              const href =
+                row.docType === '采购合同'
+                  ? `/sale/purchaseContract/Detail?id=${
+                      row.documentId
+                    }&pageMode=purchase&from=CONTRACT`
+                  : `/plat/expense/normal/view?id=${row.documentId}`;
               return (
                 <Link className="tw-link" to={href}>
                   {val}

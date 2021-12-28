@@ -1,6 +1,6 @@
 import React, { PureComponent } from 'react';
 import { formatMessage } from 'umi/locale';
-import { Button, Card, Table, Tooltip } from 'antd';
+import { Button, Card, Form, InputNumber, Modal, Table, Tooltip } from 'antd';
 import { connect } from 'dva';
 import classnames from 'classnames';
 import DescriptionList from '@/components/layout/DescriptionList';
@@ -25,11 +25,29 @@ import {
   channelFeeCol,
   quoteCol,
 } from './config/index';
+import Base64 from 'crypto-js/enc-base64';
+import Utf8 from 'crypto-js/enc-utf8';
+import FieldList from '@/components/layout/FieldList';
+import { UdcSelect } from '@/pages/gen/field';
+import AsyncSelect from '@/components/common/AsyncSelect';
 
 const { OppoInfo } = component;
 const { Description } = DescriptionList;
+const { Field } = FieldList;
+const FieldListLayout = {
+  labelCol: { span: 8 },
+  wrapperCol: { span: 16 },
+};
 const DOMAIN = 'userOppsDetail';
 const ACTIVE = 'ACTIVE';
+// 易稻壳 创建电子合同
+// 合同申请地址：http://yeedocx.alz.com/Web/ProcessNewContract/ApplicationForm.aspx
+// 参数列表
+// 商机唯一主键ID: BusinessOpportunitiesID
+// 商机名称: BusinessOpportunitiesTitle
+// 合同类别: contractCategory
+// 合同小类: contractSubCategory
+const yeedocxCreateContractApi = `${YEE_DOC_URL}Web/ProcessNewContract/ApplicationForm.aspx`;
 @connect(
   ({
     loading,
@@ -63,10 +81,22 @@ const ACTIVE = 'ACTIVE';
     dispatch,
   })
 )
+@Form.create({
+  onFieldsChange(props, changedFields) {
+    const { name, value } = Object.values(changedFields)[0];
+    props.dispatch({
+      type: `${DOMAIN}/updateForm`,
+      payload: { [name]: value },
+    });
+  },
+})
 @mountToTab()
 class OppoDetailQuery extends PureComponent {
   state = {
     tabKey: 'basic',
+    visible: false,
+    contractCategory: null,
+    contractSubCategory: null,
   };
 
   componentDidMount() {
@@ -268,10 +298,39 @@ class OppoDetailQuery extends PureComponent {
     );
   };
 
+  handleChange = value => {
+    const { dispatch, form } = this.props;
+    if (!value) {
+      return;
+    }
+    this.setState({
+      contractCategory: value,
+    });
+    dispatch({
+      type: `${DOMAIN}/UDC_SmallClass`,
+      payload: value,
+    }).then(() => {
+      // 2级联动选项滞空
+      form.setFieldsValue({
+        contractSubCategory: '',
+        contractSubCategoryDesc: '',
+      });
+    });
+  };
+
+  toggleVisible = () => {
+    const { visible } = this.state;
+    this.setState({
+      visible: !visible,
+      contractCategory: null,
+      contractSubCategory: null,
+    });
+  };
+
   render() {
     const {
       loading,
-      userOppsDetail: { formData, basicPageConfig, categoryPageConfig },
+      userOppsDetail: { formData, basicPageConfig, categoryPageConfig, smallClass },
       userOppsDetailsale: { saleList, saleTotal, salePageConfig },
       userOppsDetailcase: { caseList, caseTotal, casePageConfig },
       userOppsDetailstakeholder: { shsList, shsTotal, stakePageConfig },
@@ -287,8 +346,9 @@ class OppoDetailQuery extends PureComponent {
           extInfo: { resId, baseBuId },
         },
       },
+      form: { getFieldDecorator },
     } = this.props;
-    const { tabKey } = this.state;
+    const { tabKey, visible, contractCategory, contractSubCategory } = this.state;
     // loading完成之前将按钮设为禁用
     const disabledBtn = loading.effects[`${DOMAIN}/query`];
     const contentList = {
@@ -518,6 +578,32 @@ class OppoDetailQuery extends PureComponent {
               >
                 投标保证金
               </Button>
+              <Button
+                className="tw-btn-primary"
+                icon="form"
+                size="large"
+                disabled={disabledBtn}
+                onClick={() => {
+                  this.toggleVisible();
+                  // if (formData.oppoStatus === ACTIVE) {
+                  //   console.info(formData);
+                  //   //获取token对象
+                  //   const token = localStorage.getItem('token_auth');
+                  //   // 对生成的token(ticket)进行加密：使用 Base64
+                  //   const ticket = Base64.stringify(Utf8.parse(token));
+                  //   const BusinessOpportunitiesID = formData.id;
+                  //   const BusinessOpportunitiesTitle = formData.oppoName;
+                  //   // 商机唯一主键ID: BusinessOpportunitiesID
+                  //   // 商机名称: BusinessOpportunitiesTitle
+                  //   // 合同类别: contractCategory
+                  //   window.open(yeedocxCreateContractApi + '?ticket=' + ticket+'&BusinessOpportunitiesID='+BusinessOpportunitiesID+'&BusinessOpportunitiesTitle='+BusinessOpportunitiesTitle);
+                  // } else {
+                  //   createMessage({ type: 'warn', description: '仅激活的商机能够创建电子合同' });
+                  // }
+                }}
+              >
+                创建电子合同
+              </Button>
             </>
           ) : (
             ''
@@ -541,6 +627,111 @@ class OppoDetailQuery extends PureComponent {
         >
           {formData.id ? contentList[tabKey] : <Loading />}
         </Card>
+        <Modal
+          destroyOnClose
+          title="类型选择"
+          visible={visible}
+          onOk={() => {
+            if (
+              contractCategory === null ||
+              contractCategory === undefined ||
+              contractCategory === ''
+            ) {
+              createMessage({ type: 'warn', description: '请选择品项类别' });
+              return;
+            }
+            if (
+              contractSubCategory === null ||
+              contractSubCategory === undefined ||
+              contractSubCategory === ''
+            ) {
+              createMessage({ type: 'warn', description: '请选择产品小类' });
+              return;
+            }
+            if (formData.oppoStatus === ACTIVE) {
+              //获取token对象
+              const token = localStorage.getItem('token_auth');
+              // 对生成的token(ticket)进行加密：使用 Base64
+              const ticket = Base64.stringify(Utf8.parse(token));
+              const BusinessOpportunitiesID = formData.id;
+              const BusinessOpportunitiesTitle = formData.oppoName;
+              // 商机唯一主键ID: BusinessOpportunitiesID
+              // 商机名称: BusinessOpportunitiesTitle
+              // 合同大类: contractCategory
+              // 合同小类: contractSubCategory
+              window.open(
+                yeedocxCreateContractApi +
+                  '?ticket=' +
+                  ticket +
+                  '&BusinessOpportunitiesID=' +
+                  BusinessOpportunitiesID +
+                  '&BusinessOpportunitiesTitle=' +
+                  BusinessOpportunitiesTitle +
+                  '&ContractCategory=' +
+                  contractCategory +
+                  '&contractSubCategory=' +
+                  contractSubCategory
+              );
+              this.toggleVisible();
+            } else {
+              createMessage({ type: 'warn', description: '仅激活的商机能够创建电子合同' });
+            }
+          }}
+          onCancel={() => this.toggleVisible()}
+          width="50%"
+        >
+          <FieldList getFieldDecorator={getFieldDecorator} col={2}>
+            <Field
+              name="saleType1"
+              label="品项类别"
+              decorator={{
+                initialValue: contractCategory,
+                rules: [
+                  {
+                    required: true,
+                    message: `请选择品项类别`,
+                  },
+                ],
+              }}
+              {...FieldListLayout}
+            >
+              <UdcSelect
+                code="TSK.SALE_TYPE1"
+                onChange={this.handleChange}
+                placeholder="请选择品项类别"
+                // disabled={saleType1.fieldMode !== 'EDITABLE'}
+              />
+            </Field>
+            <Field
+              name="contractSubCategory"
+              label="产品小类"
+              decorator={{
+                initialValue: contractSubCategory,
+                rules: [
+                  {
+                    required: true,
+                    message: `请选择产品小类`,
+                  },
+                ],
+              }}
+              {...FieldListLayout}
+            >
+              <AsyncSelect
+                source={smallClass}
+                placeholder="请选择产品小类"
+                // disabled={saleType2.fieldMode !== 'EDITABLE'}
+                filterOption={(input, option) =>
+                  option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }
+                onChange={e => {
+                  this.setState({
+                    contractSubCategory: e,
+                  });
+                }}
+              />
+            </Field>
+          </FieldList>
+        </Modal>
       </PageHeaderWrapper>
     );
   }

@@ -397,6 +397,14 @@ class BasicInfo extends PureComponent {
             >
               <Input placeholder="请输入护照发放地" />
             </Field>
+            <Field name="owerPhoto" label="上传照片">
+              <FileManagerEnhance
+                api="/api/person/v1/res/owerPhoto/sfs/token"
+                dataKey={formData.id}
+                listType="jpg/jpeg/png/gif"
+                disabled={false}
+              />
+            </Field>
           </FieldList>
 
           <Divider dashed />

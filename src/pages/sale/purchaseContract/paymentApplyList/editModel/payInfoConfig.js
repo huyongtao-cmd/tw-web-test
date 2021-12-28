@@ -25,9 +25,11 @@ import {
 } from '@/services/sale/purchaseContract/paymentApplyList';
 import { InvoicesSelect } from '../../suggestComponent/index';
 import { CalculateRate } from '../../constConfig';
+import { fromQs, getGuid } from '@/utils/stringUtils';
 
 const { Option } = Select;
 export function writeOffTableProps(DOMAIN, dispatch, loading, form, mode, paymentApplyEdit) {
+  const { status, entrance } = fromQs();
   const { invoiceVerDetail, pageConfig, formData } = paymentApplyEdit;
   const pageFieldJson = {};
   if (pageConfig) {
@@ -238,7 +240,7 @@ export function writeOffTableProps(DOMAIN, dispatch, loading, form, mode, paymen
                 filterOption={(input, option) =>
                   option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }
-                disabled={mode === 'view'}
+                disabled={mode === 'view' || entrance === 'flow'}
                 placeholder="请输入发票号"
                 onChange={onCellChanged(index, 'invoiceNo')}
               />
@@ -246,7 +248,7 @@ export function writeOffTableProps(DOMAIN, dispatch, loading, form, mode, paymen
               <InvoicesSelect
                 invoiceNo={row.invoiceNo || '2'}
                 value={value}
-                disabled={mode === 'view'}
+                disabled={mode === 'view' || entrance === 'flow'}
                 onChange={onCellChanged(index, 'invoiceNo')}
               />
             )}
@@ -260,7 +262,7 @@ export function writeOffTableProps(DOMAIN, dispatch, loading, form, mode, paymen
       dataIndex: 'theAmt',
       className: 'text-right',
       key: 'theAmt',
-      width: 200,
+      width: 110,
       render: (value, row, index) => (
         <InputNumber
           min={0}
@@ -269,7 +271,7 @@ export function writeOffTableProps(DOMAIN, dispatch, loading, form, mode, paymen
           parser={v => v.replace(/\$\s?|(,*)/g, '')}
           className="number-left x-fill-100"
           value={value}
-          disabled={mode === 'view'}
+          disabled={mode === 'view' || entrance === 'flow'}
           onChange={onCellChanged(index, 'theAmt')}
         />
       ),
@@ -280,7 +282,7 @@ export function writeOffTableProps(DOMAIN, dispatch, loading, form, mode, paymen
       dataIndex: 'invoiceAmt',
       key: 'invoiceAmt',
       className: 'text-right',
-      width: 200,
+      width: 80,
     },
     {
       title: `${pageFieldJson.writtenOffAmt.displayName}`,
@@ -288,14 +290,14 @@ export function writeOffTableProps(DOMAIN, dispatch, loading, form, mode, paymen
       dataIndex: 'writtenOffAmt',
       key: 'writtenOffAmt',
       className: 'text-right',
-      width: 200,
+      width: 90,
     },
     {
       title: `${pageFieldJson.rate.displayName}`,
       sortNo: `${pageFieldJson.rate.sortNo}`,
       key: 'rate',
       dataIndex: 'rate',
-      width: 150,
+      width: 60,
     },
     {
       title: `${pageFieldJson.invoiceTypeName.displayName}`,
@@ -311,7 +313,7 @@ export function writeOffTableProps(DOMAIN, dispatch, loading, form, mode, paymen
       dataIndex: 'inspectionName',
       className: 'text-center',
       key: 'inspectionName',
-      width: 200,
+      width: 80,
     },
     {
       title: `${pageFieldJson.invoiceDate.displayName}`,
@@ -319,7 +321,7 @@ export function writeOffTableProps(DOMAIN, dispatch, loading, form, mode, paymen
       dataIndex: 'invoiceDate',
       className: 'text-center',
       key: 'invoiceDate',
-      width: 200,
+      width: 80,
     },
     {
       title: `${pageFieldJson.invoiceCode.displayName}`,
@@ -327,7 +329,7 @@ export function writeOffTableProps(DOMAIN, dispatch, loading, form, mode, paymen
       dataIndex: 'invoiceCode',
       className: 'text-center',
       key: 'invoiceCode',
-      width: 200,
+      width: 80,
     },
   ];
   const columnsFilterList = columnsList.filter(
@@ -335,7 +337,7 @@ export function writeOffTableProps(DOMAIN, dispatch, loading, form, mode, paymen
   );
 
   const tableProps = {
-    readOnly: mode === 'view',
+    readOnly: mode === 'view' || entrance === 'flow',
     rowKey: 'id',
     showCopy: false,
     // loading: loading.effects[`${DOMAIN}/queryPurchase`],
@@ -407,6 +409,7 @@ export function writeOffTableProps(DOMAIN, dispatch, loading, form, mode, paymen
 }
 
 export function payDetailTableProps(DOMAIN, dispatch, loading, form, mode, paymentApplyEdit) {
+  const { status, entrance } = fromQs();
   const { payDetailList, pageConfig, formData } = paymentApplyEdit;
   const pageFieldJson = {};
   if (pageConfig) {
@@ -504,7 +507,15 @@ export function payDetailTableProps(DOMAIN, dispatch, loading, form, mode, payme
         <Input
           className="x-fill-100"
           value={value}
-          disabled={mode === 'view' ? true : formData.docType === 'CONTRACT' ? true : false}
+          disabled={
+            mode === 'view'
+              ? true
+              : formData.docType === 'CONTRACT'
+                ? true
+                : entrance === 'flow'
+                  ? true
+                  : false
+          }
           placeholder={`请输入${pageFieldJson.paymentStage.displayName}`}
           onChange={onCellChanged(index, 'paymentStage')}
         />
@@ -516,7 +527,7 @@ export function payDetailTableProps(DOMAIN, dispatch, loading, form, mode, payme
       key: 'currentPaymentAmt',
       dataIndex: 'currentPaymentAmt',
       className: 'text-center',
-      width: 200,
+      width: 110,
       render: (value, row, index) => (
         <InputNumber
           min={0}
@@ -525,7 +536,7 @@ export function payDetailTableProps(DOMAIN, dispatch, loading, form, mode, payme
           parser={v => v.replace(/\$\s?|(,*)/g, '')}
           className="number-left x-fill-100"
           value={value}
-          disabled={mode === 'view'}
+          disabled={mode === 'view' || entrance === 'flow'}
           placeholder={`请输入${pageFieldJson.currentPaymentAmt.displayName}`}
           onChange={onCellChanged(index, 'currentPaymentAmt')}
         />
@@ -537,7 +548,7 @@ export function payDetailTableProps(DOMAIN, dispatch, loading, form, mode, payme
       key: 'paymentAmt',
       dataIndex: 'paymentAmt',
       className: 'text-center',
-      width: 200,
+      width: 110,
     },
     {
       title: `${pageFieldJson.docType.displayName}`,
@@ -550,7 +561,7 @@ export function payDetailTableProps(DOMAIN, dispatch, loading, form, mode, payme
         <Selection.UDC
           code="TSK:DOC_TYPE"
           value={value}
-          disabled={mode === 'view'}
+          disabled={pageFieldJson.docType.fieldMode === 'UNEDITABLE' || mode === 'view'}
           onChange={onCellChanged(index, 'docType')}
           placeholder={`请选择${pageFieldJson.docType.displayName}`}
         />
@@ -567,7 +578,7 @@ export function payDetailTableProps(DOMAIN, dispatch, loading, form, mode, payme
         <Input
           className="x-fill-100"
           value={value}
-          disabled={mode === 'view'}
+          disabled={mode === 'view' || entrance === 'flow'}
           placeholder={`请输入${pageFieldJson.docTypeName.displayName}`}
           onChange={onCellChanged(index, 'docTypeName')}
         />
@@ -592,7 +603,7 @@ export function payDetailTableProps(DOMAIN, dispatch, loading, form, mode, payme
         return (
           <DatePicker
             format="YYYY-MM-DD"
-            disabled={mode === 'view'}
+            disabled={mode === 'view' || entrance === 'flow'}
             value={value ? moment(value) : ''}
             className="x-fill-100"
             onChange={onCellChanged(index, 'paymentDate')}
@@ -615,19 +626,50 @@ export function payDetailTableProps(DOMAIN, dispatch, loading, form, mode, payme
       className: 'text-center',
       width: 200,
     },
+    {
+      title: `${pageFieldJson.recvAmt.displayName}`,
+      sortNo: `${pageFieldJson.recvAmt.sortNo}`,
+      key: 'recvAmt',
+      dataIndex: 'recvAmt',
+      className: 'text-center',
+      width: 100,
+    },
+    {
+      title: `${pageFieldJson.actualRecvAmt.displayName}`,
+      sortNo: `${pageFieldJson.actualRecvAmt.sortNo}`,
+      key: 'actualRecvAmt',
+      dataIndex: 'actualRecvAmt',
+      className: 'text-center',
+      width: 100,
+    },
+    {
+      title: `${pageFieldJson.text.displayName}`,
+      sortNo: `${pageFieldJson.text.sortNo}`,
+      key: 'text',
+      dataIndex: 'text',
+      className: 'text-center',
+      width: 100,
+    },
   ];
   const columnsFilterList = columnsList.filter(
     field => !field.key || pageFieldJson[field.key].visibleFlag === 1
   );
 
   const tableProps = {
-    readOnly: mode === 'view' ? true : formData.docType === 'CONTRACT' ? true : false,
+    readOnly:
+      mode === 'view'
+        ? true
+        : formData.docType === 'CONTRACT'
+          ? true
+          : entrance === 'flow'
+            ? true
+            : false,
     rowKey: 'id',
     showCopy: false,
     // loading: loading.effects[`${DOMAIN}/queryPurchase`],
     pagination: false,
     scroll: {
-      x: 1700,
+      x: 2000,
     },
     dataSource: payDetailList || [],
     onAdd: newRow => {

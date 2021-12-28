@@ -1,11 +1,12 @@
 import React, { PureComponent } from 'react';
 import { connect } from 'dva';
-import { Card, Button, Divider } from 'antd';
+import { Card, Button, Divider, Table } from 'antd';
 import PageHeaderWrapper from '@/components/layout/PageHeaderWrapper';
 import DescriptionList from '@/components/layout/DescriptionList';
 import { mountToTab } from '@/layouts/routerControl';
 import moment from 'moment';
 import style from '../style.less';
+import { progressColumns } from './ProgressColumns';
 
 const DOMAIN = 'salePurchaseDetail';
 const { Description } = DescriptionList;
@@ -33,11 +34,19 @@ class Detail extends PureComponent {
     //   type: `${DOMAIN}/queryPlanList`,
     //   payload: pid || pcontractId,
     // });
+    const {
+      salePurchaseDetail: { detailData },
+      dispatch,
+    } = this.props;
+    dispatch({
+      type: `${DOMAIN}/queryChangeDetailByDocNo`,
+      payload: detailData.contractNo,
+    });
   }
 
   render() {
     const {
-      salePurchaseDetail: { detailData: formData, pageConfig },
+      salePurchaseDetail: { detailData: formData, pageConfig, twAuditInformationRecordViews },
       dispatch,
       loading,
     } = this.props;
@@ -123,14 +132,27 @@ class Detail extends PureComponent {
     const filterList = fields
       .filter(field => !field.key || pageFieldJson[field.key].visibleFlag === 1)
       .sort((field1, field2) => field1.props.sortno - field2.props.sortno);
-
     return (
-      <Card className="tw-card-adjust" bordered={false}>
-        <div className="tw-card-title">单据信息</div>
-        <DescriptionList size="large" col={3} className={style.fill}>
-          {filterList}
-        </DescriptionList>
-      </Card>
+      <>
+        <Card className="tw-card-adjust" bordered={false}>
+          <div className="tw-card-title">单据信息</div>
+          <DescriptionList size="large" col={3} className={style.fill}>
+            {filterList}
+          </DescriptionList>
+        </Card>
+        <Card bordered={false}>
+          <div className="tw-card-title">变更历史</div>
+          <Table
+            style={{ marginBottom: 16 }}
+            bordered
+            pagination={false}
+            // loading={loading}
+            dataSource={twAuditInformationRecordViews}
+            columns={progressColumns}
+            scroll={{ y: 450 }}
+          />
+        </Card>
+      </>
     );
   }
 }

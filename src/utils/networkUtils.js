@@ -370,16 +370,13 @@ const retrieveCache = (expirys, hashcode) => {
   return void 0;
 };
 
-function parseResponse(response, responseType) {
+function parseResponse(response) {
   // eslint-disable-next-line
-  console.log('[RES]:', response);
+  // console.log('[RES]:', response);
   const contentType = response.headers.get('content-type') || '';
 
   let respType = 'text';
-  if (responseType) {
-    // 添加 arrayBuffer 和 blod
-    respType = responseType;
-  } else if (
+  if (
     // Improved by Neo's advice.
     contentType.startsWith('application/json') &&
     // filteredApiList.some(item => item === url.split('?')[0])
@@ -433,7 +430,7 @@ function httpRequest(
   // (dva actually resolved this, but here we practice it as original)
   const requestUrl = [options.mock ? clientUrl : serverUrl, url].join('');
   // eslint-disable-next-line
-  console.log(`[REQ]${options.mock ? '[mock]' : ''}[${newOptions.method}]: ${url}`);
+  // console.log(`[REQ]${options.mock ? '[mock]' : ''}[${newOptions.method}]: ${url}`);
   const requestCfg = {
     url: requestUrl,
     method: newOptions.method,
@@ -455,9 +452,7 @@ function httpRequest(
         .then(response => checkStatus(response, requestCfg, newOptions))
         .then(response => (expirys ? storeCache(response, hashcode) : response))
         // Technically, we call this flat-mapping.
-        .then(response =>
-          parseResponse(response, options.responseType).then(rst => resultMaker(response, rst))
-        )
+        .then(response => parseResponse(response).then(rst => resultMaker(response, rst)))
         .catch(e => {
           // 过滤后端错误返回信息
           const { response = {} } = e;

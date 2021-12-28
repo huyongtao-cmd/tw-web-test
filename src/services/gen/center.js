@@ -13,12 +13,26 @@ const {
   saveNavsCustomShortCut,
   noticeListLength,
 } = api.user.customShortCut;
-const { todo, back, done } = api.user.flow;
+const { todo, back, done, getYeedocFlowList, saveOrUpdateYeedocFlow } = api.user.flow;
 const { willApproveCount, recentWork } = api.user.timesheet;
 const { ticketInfoChange } = api.user.center;
 const { idxMessageList, idxMessageCount } = api.plat.message;
 
 const { selectTrainingAll, updateNewPushFlag, updateShowFlag } = api.user.remind;
+
+// 拉取易稻壳退回、知会表为已读
+export async function saveOrUpdateYeedocFlowRq(params) {
+  const { appId, secretKey, ...restParmars } = params;
+  return request(toQs(saveOrUpdateYeedocFlow, { appId, secretKey }), {
+    method: 'POST',
+    body: restParmars,
+  });
+}
+
+// 拉取易稻壳推送待办、退回、知会
+export async function getYeedocFlowListRq(params) {
+  return request.get(toQs(getYeedocFlowList, params));
+}
 
 // 拉取 三个弹窗所有详细信息
 export async function selectTrainingAllRq(params) {

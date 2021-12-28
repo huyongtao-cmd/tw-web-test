@@ -1,5 +1,15 @@
-import { systemLocaleListPaging, systemSelectionLogicalDelete } from '@/services/production/system';
+import {
+  systemLocaleListPaging,
+  systemSelectionDetail,
+  systemSelectionCreate,
+  systemSelectionModify,
+  systemSelectionLogicalDelete,
+} from '@/services/production/system';
+import { querySystemMenuByCode } from '@/services/gen/app';
+import { isEmpty } from 'ramda';
 import createMessage from '@/components/core/AlertMessage';
+import { saveUserTask } from '@/services/user/task/task';
+import { closeThenGoto } from '@/layouts/routerControl';
 
 export default {
   namespace: 'systemLocaleList',

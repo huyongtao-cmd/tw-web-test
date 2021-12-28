@@ -97,7 +97,8 @@ export default {
           datum.twPaymentApplyEntity &&
           datum.twPaymentApplyEntity.docType === 'AGREEMENT' &&
           scene &&
-          parseInt(scene, 10) !== 16
+          parseInt(scene, 10) !== 16 &&
+          parseInt(scene, 10) !== 20
         ) {
           yield put({
             type: 'getPaymentApplyCalcAmt',

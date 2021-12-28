@@ -118,9 +118,16 @@ class Edit extends Component {
     } = this.props;
     const { mode } = fromQs();
     const { payDetailList, formData } = prePayWriteOffEdit;
+    const { noDocVerification } = formData;
+    // 无单据核销是否选中
+    let noDocVerificationCheck = false;
+    if (noDocVerification === true) {
+      noDocVerificationCheck = true;
+    }
     validateFieldsAndScroll((error, values) => {
       if (!error) {
-        if (payDetailList.length !== 0) {
+        // 付款明细不能为空且本次付款/核销金额必须要大于0
+        if (noDocVerificationCheck || payDetailList.length !== 0) {
           if (formData.currPaymentAmt > 0) {
             dispatch({
               type: `${DOMAIN}/save`,
@@ -156,10 +163,16 @@ class Edit extends Component {
     } = this.props;
     const { payDetailList, formData } = prePayWriteOffEdit;
     const { mode } = fromQs();
+    const { noDocVerification } = formData;
+    // 无单据核销是否选中
+    let noDocVerificationCheck = false;
+    if (noDocVerification === true) {
+      noDocVerificationCheck = true;
+    }
     validateFieldsAndScroll((error, values) => {
       if (!error) {
         // 付款明细不能为空且本次付款/核销金额必须要大于0
-        if (payDetailList.length !== 0) {
+        if (noDocVerificationCheck || payDetailList.length !== 0) {
           if (formData.currPaymentAmt > 0) {
             if (checkAmt(prePayWriteOffEdit)) {
               dispatch({

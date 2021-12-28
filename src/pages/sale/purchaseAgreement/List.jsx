@@ -61,6 +61,7 @@ class PurchasesList extends PureComponent {
     });
     this.fetchSceneData();
   }
+
   fetchSceneData = () => {
     queryUdc('TSK:SCENE_TYPE').then(resp => {
       const sceneList = resp.response || [];
@@ -145,6 +146,10 @@ class PurchasesList extends PureComponent {
     });
   };
 
+  /**
+   * 发起付款
+   * @param rowData
+   */
   paymentLaunch = rowData => {
     const { sceneListTmp = [] } = this.state;
     let newSceneList = [];
@@ -177,7 +182,11 @@ class PurchasesList extends PureComponent {
             ) || [];
         }
         if (paymentType4) {
-          newSceneList = sceneListTmp.filter(item => parseInt(item.code, 10) === 16) || [];
+          // 新增 行政运营类采购(协议)，20
+          newSceneList =
+            sceneListTmp.filter(
+              item => parseInt(item.code, 10) === 16 || parseInt(item.code, 10) === 20
+            ) || [];
         }
 
         this.setState({
@@ -229,7 +238,8 @@ class PurchasesList extends PureComponent {
         sortNo: `${pageFieldJson.purchaseAgreementNo.sortNo}`,
         key: 'purchaseAgreementNo',
         dataIndex: 'purchaseAgreementNo',
-        width: 200,
+        align: 'center',
+        width: 120,
         render: (value, row) => {
           const { id } = row;
           const href = `/sale/purchaseContract/purchaseAgreementDetail?id=${id}`;
@@ -245,7 +255,7 @@ class PurchasesList extends PureComponent {
         sortNo: `${pageFieldJson.purchaseAgreementName.sortNo}`,
         key: 'purchaseAgreementName',
         dataIndex: 'purchaseAgreementName',
-        align: 'center',
+        align: 'left',
         width: 300,
       },
       {
@@ -253,15 +263,13 @@ class PurchasesList extends PureComponent {
         sortNo: `${pageFieldJson.agreementStatus.sortNo}`,
         key: 'agreementStatus',
         dataIndex: 'agreementStatusDesc',
-        align: 'center',
-        width: 160,
+        width: 70,
       },
       {
         title: `${pageFieldJson.supplierLegalNo.displayName}`,
         sortNo: `${pageFieldJson.supplierLegalNo.sortNo}`,
         key: 'supplierLegalNo',
         dataIndex: 'supplierLegalDesc',
-        align: 'center',
         width: 260,
       },
       {
@@ -269,7 +277,6 @@ class PurchasesList extends PureComponent {
         sortNo: `${pageFieldJson.signingLegalNo.sortNo}`,
         key: 'signingLegalNo',
         dataIndex: 'signingLegalDesc',
-        align: 'center',
         width: 260,
       },
       {
@@ -277,15 +284,13 @@ class PurchasesList extends PureComponent {
         sortNo: `${pageFieldJson.signingBuId.sortNo}`,
         key: 'signingBuId',
         dataIndex: 'signingBuDesc',
-        align: 'center',
-        width: 200,
+        width: 150,
       },
       {
         title: `${pageFieldJson.purchaseInchargeResId.displayName}`,
         sortNo: `${pageFieldJson.purchaseInchargeResId.sortNo}`,
         key: 'purchaseInchargeResId',
         dataIndex: 'purchaseInchargeResName',
-        align: 'center',
         width: 120,
       },
       {
@@ -293,7 +298,6 @@ class PurchasesList extends PureComponent {
         sortNo: `${pageFieldJson.acceptanceType.sortNo}`,
         key: 'acceptanceType',
         dataIndex: 'acceptanceTypeDesc',
-        align: 'center',
         width: 120,
       },
       {
@@ -301,17 +305,16 @@ class PurchasesList extends PureComponent {
         sortNo: `${pageFieldJson.amt.sortNo}`,
         key: 'amt',
         dataIndex: 'amt',
-        // align: 'center',
-        width: 150,
+        align: 'right',
+        width: 80,
       },
-      {
-        title: `${pageFieldJson.currCode.displayName}`,
-        sortNo: `${pageFieldJson.currCode.sortNo}`,
-        key: 'currCode',
-        dataIndex: 'currCodeDesc',
-        align: 'center',
-        width: 120,
-      },
+      // {
+      //   title: `${pageFieldJson.currCode.displayName}`,
+      //   sortNo: `${pageFieldJson.currCode.sortNo}`,
+      //   key: 'currCode',
+      //   dataIndex: 'currCodeDesc',
+      //   width: 90,
+      // },
       {
         title: `${pageFieldJson.effectiveStartDate.displayName}`,
         sortNo: `${pageFieldJson.effectiveStartDate.sortNo}`,
@@ -335,7 +338,6 @@ class PurchasesList extends PureComponent {
         sortNo: `${pageFieldJson.createUserId.sortNo}`,
         key: 'createUserId',
         dataIndex: 'createUserName',
-        align: 'center',
         width: 120,
       },
       {
@@ -536,8 +538,15 @@ class PurchasesList extends PureComponent {
               selectedRows[0].agreementStatus === 'CREATE' ||
               selectedRows[0].agreementStatus === 'ACTIVE'
             ) {
-              const { id } = selectedRows[0];
-              router.push(`/sale/purchaseContract/purchaseAgreementEdit?id=${id}`);
+              if (
+                selectedRows[0].apprStatus === 'APPROVING' ||
+                selectedRows[0].apprStatus === 'WITHDRAW'
+              ) {
+                createMessage({ type: 'warn', description: '激活流程中的协议请在流程中修改' });
+              } else {
+                const { id } = selectedRows[0];
+                router.push(`/sale/purchaseContract/purchaseAgreementEdit?id=${id}`);
+              }
             } else {
               createMessage({ type: 'warn', description: '采购协议状态为新建或激活时才允许修改' });
             }
@@ -627,6 +636,30 @@ class PurchasesList extends PureComponent {
           minSelections: 0,
           cb: (selectedRowKeys, selectedRows, queryParams) => {
             this.paymentLaunch(selectedRows[0]);
+          },
+        },
+        {
+          key: 'handlePrePay',
+          className: 'tw-btn-info',
+          title: '发起预付款',
+          loading: false,
+          hidden: false,
+          // disabled: selectedRows => selectedRows.length <= 0,
+          disabled: selectedRows => selectedRows.length !== 1,
+          minSelections: 0,
+          cb: (selectedRowKeys, selectedRows, queryParams) => {
+            if (selectedRows[0].agreementStatus === 'ACTIVE') {
+              router.push(
+                `/sale/purchaseContract/prePaymentApply/edit?docNo=${
+                  selectedRows[0].purchaseAgreementNo
+                }&scene=14&mode=create&source=purchaseAgreement`
+              );
+            } else {
+              createMessage({
+                type: 'warn',
+                description: '采购协议状态为激活时才允许发起预付款',
+              });
+            }
           },
         },
         {

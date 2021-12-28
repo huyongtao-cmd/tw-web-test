@@ -8,6 +8,7 @@ import PageHeaderWrapper from '@/components/layout/PageHeaderWrapper';
 import DataTable from '@/components/common/DataTable';
 import { formatDT } from '@/utils/tempUtils/DateTime';
 import { flowToRouter } from '@/utils/flowToRouter';
+import { getType } from '@/services/user/equivalent/equivalent';
 import { readNotify } from '@/services/user/flow/flow';
 import createMessage from '@/components/core/AlertMessage';
 import { Selection } from '@/pages/gen/field';
@@ -38,7 +39,26 @@ class Notify extends Component {
   };
 
   requestRealType = async rowData => {
-    router.push('/');
+    const { id, taskId, docId } = rowData;
+    const { status, response } = await getType(docId);
+    if (status === 200 && response.ok) {
+      const defKey =
+        // eslint-disable-next-line
+        response.datum === 'TASK_BY_PACKAGE'
+          ? 'ACC_A22.SUM'
+          : response.datum === 'TASK_BY_MANDAY'
+            ? 'ACC_A22.SINGLE'
+            : 'ACC_A22.COM';
+      const route = flowToRouter(defKey, {
+        id,
+        taskId,
+        docId,
+        mode: 'view',
+        originalUrl: window.location.origin + '/user/flow/process?type=cc',
+      });
+      readNotify(taskId); // 更新知会状态，静默请求，不管返回结果
+      router.push(route);
+    }
   };
 
   renderLink = (value, rowData) => {

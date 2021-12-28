@@ -3,27 +3,6 @@ import api from '@/api';
 import { toQs, toUrl } from '@/utils/stringUtils';
 
 const {
-  //郡州项目排期
-  scheduleSave,
-  schedulePaging,
-  scheduleDetail,
-  scheduleOverall,
-  schedulePartial,
-  scheduleDelete,
-  scheduleStatusOverall,
-  scheduleCommSave,
-  scheduleListSelect,
-  scheduleListImport,
-  //郡州项目
-  projectSave,
-  projectPaging,
-  projectDetail,
-  projectOverall,
-  projectDelete,
-  projectPermission,
-  projectPermissionSelect,
-  projectRoleSelect,
-  projectFlow,
   // =======产品列表管理=======
   productManagementSave,
   productManagementOverall,
@@ -123,121 +102,8 @@ const {
   templatePlanDelete,
   templatePlanDetail,
 } = api.workbench.project;
-const { roleSelect } = api.user;
+
 const { projectTemplate } = api.production.common;
-
-//===郡州项目****
-
-//  沟通记录
-//新增
-export async function scheduleCommSaveRq(params) {
-  return request.post(scheduleCommSave, {
-    body: params,
-  });
-}
-
-//查询当期登录人被指派、抄送的排期
-export async function scheduleListSelectRq() {
-  return request.get(scheduleListSelect);
-}
-
-//排期管理-----------------------------
-
-// 导入excel
-export async function scheduleListImportRq(params) {
-  return request.post(scheduleListImport, {
-    body: params,
-  });
-}
-
-// 排期状态更新
-export async function scheduleStatusOverallRq(params) {
-  return request.put(scheduleStatusOverall, {
-    body: params,
-  });
-}
-//新增
-export async function scheduleSaveRq(params) {
-  return request.post(scheduleSave, {
-    body: params,
-  });
-}
-// 列表
-export async function schedulePagingRq(payload) {
-  return request.get(toQs(schedulePaging, payload));
-}
-// 详情
-export async function scheduleDetailRq(params) {
-  return request.get(toQs(scheduleDetail, params));
-}
-// 整体更新
-export async function scheduleOverallRq(params) {
-  return request.put(scheduleOverall, {
-    body: params,
-  });
-}
-// 指定更新
-export async function schedulePartialRq(params) {
-  return request.put(schedulePartial, {
-    body: params,
-  });
-}
-// 删除
-export async function scheduleDeleteRq(params) {
-  return request.patch(toUrl(scheduleDelete, params));
-}
-
-//查询角色下拉列表
-export async function roleSelectRq(payload) {
-  return request.get(toQs(roleSelect, payload));
-}
-//新增
-export async function projectSaveRq(params) {
-  return request.post(projectSave, {
-    body: params,
-  });
-}
-// -----------------------项目
-// 模板/项目阶段指定更新
-export async function projectFlowRq(params) {
-  return request.put(projectFlow, {
-    body: params,
-  });
-}
-
-// 列表
-export async function projectPagingRq(payload) {
-  return request.get(toQs(projectPaging, payload));
-}
-// 详情
-export async function projectDetailRq(params) {
-  return request.get(toUrl(projectDetail, params));
-}
-// 整体更新
-export async function projectOverallRq(params) {
-  return request.put(projectOverall, {
-    body: params,
-  });
-}
-// 删除
-export async function projectDeleteRq(params) {
-  return request.patch(toUrl(projectDelete, params));
-}
-
-//   查询项目角色
-export async function projectPermissionRq(payload) {
-  return request.get(toQs(projectPermission, payload));
-}
-
-//   查询项目权限
-export async function projectPermissionSelectRq(params) {
-  return request.get(toUrl(projectPermissionSelect, params));
-}
-
-//查询项目角色下拉
-export async function projectRoleSelectRq(payload) {
-  return request.get(toQs(projectRoleSelect, payload));
-}
 
 // =====================WBS======================
 // 列表

@@ -12,7 +12,20 @@ import {
   deleteProfitdistRules,
 } from '@/services/sys/baseinfo/profitdistrule';
 import { businessPageDetailByNo } from '@/services/sys/system/pageConfig';
+import { virtualContractActivationUrl } from '@/services/plat/prePayMgmt';
+import { launchFlowFn } from '@/services/sys/flowHandle';
+import { closeThenGoto } from '@/layouts/routerControl';
+import { customSelectionTreeFun } from '@/services/production/system';
 
+const toFlatTags = (flatTags, menus) => {
+  menus.forEach(item => {
+    // eslint-disable-next-line no-param-reassign
+    flatTags[item.id] = item;
+    if (item.children && item.children.length > 0) {
+      toFlatTags(flatTags, item.children);
+    }
+  });
+};
 export default {
   namespace: 'userContractEditSub',
 
@@ -78,6 +91,9 @@ export default {
     pageConfig: {
       pageBlockViews: [],
     },
+    tagTree: [], // 标签树
+    flatTags: {},
+    checkedKeys: [], //选中的标签id
   },
 
   effects: {
@@ -216,6 +232,77 @@ export default {
         return response;
       }
       return {};
+    },
+
+    *virtualContractActivationUrl({ payload }, { call, put, select }) {
+      const { response } = yield call(virtualContractActivationUrl, payload);
+      if (response && response.ok) {
+        const kid = response.datum;
+        const responseFlow = yield call(launchFlowFn, {
+          defkey: 'ACC_A62',
+          value: {
+            id: kid,
+          },
+        });
+        const response2 = responseFlow.response;
+        if (response2 && response2.ok) {
+          createMessage({ type: 'success', description: '提交成功' });
+          closeThenGoto('/user/flow/process?type=procs');
+        } else {
+          createMessage({
+            type: 'warn',
+            description: '提交出现问题,请返回重新提交',
+          });
+        }
+      } else if (response.reason === 'CONTRACT:CONTRACT_ACTIVACTION_ISNULL_CHECK') {
+        createMessage({
+          type: 'warn',
+          description: '子合同收益分配规则不能为空,请返回子合同完善信息',
+        });
+      } else {
+        createMessage({ type: 'warn', description: response.reason });
+      }
+    },
+
+    // 标签数据
+    // 根据自定义选择项的key 获取本身和孩子数据-树形结构
+    *getTagTree({ payload }, { call, put }) {
+      const { response } = yield call(customSelectionTreeFun, payload);
+      const treeDataMap = tree =>
+        tree.map(item => {
+          if (item.children) {
+            return {
+              id: item.id,
+              value: item.id,
+              key: item.id,
+              text: item.selectionName,
+              title: item.selectionName,
+              child: treeDataMap(item.children),
+              children: treeDataMap(item.children),
+            };
+          }
+          return {
+            id: item.id,
+            value: item.id,
+            key: item.id,
+            text: item.selectionName,
+            title: item.selectionName,
+            child: item.children,
+            children: item.children,
+          };
+        });
+      const tagTreeTemp = treeDataMap([response.data]);
+      const flatTags = {};
+      toFlatTags(flatTags, tagTreeTemp || []);
+      if (response.ok) {
+        yield put({
+          type: 'updateState',
+          payload: {
+            tagTree: tagTreeTemp,
+            flatTags,
+          },
+        });
+      }
     },
   },
 

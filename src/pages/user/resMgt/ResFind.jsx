@@ -278,22 +278,22 @@ class ResFind extends PureComponent {
             />
           ),
         },
-        pageFieldJsonQuery.resStatus.visibleFlag && {
-          title: `${pageFieldJsonQuery.resStatus.displayName}`,
-          dataIndex: 'resStatus',
-          sortNo: `${pageFieldJsonQuery.resStatus.sortNo}`,
-          options: {
-            initialValue: searchForm.resStatus,
-          },
-          formItemLayout,
-          tag: (
-            <Selection.UDC
-              code="RES.RES_STATUS"
-              mode="multiple"
-              placeholder={`请选择${pageFieldJsonQuery.resStatus.displayName}`}
-            />
-          ),
-        },
+        // pageFieldJsonQuery.resStatus.visibleFlag && {
+        //   title: `${pageFieldJsonQuery.resStatus.displayName}`,
+        //   dataIndex: 'resStatus',
+        //   sortNo: `${pageFieldJsonQuery.resStatus.sortNo}`,
+        //   options: {
+        //     initialValue: searchForm.resStatus,
+        //   },
+        //   formItemLayout,
+        //   tag: (
+        //     <Selection.UDC
+        //       code="RES.RES_STATUS"
+        //       mode="multiple"
+        //       placeholder={`请选择${pageFieldJsonQuery.resStatus.displayName}`}
+        //     />
+        //   ),
+        // },
         pageFieldJsonQuery.projName.visibleFlag && {
           title: `${pageFieldJsonQuery.projName.displayName}`,
           dataIndex: 'projName',
@@ -457,24 +457,24 @@ class ResFind extends PureComponent {
           sortNo: `${pageFieldJsonList.englishName.sortNo}`,
           align: 'center',
         },
-        pageFieldJsonList.resType1.visibleFlag && {
-          title: `${pageFieldJsonList.resType1.displayName}`,
-          dataIndex: 'resType1Name',
-          sortNo: `${pageFieldJsonList.resType1.sortNo}`,
-          align: 'center',
-        },
-        pageFieldJsonList.resType2.visibleFlag && {
-          title: `${pageFieldJsonList.resType2.displayName}`,
-          dataIndex: 'resType2Name',
-          sortNo: `${pageFieldJsonList.resType2.sortNo}`,
-          align: 'center',
-        },
-        pageFieldJsonList.resStatus.visibleFlag && {
-          title: `${pageFieldJsonList.resStatus.displayName}`,
-          dataIndex: 'resStatusName',
-          sortNo: `${pageFieldJsonList.resStatus.sortNo}`,
-          align: 'center',
-        },
+        // pageFieldJsonList.resType1.visibleFlag && {
+        //   title: `${pageFieldJsonList.resType1.displayName}`,
+        //   dataIndex: 'resType1Name',
+        //   sortNo: `${pageFieldJsonList.resType1.sortNo}`,
+        //   align: 'center',
+        // },
+        // pageFieldJsonList.resType2.visibleFlag && {
+        //   title: `${pageFieldJsonList.resType2.displayName}`,
+        //   dataIndex: 'resType2Name',
+        //   sortNo: `${pageFieldJsonList.resType2.sortNo}`,
+        //   align: 'center',
+        // },
+        // pageFieldJsonList.resStatus.visibleFlag && {
+        //   title: `${pageFieldJsonList.resStatus.displayName}`,
+        //   dataIndex: 'resStatusName',
+        //   sortNo: `${pageFieldJsonList.resStatus.sortNo}`,
+        //   align: 'center',
+        // },
         pageFieldJsonList.baseBuId.visibleFlag && {
           title: 'BaseBU',
           dataIndex: 'baseBuName',

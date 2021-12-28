@@ -64,6 +64,7 @@ class Edit extends PureComponent {
       },
       loading,
       dispatch,
+      isEdit,
     } = this.props;
 
     const currentBlockConfig = pageConfig.pageBlockViews.find(
@@ -172,7 +173,7 @@ class Edit extends PureComponent {
             onChange={onCellChanged(index, 'associationId')}
             dropdownMatchSelectWidth={false}
             dropdownStyle={{ width: 400 }}
-            disabled={pageFieldJson.associationId.fieldMode !== 'EDITABLE'}
+            disabled={pageFieldJson.associationId.fieldMode !== 'EDITABLE' || isEdit}
           />
         ),
       },
@@ -193,7 +194,10 @@ class Edit extends PureComponent {
           ],
         },
         render: (value, record, index) => (
-          <Input value={value} disabled={pageFieldJson.supplierLegalNo.fieldMode !== 'EDITABLE'} />
+          <Input
+            value={value}
+            disabled={pageFieldJson.supplierLegalNo.fieldMode !== 'EDITABLE' || isEdit}
+          />
         ),
       },
       {
@@ -214,7 +218,7 @@ class Edit extends PureComponent {
         render: (value, row, index) => (
           <Input
             value={value}
-            disabled={pageFieldJson.purchaseAgreementNo.fieldMode !== 'EDITABLE'}
+            disabled={pageFieldJson.purchaseAgreementNo.fieldMode !== 'EDITABLE' || isEdit}
           />
         ),
       },
@@ -236,7 +240,7 @@ class Edit extends PureComponent {
         render: (value, row, index) => (
           <Input
             value={value}
-            disabled={pageFieldJson.purchaseAgreementName.fieldMode !== 'EDITABLE'}
+            disabled={pageFieldJson.purchaseAgreementName.fieldMode !== 'EDITABLE' || isEdit}
           />
         ),
       },
@@ -256,7 +260,10 @@ class Edit extends PureComponent {
           ],
         },
         render: (value, row, index) => (
-          <Input value={value} disabled={pageFieldJson.agreementContent.fieldMode !== 'EDITABLE'} />
+          <Input
+            value={value}
+            disabled={pageFieldJson.agreementContent.fieldMode !== 'EDITABLE' || isEdit}
+          />
         ),
       },
     ];
@@ -273,6 +280,7 @@ class Edit extends PureComponent {
       //   x: 1700,
       // },
       dataSource: agreementEntities,
+      readOnly: isEdit,
       // rowSelection: {
       //   getCheckboxProps: record => ({
       //     disabled: record.lineNo === -1,

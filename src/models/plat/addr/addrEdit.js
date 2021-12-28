@@ -7,20 +7,32 @@ import {
   saveAddrCompany,
   saveAddrContact,
   saveAddrCust,
-  saveAddrSupplier,
   saveAddrInvoice,
   saveAddrPerson,
   saveAddrCoop,
 } from '@/services/plat/addr/addr';
+import {
+  customSelectionTreeFun, // 自定义选项tree
+} from '@/services/production/system';
 import { selectAbOus } from '@/services/gen/list';
 import { selectOus } from '@/services/plat/res/resprofile';
 import { closeThenGoto } from '@/layouts/routerControl';
 import createMessage from '@/components/core/AlertMessage';
-import { queryCascaderAddr } from '@/services/gen/app';
+import { queryCascaderUdc } from '@/services/gen/app';
 import router from 'umi/router';
 
 const emptyFormData = {};
 const emptyListData = [];
+
+const toFlatTags = (flatTags, menus) => {
+  menus.forEach(item => {
+    // eslint-disable-next-line no-param-reassign
+    flatTags[item.id] = item;
+    if (item.children && item.children.length > 0) {
+      toFlatTags(flatTags, item.children);
+    }
+  });
+};
 
 const initialState = {
   tabkey: 'basic',
@@ -65,6 +77,9 @@ const initialState = {
   // 下拉
   abOuSel: [],
   addrSel: [],
+  tagTree: [], // 标签树
+  flatTags: {},
+  checkedKeys: [], //选中的标签id
 };
 
 const commonRespHandler = (response, status) => {
@@ -95,18 +110,16 @@ export default {
   effects: {
     // 根据省获取市
     *handleChangeCity({ payload }, { call }) {
+      const { province } = payload;
       if (!payload) {
         return [];
       }
-      const { response } = yield call(queryCascaderAddr, {
-        ...payload,
+      const { response } = yield call(queryCascaderUdc, {
+        defId: 'COM:CITY',
+        parentDefId: 'COM:PROVINCE',
+        parentVal: province,
       });
-      const result = response.data.rows.map(item => ({
-        title: item.name,
-        value: item.code,
-        ...item,
-      }));
-      return result;
+      return response;
     },
     *query({ payload }, { call, put }) {
       const { response, status } = yield call(findAddrByNo, payload);
@@ -120,28 +133,12 @@ export default {
       if (status === 200) {
         if (response && response.ok) {
           // eslint-disable-next-line no-restricted-syntax
-          // 数组遍历还是不要用for...in了
-          // for (const key in datum.addressListViews) {
-          // }
-          for (let key = 0; key < datum.addressListViews.length; key += 1) {
-            // 根据国家获取省列表
-            if (datum.addressListViews[key].country) {
-              const getProvinceList = yield put({
-                type: 'handleChangeCity',
-                payload: {
-                  pcode: datum.addressListViews[key].country,
-                },
-              });
-              getProvinceList.then(res => {
-                datum.addressListViews[key].provinceList = res;
-              });
-            }
-            // 根据省获取市列表
+          for (const key in datum.addressListViews) {
             if (datum.addressListViews[key].province) {
               const getCityList = yield put({
                 type: 'handleChangeCity',
                 payload: {
-                  pcode: datum.addressListViews[key].province,
+                  province: datum.addressListViews[key].province,
                 },
               });
               getCityList.then(res => {
@@ -149,11 +146,6 @@ export default {
               });
             }
           }
-
-          const { supplierView, custView } = datum;
-          if (supplierView)
-            supplierView.attachmentIds = supplierView.attachments.map(item => item.id);
-          if (custView) custView.attachmentIds = custView.attachments.map(item => item.id);
 
           yield put({
             type: 'updateState',
@@ -165,8 +157,8 @@ export default {
               bankList: datum.accListViews || [], // 银行账户
               invoiceList: datum.invInfoListViews || [], // 开票信息
               addressList: datum.addressListViews || [], // 地址列表
-              custData: custView || {},
-              supplierData: supplierView || {},
+              custData: datum.custView || {},
+              supplierData: datum.supplierView || {},
               coopData:
                 {
                   ...datum.coopView,
@@ -181,6 +173,47 @@ export default {
         }
       } else {
         createMessage({ type: 'error', description: response.reason || '获取详情失败' });
+      }
+    },
+
+    // 标签数据
+    // 根据自定义选择项的key 获取本身和孩子数据-树形结构
+    *getTagTree({ payload }, { call, put }) {
+      const { response } = yield call(customSelectionTreeFun, payload);
+      const treeDataMap = tree =>
+        tree.map(item => {
+          if (item.children) {
+            return {
+              id: item.id,
+              value: item.id,
+              key: item.id,
+              text: item.selectionName,
+              title: item.selectionName,
+              child: treeDataMap(item.children),
+              children: treeDataMap(item.children),
+            };
+          }
+          return {
+            id: item.id,
+            value: item.id,
+            key: item.id,
+            text: item.selectionName,
+            title: item.selectionName,
+            child: item.children,
+            children: item.children,
+          };
+        });
+      const tagTreeTemp = treeDataMap([response.data]);
+      const flatTags = {};
+      toFlatTags(flatTags, tagTreeTemp || []);
+      if (response.ok) {
+        yield put({
+          type: 'updateState',
+          payload: {
+            tagTree: tagTreeTemp,
+            flatTags,
+          },
+        });
       }
     },
 
@@ -410,11 +443,9 @@ export default {
     },
 
     // 供应商
-    *supplySave({ payload }, { call, put, select }) {
-      const { supplierData } = yield select(({ platAddrEdit }) => platAddrEdit);
-      const preparedData = { ...supplierData, abNo: payload.abNo };
-      const { response, status } = yield call(saveAddrSupplier, preparedData);
-      return commonRespHandler(response, status);
+    *supplySave(_, { select }) {
+      const { formData } = yield select(({ platAddrEdit }) => platAddrEdit);
+      createMessage({ type: 'info', description: '该模块信息由系统维护，请检查其他区域的填写。' });
     },
 
     // 合作伙伴
@@ -452,17 +483,10 @@ export default {
     // -------- 数据查询 --------
     *queryAbOuSel(_, { call, put }) {
       const { response } = yield call(selectAbOus);
-      let abOuSel = Array.isArray(response) ? response : [];
-      abOuSel = abOuSel.map(item => ({
-        ...item,
-        id: item.abNo,
-        value: item.code,
-        title: item.name,
-      }));
       yield put({
         type: 'updateState',
         payload: {
-          abOuSel,
+          abOuSel: Array.isArray(response) ? response : [],
         },
       });
     },
@@ -470,17 +494,10 @@ export default {
     // -------- 数据查询 --------
     *queryAddrSel(_, { call, put }) {
       const { response } = yield call(selectOus);
-      let addrSel = Array.isArray(response) ? response : [];
-      addrSel = addrSel.map(item => ({
-        ...item,
-        id: item.abNo,
-        value: item.code,
-        title: item.name,
-      }));
       yield put({
         type: 'updateState',
         payload: {
-          addrSel,
+          addrSel: Array.isArray(response) ? response : [],
         },
       });
     },
@@ -493,6 +510,16 @@ export default {
         ...payload,
       };
     },
+
+    updateForm(state, { payload }) {
+      const { coopData } = state;
+      const newFormData = { ...coopData, ...payload };
+      return {
+        ...state,
+        coopData: newFormData,
+      };
+    },
+
     clearForm(state, { payload }) {
       return {
         ...state,

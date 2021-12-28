@@ -14,7 +14,6 @@ const AddrDetT3 = props => (
     {({ ouData }) => (
       <DescriptionList size="large" title="公司信息" col={2}>
         <Description term="公司名">{ouData.ouName}</Description>
-        <Description term="公司简称">{ouData.briefName}</Description>
         <Description term="公司类型">{ouData.ouTypeName}</Description>
         <Description term="税号">{ouData.taxRegNo}</Description>
         <Description term="税率">{ouData.taxRateName}</Description>

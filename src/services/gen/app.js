@@ -49,33 +49,35 @@ export async function accountLoginToken() {
 // 根据用户resid查询头像
 export async function getAvatar(id) {
   const dataKey = id;
-  const { response } = await request.get(
-    toQs('/api/production/sys/userPhoto/sfs/token', { dataKey })
-  );
-  const tokenInfo = response;
-  const newResponse = await request.get(toQs(api.sfs.list, { dataKey, ...tokenInfo }));
-  const newList = newResponse.response;
-  if (newList.length) {
-    const a = newList.map(f => {
-      const url = `${serverUrl}${api.sfs.download}?${JSON2QueryString({
-        hash: f.itemHash,
-        dataKey,
-        ...tokenInfo,
-        'el-xsrf': localStorage.getItem('csrfToken'),
-        _t: new Date().getTime() / 1000,
-      })}`;
+  const { response } = await request.get(toQs('/api/person/v1/res/headImg/sfs/token', { dataKey }));
+  const {
+    response: { datum },
+  } = await request.get(toQs('/api/common/v1/getHeadImgFile', { id }));
+  // const tokenInfo = response;
+  // const newResponse = await request.get(toQs(api.sfs.list, { dataKey, ...tokenInfo }));
+  // const newList = newResponse.response;
+  // if (newList.length) {
+  //   const a = newList.map(f => {
+  //     const url = `${serverUrl}${api.sfs.download}?${JSON2QueryString({
+  //       hash: f.itemHash,
+  //       dataKey,
+  //       ...tokenInfo,
+  //       'el-xsrf': localStorage.getItem('csrfToken'),
+  //       _t: new Date().getTime() / 1000,
+  //     })}`;
 
-      return {
-        uid: f.itemName,
-        name: f.itemName,
-        link: url,
-        status: 'done',
-        ...f,
-      };
-    });
-    return a[a.length - 1].link;
-  }
-  return false;
+  //     return {
+  //       uid: f.itemName,
+  //       name: f.itemName,
+  //       link: url,
+  //       status: 'done',
+  //       ...f,
+  //     };
+  //   });
+  //   return a[a.length - 1].link;
+  // }
+  // return false;
+  return datum;
 }
 
 /**
@@ -84,6 +86,15 @@ export async function getAvatar(id) {
  * 不需要log，因为不成功就打登录页并且刷新浏览器了，log也记录不下来
  */
 export async function authCheckingChain() {
+  // const XSRF_TOKEN = sessionStorage.getItem('token_xsrf');
+  // if (!XSRF_TOKEN) {
+  //   const data = await request(api.basic.xsrf, {
+  //     method: 'HEAD',
+  //   });
+  //   const { code } = data;
+  //   // console.log(data,'12');
+  //   sessionStorage.setItem('token_xsrf', code);
+  // }
   const { response: res } = await request.get(api.basic.principal, { force: true });
   // console.warn(res);
   if (!isNil(res.user)) return res;
@@ -153,15 +164,15 @@ export async function queryBuList() {
   return request.get(api.common.getBuList);
 }
 
+// 事业部下拉
+export async function divisionBuList() {
+  return request.get(api.common.divisionList);
+}
+
 // 级联udc接口
 export async function queryCascaderUdc(code) {
   // console.log('[EL-I18N]: f -> queryCascaderUdc ::', code);
   return request.get(toQs(api.common.cascaderUdc, code));
-}
-//省市区查询
-export async function queryCascaderAddr(code) {
-  // console.log('[EL-I18N]: f -> queryCascaderUdc ::', code);
-  return request.get(toQs(api.common.cascaderAddr, code));
 }
 
 // 获取导航信息(菜单、页面、视图)
@@ -316,12 +327,4 @@ export async function getFakeCaptcha(mobile) {
 // 获取CMS配置数据
 export async function getCmsInfo(code) {
   return request.get(api.basic.cms.replace('{code}', code));
-}
-// 根据业务单据查询附件
-export async function getAttachmentsRq(payload) {
-  return request.get(toQs(api.sfs.getAttachments, payload));
-}
-// 附件预览
-export async function attachmentsPreviewRq(payload) {
-  return request(toUrl(api.sfs.filePreview, payload));
 }

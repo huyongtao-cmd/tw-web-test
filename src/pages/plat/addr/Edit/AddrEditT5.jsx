@@ -3,11 +3,11 @@ import { Input, Switch } from 'antd';
 import update from 'immutability-helper';
 
 import Title from '@/components/layout/Title';
+import { UdcSelect } from '@/pages/gen/field';
 import { genFakeId } from '@/utils/mathUtils';
 import EditableDataTable from '@/components/common/EditableDataTable';
 
 import { AddrEditContext, DOMAIN } from './index';
-import BaseSelect from '@/components/production/basic/BaseSelect.tsx';
 
 // 注意-> 真正的上下文在Consumer里面，多个Tab共享父页面的上下文
 const AddrEditT5 = props => (
@@ -83,9 +83,10 @@ const AddrEditT5 = props => (
               ],
             },
             render: (value, row, index) => (
-              <BaseSelect
+              <UdcSelect
+                size="small"
                 value={value}
-                parentKey="FUNCTION:ACCOUNT_TYPE"
+                code="COM:ACCOUNT_TYPE1"
                 placeholder="请选择账户类型"
                 onChange={onCellChanged(index, 'accType')}
               />
@@ -171,9 +172,10 @@ const AddrEditT5 = props => (
             align: 'center',
             width: 120,
             render: (value, row, index) => (
-              <BaseSelect
+              <UdcSelect
+                size="small"
                 value={value}
-                parentKey="COMMON_CURRENCY"
+                code="COM:CURRENCY_KIND"
                 placeholder="请选择币种"
                 onChange={onCellChanged(index, 'currCode')}
               />
@@ -184,7 +186,7 @@ const AddrEditT5 = props => (
             dataIndex: 'defaultFlag',
             align: 'center',
             render: (value, row, index) => (
-              <Switch checked={!!+value} onChange={onCellChanged(index, 'defaultFlag')} />
+              <Switch defaultChecked={!!+value} onChange={onCellChanged(index, 'defaultFlag')} />
             ),
           },
           {

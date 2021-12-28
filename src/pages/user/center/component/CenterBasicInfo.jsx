@@ -86,6 +86,15 @@ class CenterBasicInfo extends PureComponent {
             getFieldDecorator={getFieldDecorator}
             col={2}
           >
+            {/* <Field name="owerPhoto" label="上传照片">
+              <FileManagerEnhance
+                api="/api/person/v1/res/owerPhoto/sfs/token"
+                dataKey={formData.id}
+                listType="jpg/jpeg/png/gif"
+                disabled={false}
+                max={1}
+              />
+            </Field> */}
             <Field
               name="resName"
               label="姓名"

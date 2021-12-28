@@ -24,7 +24,7 @@ class SystemRole extends PureComponent {
       sortBy: 'code',
       sortDirection: 'ASC',
       custom: undefined,
-      disabled: false,
+      disabled: undefined,
     });
   }
 
@@ -77,11 +77,11 @@ class SystemRole extends PureComponent {
           title: formatMessage({ id: 'sys.system.accountType', desc: '账号类型' }),
           dataIndex: 'disabled',
           options: {
-            initialValue: searchForm.disabled || 'false',
+            initialValue: searchForm.disabled || 'all',
           },
           tag: (
-            <Select allowClear>
-              {/* <Option value="all">全部</Option> */}
+            <Select>
+              <Option value="all">全部</Option>
               <Option value="false">有效</Option>
               <Option value="true">无效</Option>
             </Select>
@@ -129,11 +129,11 @@ class SystemRole extends PureComponent {
               checkedChildren={formatMessage({ id: 'sys.system.status.valid', desc: '有效' })}
               unCheckedChildren={formatMessage({ id: 'sys.system.status.invalid', desc: '无效' })}
               onChange={checked => {
-                const { code } = record;
+                const { id } = record;
                 if (checked) {
-                  dispatch({ type: `${DOMAIN}/disable`, payload: { id: code, record } });
+                  dispatch({ type: `${DOMAIN}/enable`, payload: { id, record } });
                 } else {
-                  dispatch({ type: `${DOMAIN}/enable`, payload: { id: code, record } });
+                  dispatch({ type: `${DOMAIN}/disable`, payload: { id, record } });
                 }
               }}
             />

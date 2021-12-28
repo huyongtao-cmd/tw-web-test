@@ -25,7 +25,15 @@ class SyntheticField extends PureComponent {
             key: 'fld_' + i, // eslint-disable-line
             value: value[i],
             onChange: e => {
-              valueMap[i] = e && e.target ? e.target.value : e;
+              if (Object.prototype.toString.call(e) === '[object Object]') {
+                if (e.target.type === 'checkbox') {
+                  valueMap[i] = e.target.checked;
+                } else {
+                  valueMap[i] = e && e.target ? e.target.value : e;
+                }
+              } else {
+                valueMap[i] = e && e.target ? e.target.value : e;
+              }
               return onChange(valueMap);
             },
           })

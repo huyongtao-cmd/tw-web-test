@@ -1,45 +1,34 @@
-import React, { ReactNode } from 'react';
-import { omit, clone } from 'ramda';
-import { Table, Form, Row, Col, Dropdown, Menu, Checkbox, Tooltip, Popconfirm, Icon } from 'antd';
-import { ColumnProps, TableRowSelection } from 'antd/es/table';
-import Link from '@/components/production/basic/Link';
-import Button from '@/components/production/basic/Button';
-import Card from '@/components/production/layout/Card';
+import React, {ReactNode} from 'react';
+import {omit, clone} from 'ramda';
+import {Table, Form, Row, Col, Dropdown, Menu, Checkbox, Tooltip, Popconfirm, Icon} from 'antd';
+import {ColumnProps, TableRowSelection} from 'antd/es/table';
+import Link from "@/components/production/basic/Link";
+import Button from "@/components/production/basic/Button";
+import Card from "@/components/production/layout/Card";
 import message from '@/components/production/layout/Message';
-import { localeString } from '@/components/production/basic/Locale';
-import { outputHandle } from '@/utils/production/outputUtil';
+import {localeString} from '@/components/production/basic/Locale';
+import {outputHandle} from "@/utils/production/outputUtil";
 
-import { treeToList } from '@/utils/production/TreeUtil';
-import {ButtonSize} from "antd/lib/button";
+import {treeToList} from '@/utils/production/TreeUtil'
 // import {}
 
 // @ts-ignore
-import { compileCsvData, exportToCsv } from './util/_utils';
+import {compileCsvData, exportToCsv,} from './util/_utils';
 import styles from './style/editTable.less';
-import { PaginationConfig, SelectionSelectFn } from 'antd/lib/table';
-import { WrappedFormUtils } from 'antd/lib/form/Form';
-import confirm from '@/components/production/layout/Confirm';
+import {PaginationConfig, SelectionSelectFn} from "antd/lib/table";
+import {WrappedFormUtils} from "antd/lib/form/Form";
+import confirm from "@/components/production/layout/Confirm";
 // @ts-ignore
-import { customSettingDetailByKey } from '@/services/production/system/customSetting';
-
-interface ButtonProps {
-  key?: string; // key
-  title?: string; // 按钮名称
-  type?: 'default' | 'primary' | 'info' | 'danger'; // 按钮类型
-  loading?: boolean; // 加载状态
-  cb?: (internalState: any) => void; // 回调方法
-  disabled?: (internalState: any) => boolean | boolean; // 是否可点击
-}
-
+import {customSettingDetailByKey} from '@/services/production/system/customSetting';
 
 interface Props<T> {
   title?: string; // 表格标题
   dataSource?: T[];
   columns: ColumnProps<T>[];
-  buttons?:ButtonProps[]; // 其它业务按钮
-  rowKey?: string;
+  buttons?: ReactNode,
+  rowKey?: string,
   loading?: boolean;
-  selectType?: 'checkbox' | 'radio' | null; // 选择形式,多选,单选,不可选择; 默认checkbox
+  selectType?: "checkbox" | "radio" | null; // 选择形式,多选,单选,不可选择; 默认checkbox
   getCheckboxProps?: (data: T[]) => object; // 选择框的默认属性配置
   selectedRowKeys?: string[] | number[];
   onRowSelect?: SelectionSelectFn<T>;
@@ -50,7 +39,7 @@ interface Props<T> {
   onDeleteConfirm?: (keys: any[]) => void;
   form: WrappedFormUtils;
 
-  [propName: string]: any; // 其它属性
+  [propName: string]: any, // 其它属性
 }
 
 interface EditColumnProps<T> extends ColumnProps<T> {
@@ -62,6 +51,7 @@ interface EditColumnProps<T> extends ColumnProps<T> {
 }
 
 class EditTable<T> extends React.PureComponent<Props<T>, any> {
+
   static defaultProps?: object;
 
   constructor(props: Props<T>) {
@@ -72,6 +62,7 @@ class EditTable<T> extends React.PureComponent<Props<T>, any> {
       selectedRows: [],
       editRowKeys: [],
     };
+
   }
 
   componentDidMount() {
@@ -79,38 +70,38 @@ class EditTable<T> extends React.PureComponent<Props<T>, any> {
   }
 
   getMax = async () => {
-    const { data } = await outputHandle(customSettingDetailByKey, {
-      key: 'EDIT_TABLE_MAX_ROWS_COUNT',
-    });
-    this.setState({ max: data.settingValue });
-  };
+    const {data} = await outputHandle(customSettingDetailByKey, {key: "EDIT_TABLE_MAX_ROWS_COUNT"});
+    this.setState({max: data.settingValue})
+  }
   onRowSelect = (record: T, selected: boolean, selectedRows: Object[]) => {
-    const { rowKey } = this.props;
+    const {rowKey} = this.props;
     const rowKeyString: string = rowKey as string;
     this.setState({
       selectedRowKeys: selectedRows.map((row: any) => row[rowKeyString]),
-      selectedRows: selectedRows,
-    });
+      selectedRows: selectedRows
+    })
+
   };
 
   onRowSelectAll = (selected: boolean, selectedRows: Object[], changeRows: Object[]) => {
-    const { rowKey } = this.props;
+    const {rowKey} = this.props;
     const rowKeyString: string = rowKey as string;
     if (selected) {
       this.setState({
-        selectedRowKeys: [
-          ...selectedRows.map((row: any) => row[rowKeyString]),
-        ],
-        selectedRows: [...selectedRows],
+        selectedRowKeys: [...selectedRows.map((row: any) => row[rowKeyString]),
+          ...changeRows.map((row: any) => row[rowKeyString])],
+        selectedRows: [...selectedRows, ...changeRows]
       });
     } else {
-      this.setState({ selectedRowKeys: [], selectedRows: [] });
+      this.setState({selectedRowKeys: [], selectedRows: []});
     }
+
   };
 
   renderFooter = () => {
-    const { selectedRows, selectedRowKeys } = this.state;
-    const { onAddClick, onCopyClick, onDeleteConfirm, readOnly, rowKey, buttons } = this.props;
+    const {selectedRows, selectedRowKeys} = this.state;
+    const {onAddClick, onCopyClick, onDeleteConfirm, readOnly, buttons,} = this.props;
+
 
     if (readOnly) {
       return null;
@@ -119,21 +110,20 @@ class EditTable<T> extends React.PureComponent<Props<T>, any> {
       <Row className={styles[`prod-table-operations`]}>
         <Col span={24}>
           {onAddClick && (
-            <Button key="add" type="primary" onClick={onAddClick}>
+            <Button
+              key="add"
+              type="primary"
+              onClick={onAddClick}
+            >
               新增
             </Button>
           )}
           {onCopyClick && (
-            <Button key="copy" type="primary" onClick={() => {
-              if(selectedRows.length === 0){
-                message({
-                  type: 'info',
-                  content: '请至少选择一条数据复制！',
-                });
-                return;
-              }
-              onCopyClick(selectedRows);
-            }}>
+            <Button
+              key="copy"
+              type="primary"
+              onClick={() => onCopyClick(selectedRows)}
+            >
               复制
             </Button>
           )}
@@ -145,57 +135,38 @@ class EditTable<T> extends React.PureComponent<Props<T>, any> {
                 if (selectedRowKeys && selectedRowKeys.length > 0) {
                   confirm({
                     onOk: () => {
-                      onDeleteConfirm(selectedRowKeys);
-                      this.setState({ selectedRowKeys: [], selectedRows: [] });
-                    },
-                  });
-                }else {
-                  message({
-                    type: 'info',
-                    content: '请至少选择一条数据删除！',
-                  });
+                      onDeleteConfirm(selectedRowKeys)
+                    }
+                  })
                 }
               }}
             >
               删除
             </Button>
           )}
-          {buttons && buttons.map( button => (
-            <Button
-              key={button.key}
-              type={button.type}
-              loading={button.loading}
-              onClick={
-                () => {
-                  button.cb && button.cb(this.state);
-                }
-              }
-              disabled={typeof button.disabled === 'function'?button.disabled(this.state):button.disabled}
-            >
-              {button.title}
-            </Button>
-          ))}
+
         </Col>
       </Row>
     );
   };
 
   handleEdit = (key: any) => {
-    const { editRowKeys } = this.state;
+    const {editRowKeys} = this.state
     if (editRowKeys.length > 0) {
       message({
-        type: 'info',
+        type: "info",
         content: '您有尚未保存的编辑内容，请先保存！',
       });
     } else {
-      const { form } = this.props;
-      form && form.setFieldsValue({ editTableSpecial_: true });
-      this.setState({ editRowKeys: [key] });
+      const {form} = this.props;
+      form && form.setFieldsValue({editTableSpecial_:true});
+      this.setState({editRowKeys: [key]});
     }
   };
   handleEditSave = (key: any) => {
-    this.setState({ editRowKeys: [] });
+    this.setState({editRowKeys: []});
   };
+
 
   render() {
     const {
@@ -206,28 +177,24 @@ class EditTable<T> extends React.PureComponent<Props<T>, any> {
       pagination = false,
       bordered = true,
       rowKey,
-      size = 'small',
+      size = "small",
       loading,
       selectType,
       getCheckboxProps,
-      rowSelection: newRowSelection = {},
       ...rest
     } = this.props;
 
-    const { selectedRowKeys, max, editRowKeys } = this.state;
+    const {selectedRowKeys, max, editRowKeys} = this.state;
     let prodRowSelection: any = {};
     if (selectType) {
       prodRowSelection.rowSelection = {
-        ...{
-          // fixed: true,
-          type: selectType,
-          selectedRowKeys: selectedRowKeys,
-          onSelect: this.onRowSelect,
-          onSelectAll: this.onRowSelectAll,
-          getCheckboxProps: getCheckboxProps,
-        },
-        ...newRowSelection,
-      };
+        fixed: true,
+        type: selectType,
+        selectedRowKeys: selectedRowKeys,
+        onSelect: this.onRowSelect,
+        onSelectAll: this.onRowSelectAll,
+        getCheckboxProps:getCheckboxProps,
+      }
     }
     // let prodSelection:TableRowSelection<T> | false = false;
     // const prodRowSelection:TableRowSelection<T> = {
@@ -238,20 +205,18 @@ class EditTable<T> extends React.PureComponent<Props<T>, any> {
     //   onSelectAll:this.onRowSelectAll,
     // };
 
-    let wrappedColumns = columns.map((column: any) => ({
-      ...column,
-      title: column.required ? (
-        <span className="ant-form-item-required">{column.title}</span>
-      ) : (
-        column.title
-      ),
-    }));
+
+    let wrappedColumns = columns.map((column: any) => (
+      {
+        ...column,
+        title: (column.required ? <span className="ant-form-item-required">{column.title}</span> : column.title),
+      }));
 
     // @ts-ignore
-    const dataSourceLength = treeToList(dataSource || []).length; //有的dataSource为树形结构，转化为list的长度
+    const dataSourceLength = treeToList(dataSource || []).length//有的dataSource为树形结构，转化为list的长度
     if (max && dataSourceLength && dataSourceLength > max) {
       wrappedColumns = wrappedColumns.map((column: EditColumnProps<T>, index: number) => {
-        const { render } = column;
+        const {render} = column;
         if (render) {
           column.render = (text: any, record: T, index: number) => {
             // @ts-ignore
@@ -269,59 +234,36 @@ class EditTable<T> extends React.PureComponent<Props<T>, any> {
               }
               return result ? result.toString() : result;
             }
-          };
+          }
         }
         return column;
       });
 
-      wrappedColumns = [
-        ...wrappedColumns,
-        {
-          title: '操作',
-          dataIndex: 'editOption',
-          align: 'center',
-          render: (value: any, rows: any) => (
-            <div>
-              {editRowKeys.indexOf(rows[`${rowKey}`]) === -1 && (
-                <Icon
-                  type="edit"
-                  theme="twoTone"
-                  style={{ cursor: 'pointer' }}
-                  title={'编辑'}
-                  onClick={e => {
-                    this.handleEdit(rows[`${rowKey}`]);
-                  }}
-                />
-              )}
-              {editRowKeys.indexOf(rows[`${rowKey}`]) !== -1 && (
-                <Icon
-                  type="check"
-                  style={{ cursor: 'pointer', color: 'rgb(24, 144, 255) ' }}
-                  title={'保存'}
-                  onClick={e => {
-                    this.handleEditSave(rows[`${rowKey}`]);
-                  }}
-                />
-              )}
-            </div>
-          ),
-        },
-      ];
+      wrappedColumns = [...wrappedColumns, {
+        title: '操作',
+        dataIndex: 'editOption',
+        align: 'center',
+        render: (value: any, rows: any) => (
+          <div>
+            {editRowKeys.indexOf(rows[`${rowKey}`]) === -1 && (
+              <Icon type="edit" theme="twoTone" style={{cursor: 'pointer'}} title={'编辑'} onClick={(e) => {
+                this.handleEdit(rows[`${rowKey}`]);
+              }}/>
+            )}
+            {editRowKeys.indexOf(rows[`${rowKey}`]) !== -1 && (
+              <Icon type="check" style={{cursor: 'pointer',color:'rgb(24, 144, 255) '}} title={'保存'} onClick={(e) => {
+                this.handleEditSave(rows[`${rowKey}`]);
+              }}/>
+            )}
+          </div>
+        ),
+      }];
     }
+
 
     return (
       <Card
-        title={
-          title?<p>
-            {title}
-            {dataSourceLength > max && (
-              <span style={{ fontSize: '14px', color: 'red' }}>
-                {' '}
-                当前数据量过多，建议您单行编辑！
-              </span>
-            )}
-          </p>:""
-        }
+        title={<p>{title}{dataSourceLength > max && <span style={{fontSize:'14px',color:'red'}}> 当前数据量过多，建议您单行编辑！</span>}</p>}
       >
         <Table
           className={styles['prod-edit-table']}
@@ -336,14 +278,16 @@ class EditTable<T> extends React.PureComponent<Props<T>, any> {
           {...rest}
         />
       </Card>
+
     );
   }
+
 }
 
 EditTable.defaultProps = {
   // title: "编辑表格",
-  rowKey: 'id',
-  selectType: 'checkbox',
+  rowKey: "id",
+  selectType: "checkbox",
 };
 
 export default EditTable;

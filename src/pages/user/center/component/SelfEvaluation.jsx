@@ -144,6 +144,24 @@ class SelfEvaluation extends PureComponent {
             ))}
           </Col>
         </Row>
+        <Row className={styles['my-resume']}>
+          <Col span={3} className={styles['evaluation-label']}>
+            个人头像照片:
+          </Col>
+          <Col span={12}>
+            <FileManagerEnhance
+              api="/api/person/v1/res/headImg/sfs/token"
+              dataKey={formData.id}
+              listType="jpg/jpeg/png/gif"
+              disabled={false}
+              max={1}
+            />
+          </Col>
+          <Col span={8} style={{ color: 'red', marginLeft: '10px' }}>
+            {' '}
+            照片要求： 大小&lt;1M, 格式JPG,PNG,JPEG,GIF{' '}
+          </Col>
+        </Row>
         <Row className={styles['my-video']}>
           <Col span={3} className={styles['evaluation-label']}>
             自我介绍视频:
@@ -154,6 +172,7 @@ class SelfEvaluation extends PureComponent {
               dataKey={formData.id}
               listType="text"
               disabled={false}
+              max={20}
             />
           </Col>
           <Col span={8} style={{ color: 'red', marginLeft: '10px' }}>

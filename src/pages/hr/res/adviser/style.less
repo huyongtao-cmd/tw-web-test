@@ -1,0 +1,24 @@
+.fill {
+  > div {
+    > div {
+      width: 100%;
+    }
+  }
+}
+.ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.remark {
+  > div:first-child {
+    width: 11%;
+  }
+  > div:last-child {
+    width: 89%;
+  }
+}
+
+.adviser-info ::after {
+  content: '独立顾问个人信息(姓名、身份证号、手机号、银行卡账号、开户行信息)';
+}

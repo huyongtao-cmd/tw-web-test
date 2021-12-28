@@ -4,6 +4,7 @@ import {
   purchaseChangeDetailByChangeId,
   purchaseOverDetailByOverId,
   purchaseOverSubmit,
+  purchaseChangeByContractNo,
 } from '@/services/sale/purchaseContract/purchaseContract';
 import { getViewConf } from '@/services/gen/flow';
 import { businessPageDetailByNo } from '@/services/sys/system/pageConfig';
@@ -28,6 +29,7 @@ export default {
     },
     pageConfig: {},
     closeReason: '',
+    twAuditInformationRecordViews: [],
   },
   effects: {
     /* 获取采购合同详情 */
@@ -112,6 +114,22 @@ export default {
               pageNo: 'PURCHASE_CONTRACT_MANAGEMENT_DETAILS:OTHER_TYPES',
             },
           });
+        } else if (response.purchaseType === 'PROJECT') {
+          if (response.businessType === 'RENT') {
+            yield put({
+              type: `getPageConfig`,
+              payload: {
+                pageNo: 'PURCHASE_CONTRACT_MANAGEMENT_DETAILS:RENT',
+              },
+            });
+          } else if (response.businessType === 'SUNDRY') {
+            yield put({
+              type: `getPageConfig`,
+              payload: {
+                pageNo: 'PURCHASE_CONTRACT_MANAGEMENT_DETAILS:SUNDRY',
+              },
+            });
+          }
         } else {
           yield put({
             type: `getPageConfig`,
@@ -121,8 +139,19 @@ export default {
           });
         }
       }
+      return response;
     },
 
+    //根据合同编号获取合同变更记录
+    *queryChangeDetailByDocNo({ payload }, { call, put, select }) {
+      const { response } = yield call(purchaseChangeByContractNo, payload);
+      yield put({
+        type: 'updateState',
+        payload: {
+          twAuditInformationRecordViews: response.datum,
+        },
+      });
+    },
     *queryChangeDetailByChangeId({ payload }, { call, put, select }) {
       const { response } = yield call(purchaseChangeDetailByChangeId, payload);
       if (response && response.ok) {
@@ -319,7 +348,7 @@ export default {
         });
       }
     },
-
+    // 终止提交
     *retryCloseSubmit({ payload }, { call, put, select }) {
       const { response } = yield call(purchaseOverSubmit, payload);
       if (response) {

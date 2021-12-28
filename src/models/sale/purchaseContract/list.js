@@ -7,8 +7,10 @@ import {
   purchasePending,
   purchaseActive,
   purchaseOverSubmit,
+  purchaseClose,
   remove,
 } from '@/services/sale/purchaseContract/purchaseContract';
+
 import { queryProdClassesTree } from '@/services/sys/baseinfo/product';
 import { queryUserPrincipal } from '@/services/gen/user';
 import { launchFlowFn } from '@/services/sys/flowHandle';
@@ -71,6 +73,21 @@ export default {
       }
     },
 
+    // 关闭
+    *close({ payload }, { call, put, select }) {
+      const { response } = yield call(purchaseClose, payload);
+      const { params } = yield select(({ salePurchaseList }) => salePurchaseList);
+      if (response && response.ok) {
+        createMessage({ type: 'success', description: '关闭成功' });
+        yield put({
+          type: 'queryList',
+          payload: params,
+        });
+      } else {
+        createMessage({ type: 'error', description: `关闭失败,错误原因：${response.reason}` });
+      }
+    },
+
     *tree({ payload }, { call, put }) {
       const mergeDeep = child =>
         Array.isArray(child)
@@ -92,7 +109,7 @@ export default {
       });
     },
 
-    *close({ payload }, { call, put, select }) {
+    *over({ payload }, { call, put, select }) {
       let defkey = '';
       const { response } = yield call(purchaseOverSubmit, payload);
       if (response && response.ok) {

@@ -5,6 +5,9 @@ import moment from 'moment';
 import { groupWith, isNil } from 'ramda';
 import router from 'umi/router';
 import { stringify } from 'qs';
+//对生成的token进行加密：使用 Base64
+import Base64 from 'crypto-js/enc-base64';
+import Utf8 from 'crypto-js/enc-utf8';
 import NoticeIcon from '../NoticeIcon/index';
 import HeaderSearch from '../HeaderSearch/index';
 import styles from './index.less';
@@ -76,6 +79,19 @@ export default class GlobalHeaderRight extends PureComponent {
   onExtensionMenuClick = (mCode, mUrl, ELearningLink) => {
     const haveELearningLink = !isNil(ELearningLink);
     if (mUrl) {
+      // 是否需要打卡外链
+      if (mCode.includes('blank')) {
+        if (mCode === 'yeeDoc_blank') {
+          //获取token对象
+          const token = localStorage.getItem('token_auth');
+          // 对生成的token(ticket)进行加密：使用 Base64
+          const ticket = Base64.stringify(Utf8.parse(token));
+          window.open(mUrl + '?ticket=' + ticket);
+          return;
+        }
+        window.open(mUrl);
+        return;
+      }
       // 头部右侧菜单收缩后点击跳转
       if (mCode === 'appDownload') {
         window.open('/download');
@@ -87,6 +103,7 @@ export default class GlobalHeaderRight extends PureComponent {
         }
         return;
       }
+
       if (mCode === 'help') {
         const urls = getUrl();
         const from = stringify({ url: urls });
@@ -111,7 +128,9 @@ export default class GlobalHeaderRight extends PureComponent {
       theme,
       notifyCount,
       extensionInfo = [],
+      headImgFile,
     } = this.props;
+
     const menu = (
       <Menu className={styles.menu} selectedKeys={[]} onClick={onMenuClick}>
         <Menu.Item key="userinfo">
@@ -209,9 +228,15 @@ export default class GlobalHeaderRight extends PureComponent {
               <Avatar
                 size="small"
                 className={styles.avatar}
-                src={user.avatar ? user.avatar : avatarImg}
+                src={headImgFile !== '' ? `data:image/jpeg;base64,${headImgFile}` : avatarImg}
                 alt="avatar"
               />
+              {/* <img
+                src={  avatarImg}
+                // `data:image/jpeg;base64,${extensionInfo[0].imgFile}`
+                alt="icon"
+                className={styles.iconStyle}
+              /> */}
               <span className={styles.name} data-user-id={user.info.id}>
                 {user.info.name}
               </span>

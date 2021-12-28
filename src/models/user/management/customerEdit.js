@@ -12,6 +12,9 @@ import {
   saveAddrCoop,
   saveAll,
 } from '@/services/plat/addr/addr';
+import {
+  customSelectionTreeFun, // 自定义选项tree
+} from '@/services/production/system';
 import { customerDetailsRq } from '@/services/user/management/customer';
 import { launchFlowFn, pushFlowFn } from '@/services/sys/flowHandle';
 import { selectAbOus } from '@/services/gen/list';
@@ -70,6 +73,18 @@ const initialState = {
   // 下拉
   abOuSel: [],
   addrSel: [],
+  tagTree: [], // 标签树
+  flatTags: {},
+};
+
+const toFlatTags = (flatTags, menus) => {
+  menus.forEach(item => {
+    // eslint-disable-next-line no-param-reassign
+    flatTags[item.id] = item;
+    if (item.children && item.children.length > 0) {
+      toFlatTags(flatTags, item.children);
+    }
+  });
 };
 
 const commonRespHandler = (response, status) => {
@@ -145,6 +160,46 @@ export default {
           codeData: datum.abBasicDetailView || { relateType: '' },
         },
       });
+    },
+    // 标签数据
+    // 根据自定义选择项的key 获取本身和孩子数据-树形结构
+    *getTagTree({ payload }, { call, put }) {
+      const { response } = yield call(customSelectionTreeFun, payload);
+      const treeDataMap = tree =>
+        tree.map(item => {
+          if (item.children) {
+            return {
+              id: item.id,
+              value: item.id,
+              key: item.id,
+              text: item.selectionName,
+              title: item.selectionName,
+              child: treeDataMap(item.children),
+              children: treeDataMap(item.children),
+            };
+          }
+          return {
+            id: item.id,
+            value: item.id,
+            key: item.id,
+            text: item.selectionName,
+            title: item.selectionName,
+            child: item.children,
+            children: item.children,
+          };
+        });
+      const tagTreeTemp = treeDataMap([response.data]);
+      const flatTags = {};
+      toFlatTags(flatTags, tagTreeTemp || []);
+      if (response.ok) {
+        yield put({
+          type: 'updateState',
+          payload: {
+            tagTree: tagTreeTemp,
+            flatTags,
+          },
+        });
+      }
     },
 
     *initData({ payload }, { call, put }) {

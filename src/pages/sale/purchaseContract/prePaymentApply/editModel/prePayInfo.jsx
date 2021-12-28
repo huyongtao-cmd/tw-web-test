@@ -24,7 +24,7 @@ import { formatDT } from '@/utils/tempUtils/DateTime';
 import { toIsoDate } from '@/utils/timeUtils';
 import { add as mathAdd, sub, div, mul, checkIfNumber, genFakeId } from '@/utils/mathUtils';
 import router from 'umi/router';
-import { payDetailTableProps } from './prePayInfoConfig';
+import { payDetailTableProps, paymentPlanAdvPayTableProps } from './prePayInfoConfig';
 import { selectBu, selectSupplier } from '@/services/user/Contract/sales';
 import { selectBus } from '@/services/org/bu/bu';
 import { selectUsers } from '@/services/sys/user';
@@ -96,6 +96,18 @@ class PrePayInfo extends PureComponent {
     dispatch({ type: `${DOMAIN}/selectAccountByNo`, payload: { receivingUnit: key } });
   };
 
+  // 付款公司
+  handleFinalPaymentCompany1 = (key, data) => {
+    const { dispatch } = this.props;
+    dispatch({ type: `${DOMAIN}/selectFinalAccountByNo`, payload: { finalPaymentCompany1: key } });
+  };
+
+  // 付款卡号
+  handleFinalPaymentId = (key, data) => {
+    const { dispatch } = this.props;
+    dispatch({ type: `${DOMAIN}/selectFinalApplyAccounts`, payload: { finalPaymentId: key } });
+  };
+
   // 收款卡号
   handleReceivingId = (key, data) => {
     const { dispatch, form } = this.props;
@@ -131,6 +143,7 @@ class PrePayInfo extends PureComponent {
     const { prePaymentApplyEdit } = this.props;
     const { pageConfig, formData } = prePaymentApplyEdit;
     const { mode } = this.props;
+    const { status, entrance } = fromQs();
     if (pageConfig) {
       if (!pageConfig.pageBlockViews || pageConfig.pageBlockViews.length < 1) {
         return <div />;
@@ -161,7 +174,7 @@ class PrePayInfo extends PureComponent {
           }}
         >
           <Input
-            disabled={this.pageFieldMode(pageFieldJson.paymentNo.fieldMode)}
+            disabled={this.pageFieldMode(pageFieldJson.paymentNo.fieldMode) || entrance === 'flow'}
             placeholder="系统自动生成"
           />
         </Field>,
@@ -205,7 +218,9 @@ class PrePayInfo extends PureComponent {
         >
           <Input
             placeholder={`请输入${pageFieldJson.purchaseName.displayName}`}
-            disabled={this.pageFieldMode(pageFieldJson.purchaseName.fieldMode)}
+            disabled={
+              this.pageFieldMode(pageFieldJson.purchaseName.fieldMode) || entrance === 'flow'
+            }
           />
         </Field>,
         <Field
@@ -227,7 +242,9 @@ class PrePayInfo extends PureComponent {
           <DatePicker
             placeholder={`请选择${pageFieldJson.applicationDate.displayName}`}
             format="YYYY-MM-DD"
-            disabled={this.pageFieldMode(pageFieldJson.applicationDate.fieldMode)}
+            disabled={
+              this.pageFieldMode(pageFieldJson.applicationDate.fieldMode) || entrance === 'flow'
+            }
             className="x-fill-100"
           />
         </Field>,
@@ -258,7 +275,9 @@ class PrePayInfo extends PureComponent {
                 option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }
               onChange={this.handlePaymentCompany1}
-              disabled={this.pageFieldMode(pageFieldJson.paymentCompany1.fieldMode)}
+              disabled={
+                this.pageFieldMode(pageFieldJson.paymentCompany1.fieldMode) || entrance === 'flow'
+              }
               placeholder={`请选择${pageFieldJson.paymentCompany1.displayName}`}
             />
           </Field>
@@ -301,7 +320,9 @@ class PrePayInfo extends PureComponent {
             filterOption={(input, option) =>
               option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }
-            disabled={this.pageFieldMode(pageFieldJson.supplierLegalNo.fieldMode)}
+            disabled={
+              this.pageFieldMode(pageFieldJson.supplierLegalNo.fieldMode) || entrance === 'flow'
+            }
             placeholder={`请选择${pageFieldJson.supplierLegalNo.displayName}`}
             onChange={this.handleSupplier}
           />
@@ -325,7 +346,9 @@ class PrePayInfo extends PureComponent {
           <Selection.UDC
             code="TSK:ACCEPTANCE_TYPE"
             placeholder={`请选择${pageFieldJson.acceptanceType.displayName}`}
-            disabled={this.pageFieldMode(pageFieldJson.acceptanceType.fieldMode)}
+            disabled={
+              this.pageFieldMode(pageFieldJson.acceptanceType.fieldMode) || entrance === 'flow'
+            }
           />
         </Field>,
         <Field
@@ -350,7 +373,7 @@ class PrePayInfo extends PureComponent {
             formatter={v => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
             parser={v => v.replace(/\$\s?|(,*)/g, '')}
             className="number-left x-fill-100"
-            disabled={this.pageFieldMode(pageFieldJson.paymentAmt.fieldMode)}
+            disabled={this.pageFieldMode(pageFieldJson.paymentAmt.fieldMode) || entrance === 'flow'}
             placeholder={`请输入${pageFieldJson.paymentAmt.displayName}`}
           />
         </Field>,
@@ -376,7 +399,9 @@ class PrePayInfo extends PureComponent {
             formatter={v => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
             parser={v => v.replace(/\$\s?|(,*)/g, '')}
             className="number-left x-fill-100"
-            disabled={this.pageFieldMode(pageFieldJson.currPaymentAmt.fieldMode)}
+            disabled={
+              this.pageFieldMode(pageFieldJson.currPaymentAmt.fieldMode) || entrance === 'flow'
+            }
             placeholder={`请输入${pageFieldJson.currPaymentAmt.displayName}`}
           />
         </Field>,
@@ -399,7 +424,7 @@ class PrePayInfo extends PureComponent {
           <Selection.UDC
             code="COM:CURRENCY_KIND"
             placeholder={`请选择${pageFieldJson.currCode.displayName}`}
-            disabled={this.pageFieldMode(pageFieldJson.currCode.fieldMode)}
+            disabled={this.pageFieldMode(pageFieldJson.currCode.fieldMode) || entrance === 'flow'}
           />
         </Field>,
         <Field
@@ -425,7 +450,10 @@ class PrePayInfo extends PureComponent {
             filterOption={(input, option) =>
               option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }
-            disabled={this.pageFieldMode(pageFieldJson.purchaseInchargeResId.fieldMode)}
+            disabled={
+              this.pageFieldMode(pageFieldJson.purchaseInchargeResId.fieldMode) ||
+              entrance === 'flow'
+            }
           />
         </Field>,
         <Field
@@ -447,7 +475,9 @@ class PrePayInfo extends PureComponent {
           <Selection.UDC
             code="TSK:INVOICE_STATE"
             placeholder={`请选择${pageFieldJson.invoiceState.displayName}`}
-            disabled={this.pageFieldMode(pageFieldJson.invoiceState.fieldMode)}
+            disabled={
+              this.pageFieldMode(pageFieldJson.invoiceState.fieldMode) || entrance === 'flow'
+            }
           />
         </Field>,
         <Field
@@ -469,7 +499,33 @@ class PrePayInfo extends PureComponent {
           <Input
             placeholder={`请输入${pageFieldJson.demandNo.displayName}`}
             className="x-fill-100"
-            disabled={this.pageFieldMode(pageFieldJson.demandNo.fieldMode)}
+            disabled={this.pageFieldMode(pageFieldJson.demandNo.fieldMode) || entrance === 'flow'}
+          />
+        </Field>,
+        // 新增预计核销日期
+        <Field
+          name="expHexiaoDate"
+          key="expHexiaoDate"
+          label={pageFieldJson.expHexiaoDate.displayName}
+          sortNo={pageFieldJson.expHexiaoDate.sortNo}
+          {...FieldListLayout}
+          decorator={{
+            initialValue: formData.expHexiaoDate ? moment(formData.expHexiaoDate) : '',
+            rules: [
+              {
+                required: pageFieldJson.expHexiaoDate.requiredFlag,
+                message: `请输入${pageFieldJson.expHexiaoDate.displayName}`,
+              },
+            ],
+          }}
+        >
+          <DatePicker
+            placeholder={`请选择${pageFieldJson.expHexiaoDate.displayName}`}
+            format="YYYY-MM-DD"
+            disabled={
+              this.pageFieldMode(pageFieldJson.expHexiaoDate.fieldMode) || entrance === 'flow'
+            }
+            className="x-fill-100"
           />
         </Field>,
         <Field
@@ -493,12 +549,12 @@ class PrePayInfo extends PureComponent {
           <Input.TextArea
             placeholder={`请输入${pageFieldJson.note.displayName}`}
             rows={3}
-            disabled={this.pageFieldMode(pageFieldJson.note.fieldMode)}
+            disabled={this.pageFieldMode(pageFieldJson.note.fieldMode) || entrance === 'flow'}
           />
         </Field>,
       ];
       const filterList = fields
-        .filter(field => !field.key || pageFieldJson[field.key].visibleFlag === 1)
+        // .filter(field => !field.key || pageFieldJson[field.key].visibleFlag === 1)
         .sort((field1, field2) => field1.props.sortNo - field2.props.sortNo);
       return filterList;
     }
@@ -509,8 +565,7 @@ class PrePayInfo extends PureComponent {
   renderRelatedPageConfig = () => {
     const { prePaymentApplyEdit } = this.props;
     const { pageConfig, formData, opportunityList } = prePaymentApplyEdit;
-    const { mode } = this.props;
-    const readOnly = true;
+    const { status, entrance } = fromQs();
     if (pageConfig) {
       if (!pageConfig.pageBlockViews || pageConfig.pageBlockViews.length < 1) {
         return <div />;
@@ -542,7 +597,7 @@ class PrePayInfo extends PureComponent {
         >
           <Selection.UDC
             code="TSK:DOC_TYPE"
-            disabled={this.pageFieldMode(pageFieldJson.docType.fieldMode)}
+            disabled={this.pageFieldMode(pageFieldJson.docType.fieldMode) || entrance === 'flow'}
             onChange={this.handleDocType}
             placeholder={`请选择${pageFieldJson.docType.displayName}`}
           />
@@ -564,7 +619,7 @@ class PrePayInfo extends PureComponent {
           }}
         >
           <Input
-            disabled={this.pageFieldMode(pageFieldJson.docNo.fieldMode)}
+            disabled={this.pageFieldMode(pageFieldJson.docNo.fieldMode) || entrance === 'flow'}
             placeholder={`请选择${pageFieldJson.docNo.displayName}`}
           />
         </Field>,
@@ -585,39 +640,65 @@ class PrePayInfo extends PureComponent {
           }}
         >
           <Input
-            disabled={this.pageFieldMode(pageFieldJson.relatedSalesContract.fieldMode)}
+            disabled={
+              this.pageFieldMode(pageFieldJson.relatedSalesContract.fieldMode) ||
+              entrance === 'flow'
+            }
             placeholder={`请输入${pageFieldJson.relatedSalesContract.displayName}`}
           />
         </Field>,
-        <Field
-          name="opportunity"
-          key="opportunity"
+        <FieldLine
           label={pageFieldJson.opportunity.displayName}
           sortNo={pageFieldJson.opportunity.sortNo}
+          required={pageFieldJson.opportunity.requiredFlag}
           {...FieldListLayout}
-          decorator={{
-            initialValue: formData.opportunity ? parseInt(formData.opportunity, 10) : '',
-            rules: [
-              {
-                required: pageFieldJson.opportunity.requiredFlag,
-                message: `请输入${pageFieldJson.opportunity.displayName}`,
-              },
-            ],
-          }}
         >
-          <Selection.Columns
-            className="x-fill-100"
-            source={opportunityList}
-            columns={opportunityColumns}
-            transfer={{ key: 'id', code: 'id', name: 'oppoName' }}
-            dropdownMatchSelectWidth={false}
-            showSearch
-            onColumnsChange={value => {}}
-            placeholder={`请选择${pageFieldJson.opportunity.displayName}`}
-            limit={20}
-            disabled={this.pageFieldMode(pageFieldJson.opportunity.fieldMode)}
-          />
-        </Field>,
+          <Field
+            name="opportunity"
+            key="opportunity"
+            decorator={{
+              initialValue: formData.opportunity ? parseInt(formData.opportunity, 10) : '',
+              rules: [
+                {
+                  required: pageFieldJson.opportunity.requiredFlag,
+                  message: `请输入${pageFieldJson.opportunity.displayName}`,
+                },
+              ],
+            }}
+            wrapperCol={{ span: 23, xxl: 23 }}
+          >
+            <Selection.Columns
+              className="x-fill-100"
+              source={opportunityList}
+              columns={opportunityColumns}
+              transfer={{ key: 'id', code: 'id', name: 'oppoName' }}
+              dropdownMatchSelectWidth={false}
+              showSearch
+              onColumnsChange={value => {}}
+              placeholder={`请选择${pageFieldJson.opportunity.displayName}`}
+              limit={20}
+              disabled={
+                this.pageFieldMode(pageFieldJson.opportunity.fieldMode) || entrance === 'flow'
+              }
+            />
+          </Field>
+          <Field
+            name="opportunity"
+            key="opportunity"
+            decorator={{
+              initialValue: formData.opportunity || '',
+              rules: [
+                {
+                  required: pageFieldJson.opportunity.requiredFlag,
+                  message: `请输入${pageFieldJson.opportunity.displayName}`,
+                },
+              ],
+            }}
+            wrapperCol={{ span: 23, offset: 1, xxl: 23 }}
+          >
+            <Input disabled />
+          </Field>
+        </FieldLine>,
         <Field
           name="relatedProjectNo"
           key="relatedProjectNo"
@@ -635,7 +716,9 @@ class PrePayInfo extends PureComponent {
           }}
         >
           <Input
-            disabled={this.pageFieldMode(pageFieldJson.relatedProjectNo.fieldMode)}
+            disabled={
+              this.pageFieldMode(pageFieldJson.relatedProjectNo.fieldMode) || entrance === 'flow'
+            }
             placeholder={`请输入${pageFieldJson.relatedProjectNo.displayName}`}
           />
         </Field>,
@@ -656,7 +739,9 @@ class PrePayInfo extends PureComponent {
           }}
         >
           <Input
-            disabled={this.pageFieldMode(pageFieldJson.relatedTaskName.fieldMode)}
+            disabled={
+              this.pageFieldMode(pageFieldJson.relatedTaskName.fieldMode) || entrance === 'flow'
+            }
             placeholder={`请输入${pageFieldJson.relatedTaskName.displayName}`}
           />
         </Field>,
@@ -677,7 +762,9 @@ class PrePayInfo extends PureComponent {
           }}
         >
           <Input
-            disabled={this.pageFieldMode(pageFieldJson.attributionPayApply.fieldMode)}
+            disabled={
+              this.pageFieldMode(pageFieldJson.attributionPayApply.fieldMode) || entrance === 'flow'
+            }
             placeholder={`请输入${pageFieldJson.attributionPayApply.displayName}`}
           />
         </Field>,
@@ -698,7 +785,9 @@ class PrePayInfo extends PureComponent {
           }}
         >
           <Input
-            disabled={this.pageFieldMode(pageFieldJson.prePaymentNo.fieldMode)}
+            disabled={
+              this.pageFieldMode(pageFieldJson.prePaymentNo.fieldMode) || entrance === 'flow'
+            }
             placeholder={`请输入${pageFieldJson.prePaymentNo.displayName}`}
           />
         </Field>,
@@ -717,6 +806,7 @@ class PrePayInfo extends PureComponent {
     const { pageConfig, formData, receivingIdList } = prePaymentApplyEdit;
     const { mode } = this.props;
     const readOnly = true;
+    const { status, entrance } = fromQs();
     if (pageConfig) {
       if (!pageConfig.pageBlockViews || pageConfig.pageBlockViews.length < 1) {
         return <div />;
@@ -747,7 +837,7 @@ class PrePayInfo extends PureComponent {
           }}
         >
           <Input
-            disabled={this.pageFieldMode(pageFieldJson.invoiceNo.fieldMode)}
+            disabled={this.pageFieldMode(pageFieldJson.invoiceNo.fieldMode) || entrance === 'flow'}
             placeholder={`请输入${pageFieldJson.invoiceNo.displayName}`}
           />
         </Field>,
@@ -768,7 +858,7 @@ class PrePayInfo extends PureComponent {
           }}
         >
           <Input
-            disabled={this.pageFieldMode(pageFieldJson.invoiceAmt.fieldMode)}
+            disabled={this.pageFieldMode(pageFieldJson.invoiceAmt.fieldMode) || entrance === 'flow'}
             placeholder={`请输入${pageFieldJson.invoiceAmt.displayName}`}
           />
         </Field>,
@@ -789,7 +879,7 @@ class PrePayInfo extends PureComponent {
           }}
         >
           <Input
-            disabled={this.pageFieldMode(pageFieldJson.rate.fieldMode)}
+            disabled={this.pageFieldMode(pageFieldJson.rate.fieldMode) || entrance === 'flow'}
             placeholder={`请输入${pageFieldJson.rate.displayName}`}
           />
         </Field>,
@@ -810,7 +900,7 @@ class PrePayInfo extends PureComponent {
           }}
         >
           <Input
-            disabled={this.pageFieldMode(pageFieldJson.taxAmount.fieldMode)}
+            disabled={this.pageFieldMode(pageFieldJson.taxAmount.fieldMode) || entrance === 'flow'}
             placeholder={`请输入${pageFieldJson.taxAmount.displayName}`}
           />
         </Field>,
@@ -832,7 +922,7 @@ class PrePayInfo extends PureComponent {
         >
           <UdcSelect
             code="ACC:PAY_METHOD"
-            disabled={this.pageFieldMode(pageFieldJson.payMethod.fieldMode)}
+            disabled={this.pageFieldMode(pageFieldJson.payMethod.fieldMode) || entrance === 'flow'}
             onChange={this.handlePayMethod}
             placeholder={`请选择${pageFieldJson.payMethod.displayName}`}
           />
@@ -853,8 +943,15 @@ class PrePayInfo extends PureComponent {
             ],
           }}
         >
-          <Input
-            disabled={this.pageFieldMode(pageFieldJson.relatedDays.fieldMode)}
+          <InputNumber
+            min={0}
+            precision={0}
+            formatter={v => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+            parser={v => v.replace(/\$\s?|(,*)/g, '')}
+            className="number-left x-fill-100"
+            disabled={
+              this.pageFieldMode(pageFieldJson.relatedDays.fieldMode) || entrance === 'flow'
+            }
             placeholder={`请输入${pageFieldJson.relatedDays.displayName}`}
           />
         </Field>,
@@ -877,7 +974,9 @@ class PrePayInfo extends PureComponent {
           <DatePicker
             placeholder={`请选择${pageFieldJson.expRelatedDate.displayName}`}
             format="YYYY-MM-DD"
-            disabled={this.pageFieldMode(pageFieldJson.expRelatedDate.fieldMode)}
+            disabled={
+              this.pageFieldMode(pageFieldJson.expRelatedDate.fieldMode) || entrance === 'flow'
+            }
             className="x-fill-100"
           />
         </Field>,
@@ -900,7 +999,9 @@ class PrePayInfo extends PureComponent {
           <DatePicker
             placeholder={`请选择${pageFieldJson.expHexiaoDate.displayName}`}
             format="YYYY-MM-DD"
-            disabled={this.pageFieldMode(pageFieldJson.expHexiaoDate.fieldMode)}
+            disabled={
+              this.pageFieldMode(pageFieldJson.expHexiaoDate.fieldMode) || entrance === 'flow'
+            }
             className="x-fill-100"
           />
         </Field>,
@@ -926,7 +1027,9 @@ class PrePayInfo extends PureComponent {
             filterOption={(input, option) =>
               option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }
-            disabled={this.pageFieldMode(pageFieldJson.receivingUnit.fieldMode)}
+            disabled={
+              this.pageFieldMode(pageFieldJson.receivingUnit.fieldMode) || entrance === 'flow'
+            }
             onChange={this.handleReceivingUnit}
             placeholder={`请选择${pageFieldJson.receivingUnit.displayName}`}
           />
@@ -947,7 +1050,11 @@ class PrePayInfo extends PureComponent {
             ],
           }}
         >
-          <Input disabled={this.pageFieldMode(pageFieldJson.receivingBank.fieldMode)} />
+          <Input
+            disabled={
+              this.pageFieldMode(pageFieldJson.receivingBank.fieldMode) || entrance === 'flow'
+            }
+          />
         </Field>,
         <Field
           name="receivingId"
@@ -970,7 +1077,9 @@ class PrePayInfo extends PureComponent {
             showSearch
             onChange={this.handleReceivingId}
             placeholder="请选择收款账号"
-            disabled={this.pageFieldMode(pageFieldJson.receivingId.fieldMode)}
+            disabled={
+              this.pageFieldMode(pageFieldJson.receivingId.fieldMode) || entrance === 'flow'
+            }
           />
         </Field>,
         <Field
@@ -994,7 +1103,9 @@ class PrePayInfo extends PureComponent {
           <Input.TextArea
             placeholder={`请输入${pageFieldJson.accountingNote.displayName}`}
             rows={3}
-            disabled={this.pageFieldMode(pageFieldJson.accountingNote.fieldMode)}
+            disabled={
+              this.pageFieldMode(pageFieldJson.accountingNote.fieldMode) || entrance === 'flow'
+            }
           />
         </Field>,
       ];
@@ -1011,6 +1122,7 @@ class PrePayInfo extends PureComponent {
     const { prePaymentApplyEdit } = this.props;
     const { pageConfig, formData, finalPaymentIdList } = prePaymentApplyEdit;
     const { mode } = this.props;
+    const { status, entrance } = fromQs();
     if (pageConfig) {
       if (!pageConfig.pageBlockViews || pageConfig.pageBlockViews.length < 1) {
         return <div />;
@@ -1046,8 +1158,8 @@ class PrePayInfo extends PureComponent {
             filterOption={(input, option) =>
               option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }
-            disabled
-            onChange={this.handlePurchaseLegal}
+            disabled={entrance !== 'flow'}
+            onChange={this.handleFinalPaymentCompany1}
             placeholder={`请输入${pageFieldJson.finalPaymentCompany1.displayName}`}
           />
         </Field>,
@@ -1067,7 +1179,7 @@ class PrePayInfo extends PureComponent {
             ],
           }}
         >
-          <Input disabled />
+          <Input disabled={entrance !== 'flow'} />
         </Field>,
         <Field
           name="finalPaymentId"
@@ -1088,7 +1200,8 @@ class PrePayInfo extends PureComponent {
           <AsyncSelect
             source={finalPaymentIdList || []}
             showSearch
-            disabled
+            disabled={entrance !== 'flow'}
+            onChange={this.handleFinalPaymentId}
             placeholder={`请选择${pageFieldJson.finalPaymentId.displayName}`}
           />
         </Field>,
@@ -1114,7 +1227,7 @@ class PrePayInfo extends PureComponent {
             filterOption={(input, option) =>
               option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }
-            disabled
+            disabled={entrance !== 'flow'}
             placeholder={`请输入${pageFieldJson.finalAccountingSubject.displayName}`}
           />
         </Field>,
@@ -1136,7 +1249,7 @@ class PrePayInfo extends PureComponent {
         >
           <UdcSelect
             code="ACC:PAY_METHOD"
-            disabled
+            disabled={entrance !== 'flow'}
             placeholder={`请选择${pageFieldJson.finalPayMethod.displayName}`}
           />
         </Field>,
@@ -1159,7 +1272,7 @@ class PrePayInfo extends PureComponent {
           <DatePicker
             placeholder={`请选择${pageFieldJson.finalPayDate.displayName}`}
             format="YYYY-MM-DD"
-            disabled
+            disabled={entrance !== 'flow'}
             className="x-fill-100"
           />
         </Field>,
@@ -1182,7 +1295,7 @@ class PrePayInfo extends PureComponent {
           <DatePicker
             placeholder={`请选择${pageFieldJson.finalHexiaoDate.displayName}`}
             format="YYYY-MM-DD"
-            disabled
+            disabled={entrance !== 'flow'}
             className="x-fill-100"
           />
         </Field>,
@@ -1206,7 +1319,7 @@ class PrePayInfo extends PureComponent {
         >
           <Input.TextArea
             placeholder={`请选择${pageFieldJson.finalAccountingNote.displayName}`}
-            disabled
+            disabled={entrance !== 'flow'}
             rows={3}
           />
         </Field>,
@@ -1223,6 +1336,8 @@ class PrePayInfo extends PureComponent {
     const { form, mode, loading, prePaymentApplyEdit, dispatch } = this.props;
     const { getFieldDecorator } = form;
     const { formData, pageConfig } = prePaymentApplyEdit;
+    const { source, status, entrance } = fromQs();
+    // const flag = false; //暂时隐藏付款单记录
     return (
       <>
         <Card className="tw-card-adjust" bordered={false}>
@@ -1247,14 +1362,15 @@ class PrePayInfo extends PureComponent {
           >
             {this.renderRelatedPageConfig()}
             <Field
-              presentational
+              // presentational
               label="付款依据"
+              name="attachment"
               {...FieldListLayout}
               decorator={{
                 initialValue: null,
                 rules: [
                   {
-                    required: true,
+                    required: mode === 'create',
                     message: '请上传付款依据',
                   },
                 ],
@@ -1264,9 +1380,35 @@ class PrePayInfo extends PureComponent {
                 api="/api/worth/v1/paymentApply/sfs/token"
                 dataKey={formData.id}
                 listType="text"
-                disabled={mode === 'view'}
+                disabled={mode === 'view' || entrance === 'flow'}
+                required
               />
             </Field>
+            {((status && status === 'urgency') || formData.isNeedUpload === 1) && (
+              <Field
+                name="emergencyPayment"
+                label="紧急付款凭证"
+                {...FieldListLayout}
+                decorator={{
+                  initialValue: null,
+                  rules: [
+                    {
+                      // eslint-disable-next-line no-unneeded-ternary
+                      required: isNil(formData.emergencyPayment) ? true : false,
+                      message: '请上传紧急付款凭证',
+                    },
+                  ],
+                }}
+              >
+                <FileManagerEnhance
+                  api="/api/worth/v1/workOrderApply/sfs/emergencyPayment/token"
+                  dataKey={formData.id}
+                  listType="text"
+                  disabled={mode === 'view'}
+                  required
+                />
+              </Field>
+            )}
           </FieldList>
         </Card>
         <Divider dashed />
@@ -1282,7 +1424,7 @@ class PrePayInfo extends PureComponent {
           </FieldList>
         </Card>
 
-        {mode === 'view' && (
+        {(mode === 'view' || (entrance && entrance === 'flow')) && (
           <>
             <Divider dashed />
             <Card className="tw-card-adjust" bordered={false}>
@@ -1308,10 +1450,30 @@ class PrePayInfo extends PureComponent {
                       loading,
                       form,
                       mode,
+                      entrance,
                       prePaymentApplyEdit
                     )}
                   />
                 )}
+            </Card>
+          </>
+        )}
+
+        {formData.docType === 'CONTRACT' && (
+          <>
+            <Divider dashed />
+            <Card className="tw-card-adjust" bordered={false}>
+              <div className="tw-card-title">付款计划参考</div>
+              <EditableDataTable
+                {...paymentPlanAdvPayTableProps(
+                  DOMAIN,
+                  dispatch,
+                  loading,
+                  form,
+                  mode,
+                  prePaymentApplyEdit
+                )}
+              />
             </Card>
           </>
         )}

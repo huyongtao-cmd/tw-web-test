@@ -102,6 +102,7 @@ class InvBatchDetail extends PureComponent {
   handleConfirm = () => {
     // TO DO
   };
+
   handleFinish = () => {
     const {
       dispatch,
@@ -253,6 +254,7 @@ class InvBatchDetail extends PureComponent {
         fieldsConfig = config;
       }
     }
+    // eslint-disable-next-line no-console
     console.warn(formData);
     const btnHideFlag = isEmpty(fieldsConfig);
     const recvPlanTableProps = {
@@ -268,11 +270,17 @@ class InvBatchDetail extends PureComponent {
         {
           title: '客户名',
           dataIndex: 'custName',
+          width: 200,
           render: (value, row, index) => (
             <Link className="tw-link" to={`/plat/addr/view?no=${row.abNo}&from=${getUrl()}`}>
               {value}
             </Link>
           ),
+        },
+        {
+          title: '客户地址簿号',
+          dataIndex: 'abNo',
+          align: 'center',
         },
         {
           title: '主合同名称',
@@ -664,10 +672,13 @@ class InvBatchDetail extends PureComponent {
             ) {
               if (taskKey === 'ACC_A05_03_INVOICE_CONFIRM') {
                 const {
+                  // eslint-disable-next-line no-shadow
                   dispatch,
                   form: { validateFieldsAndScroll, getFieldValue },
                   invBatchDetail: {
+                    // eslint-disable-next-line no-shadow
                     dtlList,
+                    // eslint-disable-next-line no-shadow
                     recvPlanList,
                     formData: { invAmt },
                   },
@@ -688,7 +699,7 @@ class InvBatchDetail extends PureComponent {
                 validateFieldsAndScroll((error, values) => {
                   if (!error) {
                     if (totalAmt === invAmt) {
-                      const { taskId, remark, ids } = fromQs();
+                      const { ids } = fromQs();
                       const isEdit = isNil(ids);
                       //  当合同开票申请被拒绝时 申请人的入口只能从首页 我的待办 入口进入 因此会带上taskId isReEdit 用来标示  false  带上id url上的id true 忽略
                       const isReEdit = isNil(taskId);
@@ -704,10 +715,13 @@ class InvBatchDetail extends PureComponent {
                         if (resp.success) {
                           dispatch({
                             type: `${DOMAIN}/finish`,
+                            // eslint-disable-next-line consistent-return
                           }).then(res => {
+                            // eslint-disable-next-line no-console
                             console.warn('finish');
 
                             if (res && res.ok) {
+                              // eslint-disable-next-line no-console
                               console.warn('res');
                               const { branches } = operation;
                               const $obj = {};
@@ -720,6 +734,7 @@ class InvBatchDetail extends PureComponent {
                                 $obj.result = operation.key;
                                 $obj.branch = branches[0].code;
                               }
+                              // eslint-disable-next-line no-console
                               console.warn('request');
 
                               request
@@ -1013,7 +1028,7 @@ class InvBatchDetail extends PureComponent {
                   placeholder="请选择开票日期"
                   format="YYYY-MM-DD"
                   className="x-fill-100"
-                  required={true}
+                  required
                   disabled={taskKey !== 'ACC_A05_03_INVOICE_CONFIRM'}
                 />
               </Field>

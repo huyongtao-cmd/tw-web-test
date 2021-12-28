@@ -20,7 +20,15 @@ import {
 
 import { AccountSelect } from '../../suggestComponent';
 
-export function payRecordTableProps(DOMAIN, dispatch, loading, form, mode, paymentApplyEdit) {
+export function payRecordTableProps(
+  DOMAIN,
+  dispatch,
+  loading,
+  form,
+  mode,
+  entrance,
+  paymentApplyEdit
+) {
   const { payRecordList, formData, fieldsConfig, pageConfig } = paymentApplyEdit;
   const pageFieldJson = {};
   if (pageConfig) {
@@ -179,7 +187,7 @@ export function payRecordTableProps(DOMAIN, dispatch, loading, form, mode, payme
             option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }
           value={value}
-          disabled
+          disabled={entrance !== 'flow'}
           onChange={onCellChanged(index, 'psubjecteCompany')}
           placeholder={`请选择${pageFieldJson.psubjecteCompany.displayName}`}
         />
@@ -196,7 +204,7 @@ export function payRecordTableProps(DOMAIN, dispatch, loading, form, mode, payme
           <AccountSelect
             abNo={row.psubjecteCompany || '0'}
             value={value}
-            disabled
+            disabled={entrance !== 'flow'}
             onChange={onCellChanged(index, 'paymentAccount')}
           />
         );
@@ -214,7 +222,7 @@ export function payRecordTableProps(DOMAIN, dispatch, loading, form, mode, payme
       dataIndex: 'paymentAmt',
       key: 'paymentAmt',
       className: 'text-center',
-      width: 200,
+      width: 100,
       render: (value, row, index) => (
         <InputNumber
           min={0}
@@ -224,7 +232,7 @@ export function payRecordTableProps(DOMAIN, dispatch, loading, form, mode, payme
           className="number-left x-fill-100"
           placeholder={`请选择${pageFieldJson.paymentAmt.displayName}`}
           value={value}
-          disabled
+          disabled={entrance !== 'flow'}
           onChange={onCellChanged(index, 'paymentAmt')}
         />
       ),
@@ -243,7 +251,7 @@ export function payRecordTableProps(DOMAIN, dispatch, loading, form, mode, payme
             option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }
           value={value}
-          disabled
+          disabled={entrance !== 'flow'}
           onChange={onCellChanged(index, 'psubjecteThat')}
           placeholder={`请选择${pageFieldJson.psubjecteThat.displayName}`}
         />
@@ -259,7 +267,7 @@ export function payRecordTableProps(DOMAIN, dispatch, loading, form, mode, payme
         <UdcSelect
           code="ACC:PAY_METHOD"
           value={value}
-          disabled
+          disabled={entrance !== 'flow'}
           onChange={onCellChanged(index, 'payMethod')}
           placeholder={`请选择${pageFieldJson.payMethod.displayName}`}
         />
@@ -277,7 +285,7 @@ export function payRecordTableProps(DOMAIN, dispatch, loading, form, mode, payme
           format="YYYY-MM-DD"
           value={value ? moment(value) : ''}
           className="x-fill-100"
-          disabled
+          disabled={entrance !== 'flow'}
           onChange={onCellChanged(index, 'purchaseDate')}
         />
       ),
@@ -296,7 +304,7 @@ export function payRecordTableProps(DOMAIN, dispatch, loading, form, mode, payme
             option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }
           value={value}
-          disabled
+          disabled={entrance !== 'flow'}
           onChange={onCellChanged(index, 'collectionCompany')}
           placeholder={`请选择${pageFieldJson.collectionCompany.displayName}`}
         />
@@ -305,15 +313,15 @@ export function payRecordTableProps(DOMAIN, dispatch, loading, form, mode, payme
     {
       title: pageFieldJson.collectionAccount.displayName,
       dataIndex: 'collectionAccount',
-      key: 'collectionCompany',
+      key: 'collectionAccount',
       className: 'text-center',
       width: 200,
       render: (value, row, index) => {
         return (
           <AccountSelect
-            abNo={row.collectionCompany || '0'}
+            abNo={row.collectionAccount || '0'}
             value={value}
-            disabled
+            disabled={entrance !== 'flow'}
             onChange={onCellChanged(index, 'collectionAccount')}
           />
         );
@@ -352,7 +360,7 @@ export function payRecordTableProps(DOMAIN, dispatch, loading, form, mode, payme
         <Input
           placeholder={`请选择${pageFieldJson.note.displayName}`}
           value={value}
-          disabled
+          disabled={entrance !== 'flow'}
           onChange={onCellChanged(index, 'note')}
         />
       ),
@@ -363,7 +371,7 @@ export function payRecordTableProps(DOMAIN, dispatch, loading, form, mode, payme
   );
 
   const tableProps = {
-    readOnly: true,
+    readOnly: mode === 'view',
     rowKey: 'id',
     showCopy: false,
     // loading: loading.effects[`${DOMAIN}/queryPurchase`],

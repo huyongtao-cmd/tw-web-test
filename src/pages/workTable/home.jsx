@@ -29,6 +29,7 @@ import FieldList from '@/components/layout/FieldList';
 import Title from '@/components/layout/Title';
 import { formatDT } from '@/utils/tempUtils/DateTime';
 import { flowToRouter } from '@/utils/flowToRouter';
+import { getType } from '@/services/user/equivalent/equivalent';
 import { readNotify } from '@/services/user/flow/flow';
 import { createConfirm } from '@/components/core/Confirm';
 import { fromQs } from '@/utils/stringUtils';
@@ -69,7 +70,7 @@ class lemonCenter extends PureComponent {
 
     const { refresh } = fromQs();
     // 获取入职培训提示
-    // !refresh && dispatch({ type: `${DOMAIN}/selectTrainingAll` });
+    !refresh && dispatch({ type: `${DOMAIN}/selectTrainingAll` });
 
     /* 常用功能图标 */
     dispatch({ type: `${DOMAIN}/queryShortCut` });
@@ -143,7 +144,19 @@ class lemonCenter extends PureComponent {
   };
 
   requestRealType = async (data, mode) => {
-    router.push('/');
+    const { id, taskId, docId } = data;
+    const { status, response } = await getType(docId);
+    if (status === 200 && response.ok) {
+      const defKey =
+        // eslint-disable-next-line
+        response.datum === 'TASK_BY_PACKAGE'
+          ? 'ACC_A22.SUM'
+          : response.datum === 'TASK_BY_MANDAY'
+            ? 'ACC_A22.SINGLE'
+            : 'ACC_A22.COM';
+      const route = flowToRouter(defKey, { id, taskId, docId, mode });
+      router.push(route);
+    }
   };
 
   jumpLink = (data, todo = false) => {

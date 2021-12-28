@@ -155,6 +155,11 @@ export async function getPrintData() {
       formData = await getPaymentApplyData(id);
       break;
     }
+    // 付款申请单:行政运营类采购(协议)
+    case 'ACC_A106': {
+      formData = await getPaymentApplyData(id);
+      break;
+    }
     // 付款申请单:公司管理类
     case 'ACC_A107': {
       formData = await getPaymentApplyData(id);

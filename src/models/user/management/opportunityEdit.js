@@ -85,6 +85,8 @@ const formDataModal = {
   internalResId: null, // ': '来源人
   internalResName: null, // ': '来源人
   profitDesc: null, // 利益承诺
+  isNeedPartner: 0, // 是否需要合作伙伴
+  partnerDesc: null, // 合作伙伴描述
 };
 export default {
   namespace: 'userOppsEdit',

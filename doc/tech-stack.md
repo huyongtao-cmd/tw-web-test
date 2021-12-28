@@ -5,7 +5,6 @@
 # - Empty Topic -
 
 ## 基础知识
-
 - 了解Web BS架构原理
 - 了解Http协议及RESTful规范
 - 了解HTML/CSS与DOM原理

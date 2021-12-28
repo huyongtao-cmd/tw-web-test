@@ -25,6 +25,7 @@ import { sortPropAscByNumber } from '@/utils/dataUtils';
 import { plainToTree, treeToPlain } from '@/components/common/TreeTransfer';
 import createMessage from '@/components/core/AlertMessage';
 import { getNotify } from '@/services/user/flow/flow';
+import { recentworkExtrwork } from '@/services/user/project/project';
 import { isNil } from 'ramda';
 
 const defaultStructure = {
@@ -330,6 +331,11 @@ export default {
 
     *changeTicketInfo({ payload }, { call, put }) {
       const { response } = yield call(changeTicketInfo, payload);
+      yield put({ type: 'recentWork' });
+    },
+
+    *extrwork({ payload }, { call, put }) {
+      const { response } = yield call(recentworkExtrwork, payload);
       yield put({ type: 'recentWork' });
     },
 

@@ -62,7 +62,6 @@ class Detail extends PureComponent {
         sortNo: `${pageFieldJson.relatedProductId.sortNo}`,
         key: 'relatedProductId',
         dataIndex: 'relatedProductDesc',
-        className: 'text-center',
         width: 200,
       },
       {
@@ -70,23 +69,6 @@ class Detail extends PureComponent {
         sortNo: `${pageFieldJson.note.sortNo}`,
         key: 'note',
         dataIndex: 'note',
-        className: 'text-left',
-        width: 200,
-      },
-      {
-        title: `${pageFieldJson.classId.displayName}`,
-        sortNo: `${pageFieldJson.classId.sortNo}`,
-        key: 'classId',
-        dataIndex: 'classDesc',
-        className: 'text-center',
-        width: 200,
-      },
-      {
-        title: `${pageFieldJson.subClassId.displayName}`,
-        sortNo: `${pageFieldJson.subClassId.sortNo}`,
-        key: 'subClassId',
-        dataIndex: 'subClassDesc',
-        className: 'text-center',
         width: 200,
       },
       {
@@ -95,7 +77,7 @@ class Detail extends PureComponent {
         key: 'quantity',
         dataIndex: 'quantity',
         className: 'text-right',
-        width: 100,
+        width: 50,
       },
       {
         title: `${pageFieldJson.taxPrice.displayName}`,
@@ -103,7 +85,7 @@ class Detail extends PureComponent {
         key: 'taxPrice',
         dataIndex: 'taxPrice',
         className: 'text-right',
-        width: 150,
+        width: 80,
       },
       {
         title: `${pageFieldJson.taxRate.displayName}`,
@@ -111,7 +93,7 @@ class Detail extends PureComponent {
         key: 'taxRate',
         dataIndex: 'taxRate',
         className: 'text-right',
-        width: 100,
+        width: 50,
         render: (value, row, index) => `${value}%`,
       },
       {
@@ -120,7 +102,7 @@ class Detail extends PureComponent {
         key: 'taxAmt',
         dataIndex: 'taxAmt',
         className: 'text-right',
-        width: 150,
+        width: 80,
       },
       {
         title: `${pageFieldJson.taxNotAmt.displayName}`,
@@ -128,7 +110,7 @@ class Detail extends PureComponent {
         key: 'taxNotAmt',
         dataIndex: 'taxNotAmt',
         className: 'text-right',
-        width: 150,
+        width: 90,
       },
       {
         title: `${pageFieldJson.deliveryDate.displayName}`,
@@ -137,6 +119,20 @@ class Detail extends PureComponent {
         dataIndex: 'deliveryDate',
         className: 'text-center',
         width: 150,
+      },
+      {
+        title: `${pageFieldJson.classId.displayName}`,
+        sortNo: `${pageFieldJson.classId.sortNo}`,
+        key: 'classId',
+        dataIndex: 'classDesc',
+        width: 200,
+      },
+      {
+        title: `${pageFieldJson.subClassId.displayName}`,
+        sortNo: `${pageFieldJson.subClassId.sortNo}`,
+        key: 'subClassId',
+        dataIndex: 'subClassDesc',
+        width: 200,
       },
     ];
     const columnsFilterList = columnsList.filter(

@@ -2,8 +2,10 @@ import { isNil } from 'ramda';
 import { channelCostConDetailRq, channelCostConEditRq } from '@/services/user/Contract/ChannelFee';
 import { queryProdList } from '@/services/sys/baseinfo/product';
 import { selectAbOus } from '@/services/gen/list';
+import { launchFlowFn } from '@/services/sys/flowHandle';
 import createMessage from '@/components/core/AlertMessage';
 import moment from 'moment';
+import { closeThenGoto } from '@/layouts/routerControl';
 
 export default {
   namespace: 'ChannelFee',
@@ -119,6 +121,22 @@ export default {
       }
       createMessage({ type: 'error', description: response.reason || '保存失败' });
       return {};
+    },
+    *submit({ payload }, { call, select, put, all }) {
+      const responseFlow = yield call(launchFlowFn, {
+        defkey: 'ACC_A111',
+        value: {
+          id: payload.id,
+        },
+      });
+      const response2 = responseFlow.response;
+      if (response2 && response2.ok) {
+        createMessage({ type: 'success', description: '提交成功' });
+        // closeThenGoto('/sale/purchaseContract/channelFeeList');
+        closeThenGoto(`/user/flow/process`);
+      } else {
+        createMessage({ type: 'error', description: '提交失败' });
+      }
     },
   },
 

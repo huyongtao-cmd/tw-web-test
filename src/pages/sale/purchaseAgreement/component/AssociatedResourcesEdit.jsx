@@ -49,6 +49,7 @@ class Edit extends PureComponent {
       },
       loading,
       dispatch,
+      isEdit,
     } = this.props;
 
     const currentBlockConfig = pageConfig.pageBlockViews.find(
@@ -127,7 +128,7 @@ class Edit extends PureComponent {
             placeholder={`请选择${pageFieldJson.resId.displayName}`}
             showSearch
             onChange={onCellChanged(index, 'resId')}
-            disabled={pageFieldJson.resId.fieldMode !== 'EDITABLE'}
+            disabled={pageFieldJson.resId.fieldMode !== 'EDITABLE' || isEdit}
           />
         ),
       },
@@ -157,7 +158,7 @@ class Edit extends PureComponent {
                 : null
             }
             onChange={onCellChanged(index, 'resDate')}
-            disabled={pageFieldJson.resStartDate.fieldMode !== 'EDITABLE'}
+            disabled={pageFieldJson.resStartDate.fieldMode !== 'EDITABLE' || isEdit}
           />
         ),
       },
@@ -174,6 +175,7 @@ class Edit extends PureComponent {
       // scroll: {
       //   x: 1700,
       // },
+      readOnly: isEdit,
       dataSource: agreementResEntities,
       // rowSelection: {
       //   getCheckboxProps: record => ({

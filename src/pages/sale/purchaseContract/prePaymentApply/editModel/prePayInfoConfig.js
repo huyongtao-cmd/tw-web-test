@@ -5,11 +5,15 @@ import { UdcSelect, FileManagerEnhance, Selection } from '@/pages/gen/field';
 import AsyncSelect from '@/components/common/AsyncSelect';
 import update from 'immutability-helper';
 import moment from 'moment';
+import { formatDT } from '@/utils/tempUtils/DateTime';
 import createMessage from '@/components/core/AlertMessage';
 import { isEmpty, takeLast, add, isNil, gte, lte } from 'ramda';
 import { add as mathAdd, sub, div, mul, checkIfNumber, genFakeId } from '@/utils/mathUtils';
+import { fromQs, getGuid } from '@/utils/stringUtils';
 
+// 付款明细
 export function payDetailTableProps(DOMAIN, dispatch, loading, form, mode, prePaymentApplyEdit) {
+  const { status, entrance } = fromQs();
   const { payDetailList, pageConfig, formData } = prePaymentApplyEdit;
   const pageFieldJson = {};
   if (pageConfig) {
@@ -82,7 +86,7 @@ export function payDetailTableProps(DOMAIN, dispatch, loading, form, mode, prePa
       key: 'currentPaymentAmt',
       dataIndex: 'currentPaymentAmt',
       className: 'text-center',
-      width: 200,
+      width: 110,
       render: (value, row, index) => (
         <InputNumber
           value={value}
@@ -91,7 +95,7 @@ export function payDetailTableProps(DOMAIN, dispatch, loading, form, mode, prePa
           formatter={v => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
           className="number-left x-fill-100"
           parser={v => v.replace(/\$\s?|(,*)/g, '')}
-          disabled={mode === 'view'}
+          disabled={mode === 'view' || entrance === 'flow'}
           placeholder={`请输入${pageFieldJson.currentPaymentAmt.displayName}`}
           onChange={onCellChanged(index, 'currentPaymentAmt')}
         />
@@ -112,7 +116,7 @@ export function payDetailTableProps(DOMAIN, dispatch, loading, form, mode, prePa
           parser={v => v.replace(/\$\s?|(,*)/g, '')}
           className="number-left x-fill-100"
           value={value}
-          disabled={mode === 'view'}
+          disabled={mode === 'view' || entrance === 'flow'}
           placeholder={`请输入${pageFieldJson.paymentAmt.displayName}`}
           onChange={onCellChanged(index, 'paymentAmt')}
         />
@@ -124,12 +128,12 @@ export function payDetailTableProps(DOMAIN, dispatch, loading, form, mode, prePa
       key: 'docType',
       dataIndex: 'docType',
       className: 'text-center',
-      width: 200,
+      width: 110,
       render: (value, row, index) => (
         <Selection.UDC
           code="TSK:DOC_TYPE"
           value={value}
-          disabled={mode === 'view'}
+          disabled={pageFieldJson.docType.fieldMode === 'UNEDITABLE' || mode === 'view'}
           onChange={onCellChanged(index, 'docType')}
           placeholder={`请选择${pageFieldJson.docType.displayName}`}
         />
@@ -146,7 +150,7 @@ export function payDetailTableProps(DOMAIN, dispatch, loading, form, mode, prePa
         <Input
           className="x-fill-100"
           value={value}
-          disabled={mode === 'view'}
+          disabled={mode === 'view' || entrance === 'flow'}
           placeholder={`请输入${pageFieldJson.docTypeName.displayName}`}
           onChange={onCellChanged(index, 'docTypeName')}
         />
@@ -163,7 +167,7 @@ export function payDetailTableProps(DOMAIN, dispatch, loading, form, mode, prePa
         <Input
           className="x-fill-100"
           value={value}
-          disabled={mode === 'view'}
+          disabled={mode === 'view' || entrance === 'flow'}
           placeholder={`请输入${pageFieldJson.contractNo.displayName}`}
           onChange={onCellChanged(index, 'contractNo')}
         />
@@ -175,13 +179,13 @@ export function payDetailTableProps(DOMAIN, dispatch, loading, form, mode, prePa
       key: 'paymentDate',
       dataIndex: 'paymentDate',
       className: 'text-center',
-      width: 200,
+      width: 100,
       render: (value, row, index) => (
         <DatePicker
           placeholder={`请选择${pageFieldJson.paymentDate.displayName}`}
           format="YYYY-MM-DD"
           value={value ? moment(value) : ''}
-          disabled={mode === 'view'}
+          disabled={mode === 'view' || entrance === 'flow'}
           onChange={onCellChanged(index, 'paymentDate')}
           className="x-fill-100"
         />
@@ -208,25 +212,48 @@ export function payDetailTableProps(DOMAIN, dispatch, loading, form, mode, prePa
         <Input
           className="x-fill-100"
           value={value}
-          disabled={mode === 'view'}
+          disabled={mode === 'view' || entrance === 'flow'}
           placeholder={`请输入${pageFieldJson.contractNodeName.displayName}`}
           onChange={onCellChanged(index, 'contractNodeName')}
         />
       ),
     },
+    {
+      title: `${pageFieldJson.recvAmt.displayName}`,
+      sortNo: `${pageFieldJson.recvAmt.sortNo}`,
+      key: 'recvAmt',
+      dataIndex: 'recvAmt',
+      className: 'text-center',
+      width: 100,
+    },
+    {
+      title: `${pageFieldJson.actualRecvAmt.displayName}`,
+      sortNo: `${pageFieldJson.actualRecvAmt.sortNo}`,
+      key: 'actualRecvAmt',
+      dataIndex: 'actualRecvAmt',
+      className: 'text-center',
+      width: 100,
+    },
+    {
+      title: `${pageFieldJson.text.displayName}`,
+      sortNo: `${pageFieldJson.text.sortNo}`,
+      key: 'text',
+      dataIndex: 'text',
+      className: 'text-center',
+      width: 100,
+    },
   ];
   const columnsFilterList = columnsList.filter(
     field => !field.key || pageFieldJson[field.key].visibleFlag === 1
   );
-
   const tableProps = {
-    readOnly: mode === 'view',
+    readOnly: mode === 'view' || entrance === 'flow',
     rowKey: 'id',
     showCopy: false,
     // loading: loading.effects[`${DOMAIN}/queryPurchase`],
     pagination: false,
     scroll: {
-      x: 1000,
+      x: 1300,
     },
     dataSource: payDetailList || [],
     // rowSelection: {
@@ -267,6 +294,103 @@ export function payDetailTableProps(DOMAIN, dispatch, loading, form, mode, prePa
       });
     },
     columns: columnsFilterList,
+  };
+  return tableProps;
+}
+
+// 付款计划参考
+export function paymentPlanAdvPayTableProps(
+  DOMAIN,
+  dispatch,
+  loading,
+  form,
+  mode,
+  prePaymentApplyEdit
+) {
+  const { paymentPlanAdvPayList } = prePaymentApplyEdit;
+  const { status, entrance } = fromQs();
+  const onCellChanged = (rowIndex, rowField) => rowFieldValue => {
+    const val = rowFieldValue && rowFieldValue.target ? rowFieldValue.target.value : rowFieldValue;
+    dispatch({
+      type: `${DOMAIN}/updateState`,
+      payload: {
+        paymentPlanAdvPayList: update(paymentPlanAdvPayList, {
+          [rowIndex]: {
+            [rowField]: {
+              $set: val,
+            },
+          },
+        }),
+      },
+    });
+  };
+
+  const columnsList = [
+    {
+      title: '序号',
+      dataIndex: 'id',
+      className: 'text-center',
+      width: 20,
+      render: (value, record, index) => index + 1,
+    },
+    {
+      title: `付款阶段`,
+      key: 'paymentStage',
+      dataIndex: 'paymentStage',
+      className: 'text-center',
+      width: 200,
+    },
+    {
+      title: `付款金额`,
+      key: 'paymentAmt',
+      dataIndex: 'paymentAmt',
+      className: 'text-center',
+      width: 110,
+    },
+
+    {
+      title: `预计付款日期`,
+      key: 'estimatedPaymentDate',
+      dataIndex: 'estimatedPaymentDate',
+      className: 'text-center',
+      width: 100,
+      render: (value, row, index) => formatDT(value),
+    },
+    {
+      title: `本次付款金额`,
+      key: 'currentPaymentAmt',
+      dataIndex: 'currentPaymentAmt',
+      className: 'text-center',
+      width: 200,
+      render: (value, row, index) =>
+        mode === 'view' ? (
+          value
+        ) : (
+          <InputNumber
+            min={0}
+            precision={2}
+            formatter={v => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+            parser={v => v.replace(/\$\s?|(,*)/g, '')}
+            className="number-left x-fill-100"
+            value={value}
+            max={row.paymentAmt}
+            disabled={mode === 'view' || entrance === 'flow'}
+            onChange={onCellChanged(index, 'currentPaymentAmt')}
+          />
+        ),
+    },
+  ];
+
+  const tableProps = {
+    readOnly: mode === 'view' || entrance === 'flow',
+    rowKey: 'id',
+    showCopy: false,
+    pagination: false,
+    scroll: {
+      x: 1000,
+    },
+    dataSource: paymentPlanAdvPayList || [],
+    columns: columnsList,
   };
   return tableProps;
 }

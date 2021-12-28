@@ -16,6 +16,7 @@ import SettlementRateDetail from './component/SettlementRateDetail';
 import RelatedAgreementsDetail from './component/RelatedAgreementsDetail';
 import PaymentDetails from './component/PaymentDetails';
 import WithdrawalApplicationDetail from './component/WithdrawalApplicationDetail';
+import BpmConnection from '@/pages/gen/BpmMgmt/BpmConnection';
 
 const tabConf = [
   {
@@ -105,6 +106,7 @@ class Detail extends Component {
       loading,
       salePurchaseAgreementsDetail: { detailData },
     } = this.props;
+    const { taskId, id } = fromQs();
     return (
       <PageHeaderWrapper title="薪资成本管理">
         <Spin
@@ -123,6 +125,16 @@ class Detail extends Component {
           >
             {contentList[operationkey]}
           </Card>
+          {
+            <BpmConnection
+              source={[
+                {
+                  docId: id,
+                  procDefKey: 'ACC_A114',
+                },
+              ]}
+            />
+          }
         </Spin>
       </PageHeaderWrapper>
     );

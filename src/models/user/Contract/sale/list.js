@@ -5,6 +5,8 @@ import {
   resetProfitResult,
   passAccountRq,
   getNormSettleByContIdRq,
+  //导入合同标签
+  contractTagImportFun,
 } from '@/services/user/Contract/sales';
 import createMessage from '@/components/core/AlertMessage';
 import { businessPageDetailByNo } from '@/services/sys/system/pageConfig';
@@ -84,6 +86,10 @@ export default {
       if (response.ok) {
         if (payload.status === 'PENDING') {
           createMessage({ type: 'success', description: '挂起成功' });
+        } else if (payload.status === 'DELETE') {
+          createMessage({ type: 'success', description: '作废成功' });
+        } else if (payload.status === 'CLOSE') {
+          createMessage({ type: 'success', description: '关闭成功' });
         } else {
           createMessage({ type: 'success', description: '激活成功' });
         }
@@ -143,6 +149,21 @@ export default {
             pageConfig: response.configInfo,
           },
         });
+        return response;
+      }
+      return {};
+    },
+    // 导入合同标签
+    *uploadTag({ payload }, { call, put, select }) {
+      const { status, response } = yield call(contractTagImportFun, payload);
+      if (status === 100) {
+        // 主动取消请求
+        return {};
+      }
+      if (status === 200) {
+        if (!response.ok) {
+          return response;
+        }
         return response;
       }
       return {};

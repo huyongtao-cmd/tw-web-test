@@ -558,6 +558,12 @@ class PrePayInfo extends PureComponent {
       pageFieldViews.forEach(field => {
         pageFieldJson[field.fieldKey] = field;
       });
+      const { noDocVerification } = formData;
+      // 无单据核销是否选中
+      let noDocVerificationCheck = false;
+      if (noDocVerification === true) {
+        noDocVerificationCheck = true;
+      }
       const fields = [
         <Field
           name="docType"
@@ -569,7 +575,7 @@ class PrePayInfo extends PureComponent {
             initialValue: formData.docType || '',
             rules: [
               {
-                required: pageFieldJson.docType.requiredFlag,
+                required: noDocVerificationCheck ? false : pageFieldJson.docType.requiredFlag,
                 message: `请选择${pageFieldJson.docType.displayName}`,
               },
             ],

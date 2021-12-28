@@ -19,7 +19,7 @@ import { formatMessage } from 'umi/locale';
 import { createConfirm } from '@/components/core/Confirm';
 import PageHeaderWrapper from '@/components/layout/PageHeaderWrapper';
 import { mountToTab, closeThenGoto } from '@/layouts/routerControl';
-import { fromQs } from '@/utils/stringUtils';
+import { fromQs, toQs } from '@/utils/stringUtils';
 import { selectUsersWithBu, selectOus, selectCusts } from '@/services/gen/list';
 
 import moment from 'moment';
@@ -44,8 +44,13 @@ import { selectBus } from '@/services/org/bu/bu';
 import { selectUsers } from '@/services/sys/user';
 import createMessage from '@/components/core/AlertMessage';
 import DataTable from '@/components/common/DataTable';
+import { request, serverUrl } from '@/utils/networkUtils';
+import apis from '@/api';
+import TreeSearch from '@/components/common/TreeSearch';
+import Loading from '@/components/core/DataLoading';
 
 const DOMAIN = 'userContractEditSub';
+const { sfs } = apis;
 const { Field, FieldLine } = FieldList;
 const FieldListLayout = {
   labelCol: { span: 8 },
@@ -58,6 +63,7 @@ const subjCol = [
 ];
 
 @connect(({ loading, dispath, userContractEditSub, userContractSharing, user }) => ({
+  treeLoading: loading.effects[`${DOMAIN}/getTagTree`],
   dispath,
   loading,
   userContractEditSub,
@@ -148,6 +154,13 @@ class EidtSubContract extends PureComponent {
         // }
       }
     });
+
+    // 合同标签数据
+    dispatch({
+      type: `${DOMAIN}/getTagTree`,
+      payload: { key: 'CONTRACT_TAG' },
+    });
+
     dispatch({ type: `${DOMAIN}/bu` });
     dispatch({ type: `${DOMAIN}/user` });
     dispatch({ type: `${DOMAIN}/salesRegionBu` });
@@ -316,6 +329,51 @@ class EidtSubContract extends PureComponent {
     });
   };
 
+  handleActive = () => {
+    const { id } = fromQs();
+    const api = '/api/op/v1/contract/sub/sfs/token';
+
+    this.fetchTokenInfo(api, id).then(({ response }) => {
+      if (response) {
+        const { tokenInfo, tokenSign } = response;
+        this.fetchList(id, tokenInfo, tokenSign);
+      } else {
+        createMessage({ type: 'error', description: '附件查询失败' });
+      }
+    });
+  };
+
+  fetchTokenInfo = (api, dataKey) =>
+    new Promise(resolve => {
+      api !== undefined &&
+        request.get(toQs(api, { dataKey })).then(data => {
+          if (data.response) {
+            this.setState(() => {
+              resolve(data);
+            });
+          }
+        });
+    });
+
+  fetchList = (id, tokenInfo, tokenSign) => {
+    request.get(toQs(sfs.list, { id, tokenInfo, tokenSign })).then(data => {
+      if (data.response && data.response.length > 0) {
+        this.virtualContractActivationUrl();
+      } else {
+        createMessage({ type: 'error', description: '附件不能为空' });
+      }
+    });
+  };
+
+  virtualContractActivationUrl = () => {
+    const { dispatch } = this.props;
+    const { id } = fromQs();
+    dispatch({
+      type: `${DOMAIN}/virtualContractActivationUrl`,
+      payload: { id },
+    });
+  };
+
   handleCancel = () => {
     closeThenGoto('/sale/contract/salesList');
   };
@@ -413,10 +471,29 @@ class EidtSubContract extends PureComponent {
     return arr;
   };
 
+  onCheck = (checkedKeys, info, parm3, param4) => {
+    const { dispatch } = this.props;
+    const allCheckedKeys = checkedKeys.concat(info.halfCheckedKeys);
+    this.updateModelState({ checkedKeys, allCheckedKeys });
+    dispatch({
+      type: `${DOMAIN}/updateForm`,
+      payload: { tagIds: allCheckedKeys.length > 0 ? allCheckedKeys.join(',') : '' },
+    });
+  };
+
+  updateModelState = params => {
+    const { dispatch } = this.props;
+    dispatch({
+      type: `${DOMAIN}/updateState`,
+      payload: params,
+    });
+  };
+
   render() {
     const {
       dispatch,
       loading,
+      treeLoading,
       userContractEditSub: {
         formData,
         smallClass,
@@ -440,6 +517,9 @@ class EidtSubContract extends PureComponent {
         preSaleResDataSource = [],
         pageConfig = {},
         attache,
+        tagTree,
+        checkedKeys,
+        flatTags,
       },
       userContractSharing: { ruleList, otherRule },
       form: { getFieldDecorator, setFields },
@@ -452,6 +532,17 @@ class EidtSubContract extends PureComponent {
       },
     } = this.props;
 
+    let checkedKeysTemp = checkedKeys;
+    if (checkedKeysTemp.length < 1) {
+      if (formData.tagIds) {
+        const arrayTemp = formData.tagIds.split(',');
+        checkedKeysTemp = arrayTemp.filter(item => {
+          const menu = flatTags[item];
+          return menu && (menu.children === null || menu.children.length === 0);
+        });
+      }
+    }
+
     let profitRuleId = null;
     if (otherRule && otherRule.length > 0) {
       profitRuleId = otherRule[0].id;
@@ -459,6 +550,9 @@ class EidtSubContract extends PureComponent {
     const { visible, ruleSelectedRowKeys, ruleSelectedRows } = this.state;
     const readOnly = true;
     const { contractStatus } = formData; // CREATE：新建，ACTIVE：激活
+    const { source } = formData;
+    // const sourceDisabled = source === 'yeedoc';
+    const sourceDisabled = false;
 
     const ALREADY_USED = (ruleList[0] || {}).agreeStatus === 'SETTLED';
 
@@ -509,6 +603,7 @@ class EidtSubContract extends PureComponent {
     const disabledBtn =
       loading.effects[`${DOMAIN}/querySub`] ||
       loading.effects[`${DOMAIN}/editInfo`] ||
+      loading.effects[`${DOMAIN}/virtualContractActivationUrl`] ||
       loading.effects[`userContractGathering/save`] ||
       loading.effects[`userContractSharing/save`] ||
       loading.effects[`purchaseDemandDeal/save`] ||
@@ -615,7 +710,7 @@ class EidtSubContract extends PureComponent {
           ],
         }}
       >
-        <Input placeholder="请输入子合同名称" />
+        <Input placeholder="请输入子合同名称" disabled={sourceDisabled} />
       </Field>,
 
       <Field
@@ -627,7 +722,7 @@ class EidtSubContract extends PureComponent {
           initialValue: formData.contractNo,
         }}
       >
-        <Input disabled={readOnly} placeholder="系统生成" />
+        <Input disabled={readOnly || sourceDisabled} placeholder="系统生成" />
       </Field>,
 
       <Field
@@ -649,7 +744,7 @@ class EidtSubContract extends PureComponent {
           source={() => selectContract()}
           placeholder="请选择主合同"
           showSearch
-          disabled={readOnly}
+          disabled={readOnly || sourceDisabled}
         />
       </Field>,
 
@@ -662,30 +757,25 @@ class EidtSubContract extends PureComponent {
           initialValue: formData.userdefinedNo,
         }}
       >
-        <Input placeholder="请输入参考合同号" />
+        <Input placeholder="请输入参考合同号" disabled={sourceDisabled} />
       </Field>,
 
       <Field
         key="signBuId"
-        name="signBuName"
+        name="signBuId"
         label="签单BU"
         decorator={{
-          initialValue: formData.signBuName,
+          initialValue: formData.signBuId,
           rules: [
             {
-              required: false,
+              required: true,
               message: '请选择签单BU',
             },
           ],
         }}
         {...FieldListLayout}
       >
-        <Selection
-          source={() => selectBus()}
-          placeholder="请选择签单BU"
-          showSearch
-          disabled={readOnly}
-        />
+        <Selection.ColumnsForBu disabled={readOnly && source !== 'yeedoc'} />
       </Field>,
 
       <Field
@@ -703,7 +793,18 @@ class EidtSubContract extends PureComponent {
         }}
         {...FieldListLayout}
       >
-        <Input disabled />
+        {/* <Input disabled={source !== 'yeedoc'} /> */}
+        <Selection.Columns
+          className="x-fill-100"
+          source={deliResDataSource}
+          columns={subjCol}
+          transfer={{ key: 'id', code: 'id', name: 'name' }}
+          dropdownMatchSelectWidth={false}
+          showSearch
+          onColumnsChange={value => {}}
+          placeholder="请选择销售负责人"
+          disabled={source !== 'yeedoc'}
+        />
       </Field>,
 
       <Field
@@ -711,7 +812,7 @@ class EidtSubContract extends PureComponent {
         name="deliBuId"
         label="交付BU"
         decorator={{
-          initialValue: formData.deliBuId || undefined,
+          initialValue: formData.deliBuId,
           rules: [
             {
               required: true,
@@ -721,16 +822,7 @@ class EidtSubContract extends PureComponent {
         }}
         {...FieldListLayout}
       >
-        <Selection.Columns
-          className="x-fill-100"
-          source={deliBuDataSource}
-          columns={subjCol}
-          transfer={{ key: 'id', code: 'id', name: 'name' }}
-          dropdownMatchSelectWidth={false}
-          showSearch
-          onColumnsChange={value => {}}
-          placeholder="请选择主交付BU"
-        />
+        <Selection.ColumnsForBu disabled={sourceDisabled} />
       </Field>,
 
       <Field
@@ -757,6 +849,7 @@ class EidtSubContract extends PureComponent {
           showSearch
           onColumnsChange={value => {}}
           placeholder="请选择交付负责人"
+          disabled={sourceDisabled}
         />
       </Field>,
       <Field
@@ -764,7 +857,7 @@ class EidtSubContract extends PureComponent {
         name="preSaleBuId"
         label="售前BU"
         decorator={{
-          initialValue: formData.preSaleBuId || undefined,
+          initialValue: formData.preSaleBuId,
           rules: [
             {
               required: true,
@@ -774,16 +867,7 @@ class EidtSubContract extends PureComponent {
         }}
         {...FieldListLayout}
       >
-        <Selection.Columns
-          className="x-fill-100"
-          source={preSaleBuDataSource}
-          columns={subjCol}
-          transfer={{ key: 'id', code: 'id', name: 'name' }}
-          dropdownMatchSelectWidth={false}
-          showSearch
-          onColumnsChange={value => {}}
-          placeholder="请选择主交付BU"
-        />
+        <Selection.ColumnsForBu disabled={sourceDisabled} />
       </Field>,
 
       <Field
@@ -810,6 +894,7 @@ class EidtSubContract extends PureComponent {
           showSearch
           onColumnsChange={value => {}}
           placeholder="请选择售前负责人"
+          disabled={sourceDisabled}
         />
       </Field>,
       <Field
@@ -830,6 +915,7 @@ class EidtSubContract extends PureComponent {
           showSearch
           onColumnsChange={value => {}}
           placeholder="请选择PMO"
+          disabled={sourceDisabled}
         />
       </Field>,
       <Field
@@ -856,6 +942,7 @@ class EidtSubContract extends PureComponent {
           showSearch
           onColumnsChange={value => {}}
           placeholder="请选择销售区域BU"
+          disabled={sourceDisabled}
         />
       </Field>,
 
@@ -868,7 +955,7 @@ class EidtSubContract extends PureComponent {
         }}
         {...FieldListLayout}
       >
-        <DatePicker placeholder="请选择签订日期" className="x-fill-100" />
+        <DatePicker placeholder="请选择签订日期" className="x-fill-100" disabled={sourceDisabled} />
       </Field>,
 
       <Field
@@ -891,7 +978,12 @@ class EidtSubContract extends PureComponent {
         }}
         {...FieldListLayout}
       >
-        <DatePicker placeholder="请选择合同开始日期" format="YYYY-MM-DD" className="x-fill-100" />
+        <DatePicker
+          placeholder="请选择合同开始日期"
+          format="YYYY-MM-DD"
+          className="x-fill-100"
+          disabled={sourceDisabled}
+        />
       </Field>,
 
       <Field
@@ -914,7 +1006,12 @@ class EidtSubContract extends PureComponent {
         }}
         {...FieldListLayout}
       >
-        <DatePicker placeholder="请选择合同结束日期" format="YYYY-MM-DD" className="x-fill-100" />
+        <DatePicker
+          disabled={sourceDisabled}
+          placeholder="请选择合同结束日期"
+          format="YYYY-MM-DD"
+          className="x-fill-100"
+        />
       </Field>,
 
       <Field
@@ -923,6 +1020,12 @@ class EidtSubContract extends PureComponent {
         label="附件"
         decorator={{
           initialValue: formData.attache,
+          rules: [
+            {
+              required: true,
+              message: '请长传附件~',
+            },
+          ],
           // rules: [
           //   {
           //     required:attache.requiredFlag,
@@ -937,6 +1040,7 @@ class EidtSubContract extends PureComponent {
           dataKey={formData.id}
           listType="text"
           disabled={false}
+          preview={sourceDisabled}
         />
       </Field>,
 
@@ -949,7 +1053,7 @@ class EidtSubContract extends PureComponent {
         }}
         {...FieldListLayout}
       >
-        <Input placeholder="请输入交付地点" />
+        <Input placeholder="请输入交付地点" disabled={sourceDisabled} />
       </Field>,
 
       <Field
@@ -962,7 +1066,7 @@ class EidtSubContract extends PureComponent {
         {...FieldListLayout}
       >
         <Selection.UDC
-          disabled={readOnly}
+          disabled={readOnly || sourceDisabled}
           code="TSK.CONTRACT_STATUS"
           placeholder="请选择合同状态"
         />
@@ -978,7 +1082,7 @@ class EidtSubContract extends PureComponent {
         {...FieldListLayout}
       >
         <Selection.UDC
-          disabled={readOnly}
+          disabled={readOnly || sourceDisabled}
           code="TSK.CONTRACT_CLOSE_REASON"
           placeholder="请选择关闭原因"
         />
@@ -988,14 +1092,14 @@ class EidtSubContract extends PureComponent {
         <Input
           placeholder="系统生成"
           value={formData.activateDate ? formatDT(formData.activateDate) : null}
-          disabled={readOnly}
+          disabled={readOnly || sourceDisabled}
         />
       </Field>,
       <Field key="closeDate" label="合同关闭日期" presentational {...FieldListLayout}>
         <Input
           placeholder="系统生成"
           value={formData.closeDate ? formatDT(formData.closeDate) : null}
-          disabled={readOnly}
+          disabled={readOnly || sourceDisabled}
         />
       </Field>,
 
@@ -1014,7 +1118,11 @@ class EidtSubContract extends PureComponent {
         }}
         {...FieldListLayout}
       >
-        <Selection.UDC code="COM.CURRENCY_KIND" placeholder="请选择币种" />
+        <Selection.UDC
+          disabled={sourceDisabled}
+          code="COM.CURRENCY_KIND"
+          placeholder="请选择币种"
+        />
       </Field>,
       <Field
         key="paperStatus"
@@ -1025,7 +1133,11 @@ class EidtSubContract extends PureComponent {
         }}
         {...FieldListLayout}
       >
-        <Selection.UDC code="TSK:CONT_PAPER_STATUS" placeholder="请选择纸质合同状态" />
+        <Selection.UDC
+          disabled={sourceDisabled}
+          code="TSK:CONT_PAPER_STATUS"
+          placeholder="请选择纸质合同状态"
+        />
       </Field>,
       <Field
         key="paperDesc"
@@ -1038,7 +1150,50 @@ class EidtSubContract extends PureComponent {
         labelCol={{ span: 4 }}
         wrapperCol={{ span: 20 }}
       >
-        <Input.TextArea placeholder="请输入纸质合同状态描述" rows={3} />
+        <Input.TextArea disabled={sourceDisabled} placeholder="请输入纸质合同状态描述" rows={3} />
+      </Field>,
+
+      <Field
+        key="platType"
+        name="platType"
+        label="平台合同类型"
+        decorator={{
+          initialValue: formData.platType,
+        }}
+        {...FieldListLayout}
+      >
+        <Selection.UDC
+          disabled={readOnly && source !== 'yeedoc'}
+          code="TSK.PLAT_TYPE"
+          placeholder="请选择平台合同类型"
+        />
+      </Field>,
+      <Field
+        key="tagIds"
+        name="tagIds"
+        label="合同标签"
+        // fieldCol={1}
+        // labelCol={{ span: 4, xxl: 3 }}
+        // wrapperCol={{ span: 19, xxl: 20 }}
+        decorator={{
+          initialValue: formData.tagIds,
+        }}
+        {...FieldListLayout}
+      >
+        {!treeLoading ? (
+          <TreeSearch
+            checkable
+            // checkStrictly
+            showSearch={false}
+            placeholder="请输入关键字"
+            treeData={tagTree}
+            defaultExpandedKeys={tagTree.map(item => `${item.id}`)}
+            checkedKeys={checkedKeysTemp}
+            onCheck={this.onCheck}
+          />
+        ) : (
+          <Loading />
+        )}
       </Field>,
 
       <Field
@@ -1052,7 +1207,7 @@ class EidtSubContract extends PureComponent {
         labelCol={{ span: 4 }}
         wrapperCol={{ span: 20 }}
       >
-        <Input.TextArea placeholder="请输入备注" rows={3} />
+        <Input.TextArea disabled={sourceDisabled} placeholder="请输入备注" rows={3} />
       </Field>,
 
       <Field
@@ -1064,7 +1219,7 @@ class EidtSubContract extends PureComponent {
         }}
         {...FieldListLayout}
       >
-        <Input disabled={readOnly} placeholder="系统生成" />
+        <Input disabled={readOnly || sourceDisabled} placeholder="系统生成" />
       </Field>,
 
       <Field
@@ -1077,7 +1232,7 @@ class EidtSubContract extends PureComponent {
         {...FieldListLayout}
         disabled={readOnly}
       >
-        <Input disabled={readOnly} placeholder="系统生成" />
+        <Input disabled={readOnly || sourceDisabled} placeholder="系统生成" />
       </Field>,
     ]
       .filter(
@@ -1090,17 +1245,18 @@ class EidtSubContract extends PureComponent {
           ...field.props,
           // eslint-disable-next-line no-nested-ternary
           name:
-            pageFieldJson[field.key].fieldKey === 'signBuId'
-              ? 'signBuName'
-              : // eslint-disable-next-line no-nested-ternary
-                pageFieldJson[field.key].fieldKey === 'salesmanResId'
-                ? 'salesmanResName'
-                : // eslint-disable-next-line no-nested-ternary
-                  pageFieldJson[field.key].fieldKey === 'mainContractId'
-                  ? 'mainContractName'
-                  : pageFieldJson[field.key].fieldKey === 'createUserId'
-                    ? 'createUserName'
-                    : pageFieldJson[field.key].fieldKey,
+            // pageFieldJson[field.key].fieldKey === 'signBuId'
+            //   ? 'signBuName'
+            //   : // eslint-disable-next-line no-nested-ternary
+            //     pageFieldJson[field.key].fieldKey === 'salesmanResId'
+            //     ? 'salesmanResName'
+            //     : // eslint-disable-next-line no-nested-ternary
+            //       pageFieldJson[field.key].fieldKey === 'mainContractId'
+            //       ? 'mainContractName'
+            //       : pageFieldJson[field.key].fieldKey === 'createUserId'
+            //         ? 'createUserName'
+            //         :
+            pageFieldJson[field.key].fieldKey,
           label: pageFieldJson[field.key].displayName,
           sortNo: pageFieldJson[field.key].sortNo,
           decorator: {
@@ -1126,7 +1282,12 @@ class EidtSubContract extends PureComponent {
         }}
         {...FieldListLayout}
       >
-        <Selection source={() => selectBuProduct()} placeholder="请选择产品" showSearch />
+        <Selection
+          disabled={sourceDisabled}
+          source={() => selectBuProduct()}
+          placeholder="请选择产品"
+          showSearch
+        />
       </Field>,
 
       <Field
@@ -1138,7 +1299,7 @@ class EidtSubContract extends PureComponent {
         }}
         {...FieldListLayout}
       >
-        <Input placeholder="请输入简要说明" />
+        <Input disabled={sourceDisabled} placeholder="请输入简要说明" />
       </Field>,
 
       <Field
@@ -1156,7 +1317,11 @@ class EidtSubContract extends PureComponent {
         }}
         {...FieldListLayout}
       >
-        <Selection.UDC code="TSK.WORK_TYPE" placeholder="请选择工作类型" />
+        <Selection.UDC
+          disabled={sourceDisabled}
+          code="TSK.WORK_TYPE"
+          placeholder="请选择工作类型"
+        />
       </Field>,
 
       <Field
@@ -1174,7 +1339,11 @@ class EidtSubContract extends PureComponent {
         }}
         {...FieldListLayout}
       >
-        <Selection.UDC code="TSK.PROMOTION_TYPE" placeholder="请选择促销码" />
+        <Selection.UDC
+          disabled={sourceDisabled}
+          code="TSK.PROMOTION_TYPE"
+          placeholder="请选择促销码"
+        />
       </Field>,
 
       <Field
@@ -1192,7 +1361,11 @@ class EidtSubContract extends PureComponent {
         }}
         {...FieldListLayout}
       >
-        <Selection.UDC code="TSK.RANGE_PROP" placeholder="请选择范围性质" />
+        <Selection.UDC
+          disabled={sourceDisabled}
+          code="TSK.RANGE_PROP"
+          placeholder="请选择范围性质"
+        />
       </Field>,
 
       <Field
@@ -1204,7 +1377,7 @@ class EidtSubContract extends PureComponent {
         }}
         {...FieldListLayout}
       >
-        <Input placeholder="请输入半开口说明" />
+        <Input disabled={sourceDisabled} placeholder="请输入半开口说明" />
       </Field>,
 
       <Field
@@ -1226,6 +1399,7 @@ class EidtSubContract extends PureComponent {
           code="TSK.SALE_TYPE1"
           onChange={this.handleChange}
           placeholder="请选择产品大类"
+          disabled={sourceDisabled}
         />
       </Field>,
 
@@ -1238,7 +1412,12 @@ class EidtSubContract extends PureComponent {
         }}
         {...FieldListLayout}
       >
-        <Selection source={smallClass} placeholder="请选择产品小类" showSearch />
+        <Selection
+          disabled={sourceDisabled}
+          source={smallClass}
+          placeholder="请选择产品小类"
+          showSearch
+        />
       </Field>,
 
       <Field
@@ -1256,7 +1435,11 @@ class EidtSubContract extends PureComponent {
         }}
         {...FieldListLayout}
       >
-        <Selection.UDC code="COM.PROD_PROP" placeholder="请选择供应主体类别" />
+        <Selection.UDC
+          disabled={sourceDisabled}
+          code="COM.PROD_PROP"
+          placeholder="请选择供应主体类别"
+        />
       </Field>,
 
       <Field
@@ -1274,7 +1457,11 @@ class EidtSubContract extends PureComponent {
         }}
         {...FieldListLayout}
       >
-        <Selection.UDC code="TSK.PROJ_PROP" placeholder="请选择提成类别" />
+        <Selection.UDC
+          disabled={sourceDisabled}
+          code="TSK.PROJ_PROP"
+          placeholder="请选择提成类别"
+        />
       </Field>,
 
       <Field
@@ -1292,7 +1479,11 @@ class EidtSubContract extends PureComponent {
         }}
         {...FieldListLayout}
       >
-        <Selection.UDC code="TSK.CHANNEL_TYPE" placeholder="请选择交易方式" />
+        <Selection.UDC
+          disabled={sourceDisabled}
+          code="TSK.CHANNEL_TYPE"
+          placeholder="请选择交易方式"
+        />
       </Field>,
 
       <Field
@@ -1346,6 +1537,7 @@ class EidtSubContract extends PureComponent {
               }
             }
           }}
+          disabled={sourceDisabled}
         />
       </Field>,
       <Field
@@ -1368,6 +1560,28 @@ class EidtSubContract extends PureComponent {
           code="TSK:BUSINESS_TYPE"
           placeholder="请选择需求类别"
           // disabled={formData.contractStatus === 'ACTIVE'}
+          disabled={sourceDisabled}
+        />
+      </Field>,
+      <Field
+        key="saleClass"
+        name="saleClass"
+        label="销售分类"
+        decorator={{
+          initialValue: formData.saleClass,
+          rules: [
+            {
+              required: true,
+              message: '请选择销售分类',
+            },
+          ],
+        }}
+        {...FieldListLayout}
+      >
+        <Selection.UDC
+          disabled={sourceDisabled}
+          code="CON:SALE_CLASS"
+          placeholder="请选择销售分类"
         />
       </Field>,
     ]
@@ -1414,7 +1628,11 @@ class EidtSubContract extends PureComponent {
         }}
         {...FieldListLayout}
       >
-        <Selection.UDC code="ACC:CONTRACT_CUSTPAY_TRAVEL" placeholder="请选择合作类型" />
+        <Selection.UDC
+          disabled={sourceDisabled}
+          code="ACC:CONTRACT_CUSTPAY_TRAVEL"
+          placeholder="请选择合作类型"
+        />
       </Field>,
 
       <Field
@@ -1432,7 +1650,7 @@ class EidtSubContract extends PureComponent {
         }}
         {...FieldListLayout}
       >
-        <Input placeholder="请输入报销政策说明" />
+        <Input disabled={sourceDisabled} placeholder="请输入报销政策说明" />
       </Field>,
 
       <FieldLine key="amtTaxRate" label="含税总金额/税率" {...FieldListLayout} required>
@@ -1453,7 +1671,7 @@ class EidtSubContract extends PureComponent {
           >
             <InputNumber
               placeholder={`请输入${pageFieldJson.amt.displayName}`}
-              disabled={pageFieldJson.amt.fieldMode !== 'EDITABLE'}
+              disabled={pageFieldJson.amt.fieldMode !== 'EDITABLE' || sourceDisabled}
               className="x-fill-100"
             />
           </Field>
@@ -1476,7 +1694,7 @@ class EidtSubContract extends PureComponent {
               code="COM.TAX_RATE"
               className="x-fill-100"
               placeholder={`请输入${pageFieldJson.taxRate.displayName}`}
-              disabled={pageFieldJson.taxRate.fieldMode !== 'EDITABLE'}
+              disabled={pageFieldJson.taxRate.fieldMode !== 'EDITABLE' || sourceDisabled}
             />
           </Field>
         )}
@@ -1535,7 +1753,7 @@ class EidtSubContract extends PureComponent {
         }}
         {...FieldListLayout}
       >
-        <InputNumber placeholder="请输入毛利" className="x-fill-100" />
+        <InputNumber disabled={sourceDisabled} placeholder="请输入毛利" className="x-fill-100" />
       </Field>,
 
       <Field
@@ -1553,7 +1771,12 @@ class EidtSubContract extends PureComponent {
         }}
         {...FieldListLayout}
       >
-        <Selection source={() => selectFinperiod()} placeholder="请选择财务期间" showSearch />
+        <Selection
+          disabled={sourceDisabled}
+          source={() => selectFinperiod()}
+          placeholder="请选择财务期间"
+          showSearch
+        />
       </Field>,
     ]
       .filter(
@@ -1966,6 +2189,20 @@ class EidtSubContract extends PureComponent {
                 )}
               </>
             )}
+            {formData.platType === 'NO_CONTRACT_VIRTUAL_CONTRACT' &&
+              formData.contractStatus === 'ACTIVE_WAITING' && (
+                <Button
+                  className="tw-btn-primary"
+                  // className={classnames('separate', 'tw-btn-default')}
+                  type="primary"
+                  icon="save"
+                  size="large"
+                  disabled={disabledBtn}
+                  onClick={this.handleActive}
+                >
+                  {formatMessage({ id: `misc.active`, desc: '激活' })}
+                </Button>
+              )}
             <Button
               className={classnames('separate', 'tw-btn-default')}
               icon="undo"

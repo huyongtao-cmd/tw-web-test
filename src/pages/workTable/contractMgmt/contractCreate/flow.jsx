@@ -8,6 +8,7 @@ import PageWrapper from '@/components/production/layout/PageWrapper';
 import BpmWrapper from '@/pages/gen/BpmMgmt/BpmWrapper';
 import { ProductFormItemBlockConfig } from '@/utils/pageConfigUtils';
 import BusinessFormTitle from '@/components/production/business/BusinessFormTitle.tsx';
+import RelatedDocs from './components/RelatedDocs';
 import { fromQs } from '@/utils/production/stringUtil';
 import { createConfirm } from '@/components/core/Confirm';
 import { pushFlowTask } from '@/services/gen/flow';
@@ -421,7 +422,9 @@ class index extends Component {
         fieldKey="relateDocument"
         initialValue={formData.relateDocument}
         descriptionField="relateDocumentDesc"
-      />,
+      >
+        <RelatedDocs />
+      </FormItem>,
       <FormItem
         fieldType="UserSimpleSelect"
         label="创建人"

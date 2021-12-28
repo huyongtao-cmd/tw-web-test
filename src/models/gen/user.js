@@ -17,6 +17,7 @@ export default {
     },
     // 用户快捷方式
     newSortNo: void 0,
+    headImgFile: '',
     formData: {},
     myShortCut: [],
     sysShortCut: [],
@@ -48,9 +49,9 @@ export default {
       if (isNil(user)) {
         return false;
       }
-      const {
-        extInfo: { resId },
-      } = user;
+      // const {
+      //   extInfo: { resId },
+      // } = user;
       yield put({
         type: 'updateState',
         payload: {
@@ -59,6 +60,7 @@ export default {
       });
       return user === true ? true : user;
     },
+
     *getAvatarFn({ payload }, { call, put, select }) {
       const userMsg = yield select(({ user: { user } }) => ({ user }));
       if (isNil(userMsg.user)) {
@@ -71,14 +73,14 @@ export default {
       } = userMsg;
       const res = yield call(getAvatar, resId);
       if (res !== false) {
-        userMsg.user.avatar = res;
+        // userMsg.user.avatar = res;
         yield put({
           type: 'updateState',
           payload: {
-            user: userMsg.user,
+            headImgFile: res?.headImgFile ?? '',
           },
         });
-        return userMsg.user;
+        return res?.headImgFile ?? '';
       }
       return false;
     },

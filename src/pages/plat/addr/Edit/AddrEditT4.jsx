@@ -4,11 +4,12 @@ import { formatMessage } from 'umi/locale';
 import update from 'immutability-helper';
 
 import Title from '@/components/layout/Title';
+import { UdcSelect } from '@/pages/gen/field';
 import { genFakeId } from '@/utils/mathUtils';
 import { formatDT } from '@/utils/tempUtils/DateTime';
 import EditableDataTable from '@/components/common/EditableDataTable';
 import { createAlert } from '@/components/core/Confirm';
-import BaseSelect from '@/components/production/basic/BaseSelect.tsx';
+
 import { AddrEditContext, DOMAIN } from './index';
 
 // 注意-> 真正的上下文在Consumer里面，多个Tab共享父页面的上下文
@@ -84,9 +85,10 @@ const AddrEditT4 = props => (
               ],
             },
             render: (value, row, index) => (
-              <BaseSelect
+              <UdcSelect
+                size="small"
                 value={value}
-                parentKey="FUNCTION:CONTACT:TYPE"
+                code="COM:CONTACT_TYPE"
                 placeholder="请选择联系人类型"
                 onChange={onCellChanged(index, 'contactType')}
               />

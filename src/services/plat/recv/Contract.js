@@ -19,7 +19,15 @@ const {
   selectCustExpApplyNo,
   ouInternal,
   recvPlanMultiColSelect,
+  updateRecvOrInvDate,
 } = api.plat.recv;
+
+export async function updateRecvOrInvDateRq(params) {
+  return request(updateRecvOrInvDate, {
+    method: 'POST',
+    body: params,
+  });
+}
 
 export async function queryRecvplanList(params) {
   return request.get(toQs(recvplanList, params));

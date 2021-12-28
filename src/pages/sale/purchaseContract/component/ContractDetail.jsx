@@ -10,6 +10,7 @@ import { formatDT } from '@/utils/tempUtils/DateTime';
 import router from 'umi/router';
 import createMessage from '@/components/core/AlertMessage';
 import Link from 'umi/link';
+import { createConfirm } from '@/components/core/Confirm';
 import { getLink } from '@/pages/sale/purchaseContract/linkConfig';
 import style from '../style.less';
 
@@ -60,7 +61,10 @@ class Detail extends PureComponent {
               disabled: false,
               minSelections: 0,
               cb: (selectedRowKeys, selectedRows, queryParams) => {
-                if (detailData.contractStatus === 'ACTIVE') {
+                if (
+                  detailData.contractStatus === 'ACTIVE' ||
+                  detailData.contractStatus === 'APPROVING'
+                ) {
                   const sceneTypeObj = {
                     SERVICES_TRADE: '1',
                     PRODUCT_TRADE: '2',
@@ -87,15 +91,28 @@ class Detail extends PureComponent {
                   } else {
                     sceneType = sceneTypeObj[detailData.purchaseType];
                   }
-                  router.push(
-                    `/sale/purchaseContract/paymentApplyList/edit?docNo=${
-                      detailData.contractNo
-                    }&scene=${sceneType}&mode=create`
-                  );
+                  if (detailData.contractStatus === 'ACTIVE') {
+                    router.push(
+                      `/sale/purchaseContract/paymentApplyList/edit?docNo=${
+                        detailData.contractNo
+                      }&scene=${sceneType}&mode=create`
+                    );
+                  } else {
+                    createConfirm({
+                      content:
+                        '此采购合同尚未审批完成，如果需要申请付款，必须提供相关的紧急付款许可凭证，如：领导的确认邮件、消息记录等。',
+                      onOk: () =>
+                        router.push(
+                          `/sale/purchaseContract/paymentApplyList/edit?docNo=${
+                            detailData.contractNo
+                          }&scene=${sceneType}&mode=create&status=urgency`
+                        ),
+                    });
+                  }
                 } else {
                   createMessage({
                     type: 'warn',
-                    description: '采购合同状态为激活时才允许发起付款',
+                    description: '采购合同状态为激活或审批中时才允许发起付款',
                   });
                 }
               },
@@ -114,8 +131,19 @@ class Detail extends PureComponent {
                   router.push(
                     `/sale/purchaseContract/prePaymentApply/edit?docNo=${
                       detailData.contractNo
-                    }&scene=14&mode=create`
+                    }&scene=14&mode=create&source=purchaseContract`
                   );
+                } else if (detailData.contractStatus === 'APPROVING') {
+                  createConfirm({
+                    content:
+                      '此采购合同尚未审批完成，如果需要申请付款，必须提供相关的紧急付款许可凭证，如：领导的确认邮件、消息记录等。',
+                    onOk: () =>
+                      router.push(
+                        `/sale/purchaseContract/prePaymentApply/edit?docNo=${
+                          detailData.contractNo
+                        }&scene=14&mode=create&source=purchaseContract&status=urgency`
+                      ),
+                  });
                 } else {
                   createMessage({
                     type: 'warn',
@@ -142,7 +170,6 @@ class Detail extends PureComponent {
         sortNo: `${pageFieldJson.paymentStage.sortNo}`,
         key: 'paymentStage',
         dataIndex: 'paymentStage',
-        className: 'text-center',
         width: 200,
       },
       {
@@ -150,8 +177,8 @@ class Detail extends PureComponent {
         sortNo: `${pageFieldJson.currentPaymentAmt.sortNo}`,
         key: 'currentPaymentAmt',
         dataIndex: 'currentPaymentAmt',
-        className: 'text-center',
-        width: 200,
+        className: 'text-right',
+        width: 120,
       },
       {
         title: `${pageFieldJson.paymentAmt.displayName}`,
@@ -159,7 +186,7 @@ class Detail extends PureComponent {
         key: 'paymentAmt',
         dataIndex: 'paymentAmt',
         className: 'text-right',
-        width: 200,
+        width: 100,
       },
       {
         title: `${pageFieldJson.paymentProportion.displayName}`,
@@ -167,8 +194,8 @@ class Detail extends PureComponent {
         key: 'paymentProportion',
         dataIndex: 'paymentProportion',
         className: 'text-right',
-        width: 200,
-        render: (value, row, index) => `${value}%`,
+        width: 100,
+        render: (value, row, index) => `${value === null ? '-' : value + '%'}`,
       },
       {
         title: `${pageFieldJson.estimatedPaymentDate.displayName}`,
@@ -184,15 +211,14 @@ class Detail extends PureComponent {
         sortNo: `${pageFieldJson.paymentApplicationType.sortNo}`,
         key: 'paymentApplicationType',
         dataIndex: 'paymentApplicationTypeName',
-        className: 'text-center',
         width: 200,
       },
       {
         title: `${pageFieldJson.paymentApplyId.displayName}`,
         sortNo: `${pageFieldJson.paymentApplyId.sortNo}`,
+        className: 'text-center',
         key: 'paymentApplyId',
         dataIndex: 'paymentNo',
-        className: 'text-center',
         width: 200,
         render: (value, row, index) => {
           const { paymentApplicationType, paymentApplyId, scene } = row;
@@ -214,7 +240,6 @@ class Detail extends PureComponent {
         sortNo: `${pageFieldJson.state.sortNo}`,
         key: 'state',
         dataIndex: 'stateName',
-        className: 'text-center',
         width: 150,
       },
       {
@@ -222,7 +247,6 @@ class Detail extends PureComponent {
         sortNo: `${pageFieldJson.contractNode.sortNo}`,
         key: 'contractNode',
         dataIndex: 'contractNodeName',
-        className: 'text-center',
         width: 200,
       },
       {
@@ -230,7 +254,6 @@ class Detail extends PureComponent {
         sortNo: `${pageFieldJson.recvStatus.sortNo}`,
         key: 'recvStatus',
         dataIndex: 'recvStatusName',
-        className: 'text-center',
         width: 200,
       },
       {
@@ -238,15 +261,14 @@ class Detail extends PureComponent {
         sortNo: `${pageFieldJson.actualRecvAmt.sortNo}`,
         key: 'actualRecvAmt',
         dataIndex: 'actualRecvAmt',
-        className: 'text-center',
-        width: 200,
+        className: 'text-right',
+        width: 100,
       },
       {
         title: `${pageFieldJson.milestone.displayName}`,
         sortNo: `${pageFieldJson.milestone.sortNo}`,
         key: 'milestone',
         dataIndex: 'milestoneName',
-        className: 'text-center',
         width: 200,
       },
       {
@@ -254,8 +276,7 @@ class Detail extends PureComponent {
         sortNo: `${pageFieldJson.milestoneStatus.sortNo}`,
         key: 'milestoneStatus',
         dataIndex: 'milestoneStatusName',
-        className: 'text-center',
-        width: 200,
+        width: 130,
       },
     ];
     const columnsFilterList = columnsList.filter(
@@ -306,7 +327,7 @@ class Detail extends PureComponent {
         key: 'relatedProductId',
         dataIndex: 'relatedProductName',
         className: 'text-center',
-        width: 200,
+        width: 150,
       },
       {
         title: `${pageFieldJson.note.displayName}`,
@@ -315,6 +336,55 @@ class Detail extends PureComponent {
         dataIndex: 'note',
         className: 'text-center',
         width: 200,
+      },
+      {
+        title: `${pageFieldJson.quantity.displayName}`,
+        sortNo: `${pageFieldJson.quantity.sortNo}`,
+        key: 'quantity',
+        dataIndex: 'quantity',
+        className: 'text-right',
+        width: 60,
+      },
+      {
+        title: `${pageFieldJson.taxPrice.displayName}`,
+        sortNo: `${pageFieldJson.taxPrice.sortNo}`,
+        key: 'taxPrice',
+        dataIndex: 'taxPrice',
+        className: 'text-right',
+        width: 80,
+      },
+      {
+        title: `${pageFieldJson.taxRate.displayName}`,
+        sortNo: `${pageFieldJson.taxRate.sortNo}`,
+        key: 'taxRate',
+        dataIndex: 'taxRate',
+        className: 'text-right',
+        width: 60,
+        render: (value, row, index) => `${value}%`,
+      },
+      {
+        title: `${pageFieldJson.taxAmt.displayName}`,
+        sortNo: `${pageFieldJson.taxAmt.sortNo}`,
+        key: 'taxAmt',
+        dataIndex: 'taxAmt',
+        className: 'text-right',
+        width: 80,
+      },
+      {
+        title: `${pageFieldJson.taxNotAmt.displayName}`,
+        sortNo: `${pageFieldJson.taxNotAmt.sortNo}`,
+        key: 'taxNotAmt',
+        dataIndex: 'taxNotAmt',
+        className: 'text-right',
+        width: 90,
+      },
+      {
+        title: `${pageFieldJson.deliveryDate.displayName}`,
+        sortNo: `${pageFieldJson.deliveryDate.sortNo}`,
+        key: 'deliveryDate',
+        dataIndex: 'deliveryDate',
+        className: 'text-center',
+        width: 100,
       },
       {
         title: `${pageFieldJson.classId.displayName}`,
@@ -331,55 +401,6 @@ class Detail extends PureComponent {
         dataIndex: 'subClassIdName',
         className: 'text-center',
         width: 200,
-      },
-      {
-        title: `${pageFieldJson.quantity.displayName}`,
-        sortNo: `${pageFieldJson.quantity.sortNo}`,
-        key: 'quantity',
-        dataIndex: 'quantity',
-        className: 'text-right',
-        width: 100,
-      },
-      {
-        title: `${pageFieldJson.taxPrice.displayName}`,
-        sortNo: `${pageFieldJson.taxPrice.sortNo}`,
-        key: 'taxPrice',
-        dataIndex: 'taxPrice',
-        className: 'text-right',
-        width: 150,
-      },
-      {
-        title: `${pageFieldJson.taxRate.displayName}`,
-        sortNo: `${pageFieldJson.taxRate.sortNo}`,
-        key: 'taxRate',
-        dataIndex: 'taxRate',
-        className: 'text-right',
-        width: 100,
-        render: (value, row, index) => `${value}%`,
-      },
-      {
-        title: `${pageFieldJson.taxAmt.displayName}`,
-        sortNo: `${pageFieldJson.taxAmt.sortNo}`,
-        key: 'taxAmt',
-        dataIndex: 'taxAmt',
-        className: 'text-right',
-        width: 150,
-      },
-      {
-        title: `${pageFieldJson.taxNotAmt.displayName}`,
-        sortNo: `${pageFieldJson.taxNotAmt.sortNo}`,
-        key: 'taxNotAmt',
-        dataIndex: 'taxNotAmt',
-        className: 'text-right',
-        width: 150,
-      },
-      {
-        title: `${pageFieldJson.deliveryDate.displayName}`,
-        sortNo: `${pageFieldJson.deliveryDate.sortNo}`,
-        key: 'deliveryDate',
-        dataIndex: 'deliveryDate',
-        className: 'text-center',
-        width: 150,
       },
     ];
     const columnsFilterList = columnsList.filter(
@@ -472,7 +493,7 @@ class Detail extends PureComponent {
           title={`${formData.purchaseLegalName || ''} / ${formData.purchaseLegalNo || ''}`}
           className={style.ellipsis}
         >
-          {formData.purchaseLegalName} / {formData.purchaseLegalNo}
+          {formData.purchaseLegalName}
         </Tooltip>
       </Description>,
       <Description
@@ -498,7 +519,7 @@ class Detail extends PureComponent {
           title={`${formData.supplierLegalName || ''} / ${formData.supplierLegalNo || ''}`}
           className={style.ellipsis}
         >
-          {formData.supplierLegalName} / {formData.supplierLegalNo}
+          {formData.supplierLegalName}
         </Tooltip>
       </Description>,
       <Description
@@ -597,7 +618,10 @@ class Detail extends PureComponent {
         key="demandNo"
         sortno={pageFieldJson.demandNo.sortNo}
       >
-        {formData.demandNo}
+        {/*{formData.demandNo}*/}
+        <Link className="tw-link" to={getLink('salesContract', null, { id: formData.demandNo })}>
+          {formData.demandNo}
+        </Link>
       </Description>,
       <Description
         term={pageFieldJson.relatedProjectId.displayName}

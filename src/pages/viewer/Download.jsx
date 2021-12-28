@@ -24,11 +24,11 @@ class Download extends React.Component {
           <div className="download-container">
             <h1>泰列渥克 APP下载</h1>
             <h2>快乐工作者必备神器，我们追逐 “快乐的工作” ...</h2>
-            <a href="http://download.elitesland.net/app/TW_V1.0.1.apk" className="android">
+            <a href="https://tw-download.elitesland.com/app/TW_V1.0.1.apk" className="android">
               下载 Android App应用
             </a>
             <a
-              href="itms-services://?action=download-manifest&amp;url=https%3A%2F%2Fapp.elitesland.com%2Faction%2Fiosplist%2FgetIOSAppPlist%3Fcode%3Dtw"
+              href="itms-services://?action=download-manifest&amp;url=https://tw-download.elitesland.com/app/TeleWork.plist"
               className="ios"
               onClick={this.toggle}
             >

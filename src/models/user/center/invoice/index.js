@@ -6,6 +6,7 @@ import {
   invoiceDtlRq,
   getInvoicesFromBaiwangRq,
   delInvoice,
+  updateInvoiceRq,
 } from '@/services/user/center/invoice';
 import { businessPageDetailByNo } from '@/services/sys/system/pageConfig';
 import createMessage from '@/components/core/AlertMessage';
@@ -37,6 +38,25 @@ export default {
   },
 
   effects: {
+    // 修改发票信息
+    *updateInvoice({ payload }, { call, put, select }) {
+      const { searchForm } = yield select(({ invoiceList }) => invoiceList);
+      const { status, response } = yield call(updateInvoiceRq, payload);
+      if (status === 200) {
+        if (response && response.ok) {
+          createMessage({ type: 'success', description: response.reason || '操作成功' });
+          yield put({
+            type: 'query',
+            payload: searchForm,
+          });
+          return response;
+        }
+        createMessage({ type: 'error', description: response.reason || '操作失败' });
+        return {};
+      }
+      createMessage({ type: 'error', description: response.reason || '操作失败' });
+      return {};
+    },
     // 报销单用查询发票列表 -- 千万不要干掉
     *queryExpense({ payload }, { call, put }) {
       const params = convertQueryParams(payload);
@@ -201,6 +221,12 @@ export default {
       // const { selectedRowKeys } = payload;
       // const ids = selectedRowKeys.join(',');
       const { response } = yield call(delInvoice, ids);
+      if (!response.ok) {
+        createMessage({
+          type: 'error',
+          description: response.datum.join(',') + response.reason,
+        });
+      }
     },
   },
 

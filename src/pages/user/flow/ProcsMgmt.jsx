@@ -11,8 +11,8 @@ import FieldList from '@/components/layout/FieldList';
 import createMessage from '@/components/core/AlertMessage';
 import { formatDT } from '@/utils/tempUtils/DateTime';
 import { flowToRouter } from '@/utils/flowToRouter';
+import { getType } from '@/services/user/equivalent/equivalent';
 import { selectIamAllUsers, selectIamUsers } from '@/services/gen/list';
-import { tenantSelectProc } from '@/services/production/common/select';
 import { UdcSelect, Selection } from '@/pages/gen/field';
 
 import { request } from '@/utils/networkUtils';
@@ -67,7 +67,19 @@ class ProcsMgmt extends Component {
   };
 
   requestRealType = async rowData => {
-    router.push('/');
+    const { id, taskId, docId } = rowData;
+    const { status, response } = await getType(docId);
+    if (status === 200 && response.ok) {
+      const defKey =
+        // eslint-disable-next-line
+        response.datum === 'TASK_BY_PACKAGE'
+          ? 'ACC_A22.SUM'
+          : response.datum === 'TASK_BY_MANDAY'
+            ? 'ACC_A22.SINGLE'
+            : 'ACC_A22.COM';
+      const route = flowToRouter(defKey, { id, taskId, docId, mode: 'view' });
+      router.push(route);
+    }
   };
 
   renderLink = (value, rowData) => {
@@ -251,7 +263,7 @@ class ProcsMgmt extends Component {
           options: {
             initialValue: searchForm.defKey,
           },
-          tag: <Selection source={() => tenantSelectProc()} placeholder="请选择流程类型" />,
+          tag: <UdcSelect code="COM.WF_DEFINE" placeholder="请选择流程类型" />,
         },
         {
           title: '流程编号',

@@ -33,6 +33,7 @@ const flowToRouterMap = {
   ACC_A24: '/plat/expense/trip/view?id=:docId', // 行政订票报销流程
   ACC_A26: '/plat/expense/computer/apply/detail?id=:docId', // 电脑自购申请流程
   TSK_P07: '/user/task/subpackDetail?id=:docId', // 任务包转包流程
+  TSK_P13: '/user/task/authonzation/flow?id=:docId', // 任务包授权流程
   ACC_A28: '/hr/res/profile/list/resEnroll/detail?id=:docId', // 资源入职申请流程
   ACC_A29: '/user/center/prePay/detail?id=:docId', // 预付款申请流程
   TSK_P08: '/user/task/resActFinishDetail?id=:docId', // 活动完工申请流程
@@ -42,6 +43,7 @@ const flowToRouterMap = {
   ACC_A32: '/user/center/unfreezeDetail?id=:docId', // 解冻申请流程
   ACC_A33: '/user/center/withdrawDetail?id=:docId', // 提现申请流程
   TSK_S04: '/sale/contract/purchasesDetail?pid=:docId&id=:docId', // 采购合同流程
+  TSK_P11: '/user/project/projectActivityDetail?pid=:docId&id=:docId', // 项目活动审批流程
 
   ACC_A34: '/sale/contract/invBatches/detail?id=:docId', // 合同开票退回流程
   ACC_A35: '/user/center/myVacation/vacationFlow/index?id=:docId', // 请假流程
@@ -51,6 +53,10 @@ const flowToRouterMap = {
   ACC_A39: '/sale/contract/sharingFlow?id=:docId', // 子合同利益分配流程
   ACC_A40: '/user/project/finishProject/flow?id=:docId', // 项目结项申请流程
   ACC_A41: '/user/center/InfoDetail?id=:docId', // 个人信息修改流程
+  ACC_A42: '/user/probation/probationMid?id=:docId', // 实习期中期考核流程
+  ACC_A43: '/user/probation/probationLast?id=:docId', // 实习期末期考核流程
+  ACC_A45: '/user/center/prefCheckFlow/index?id=:docId', // 绩效考核流程
+  ACC_A113: '/user/center/prefCheckFlow/index?id=:docId', // 绩效考核流程
 
   ACC_A46: '/hr/res/profile/list/extrApplyflowCreate?id=:docId', // 外部资源引入
   ACC_A47: '/user/Project/noContractProj/flow?id=:docId', // 无合同项目流程
@@ -65,7 +71,10 @@ const flowToRouterMap = {
   ACC_A56: '/user/center/growth/compoundAbility/view?id=:docId', // 复合能力
   ACC_A61: '/user/BaseBUChange/flow?id=:docId', // BaseBU变更流程
   ACC_A63: '/org/bu/buReimbursementList/detail?id=:docId', // BU分摊流程
-
+  ORG_G01: '/okr/okrMgmt/targetMgmt/review?id=:docId', // 目标管理审批流程
+  ACC_A57: '/hr/prefMgmt/communicate/communicatePlanFlow?id=:docId', // 绩效考核沟通计划流程
+  ACC_A58: '/hr/prefMgmt/communicate/communicateMiddleFlow?id=:docId', // 绩效考核沟通中期流程
+  ACC_A59: '/hr/prefMgmt/communicate/communicateResultFlow?id=:docId', // 绩效考核沟通结果流程
   ACC_A65: '/user/project/setUpProject/flow?id=:docId', // 项目立项流程
   ACC_A66: '/plat/expense/transferMoney/flow?id=:docId', // 资金划款流程
   ACC_A64: '/user/project/changeProjectBudget/flow?id=:docId', // 变更预算流程
@@ -73,9 +82,14 @@ const flowToRouterMap = {
   ACC_A60: '/plat/purchPay/advanceVerification/view?id=:docId', // 预付款核销流程
   ORG_G02: '/user/changeBase/review?id=:docId', // Base地和社保公积金缴纳地变更流程
   ACC_A62: '/sale/contract/subActiveView?id=:docId', // 子合同激活审批流程
+  ACC_A112: '/sale/contract/submitVirtualSub?id=:docId', // 虚拟合同提交审批流程
+  ORG_G04: '/hr/res/adviserFlow?id=:docId', // 独立顾问审批
+  ALT_L01: '/user/project/ResourcePlanFlow?id=:docId', // 资源规划更新提醒
 
   ACC_A80: '/sale/purchaseContract/paymentApplyList/detail?id=:docId', // 合同流程
   ACC_A81: '/sale/purchaseContract/paymentApplyList/detail?id=:docId', // 协议流程
+  ACC_A114: '/sale/purchaseContract/purchaseAgreementActive?id=:docId', // 采购协议激活
+  ACC_A115: '/sale/contract/prompt?id=:docId', // 合同催款流程
   ACC_A82: '/sale/purchaseContract/prePaymentApply/detail?id=:docId', // 预付款申请流程
   ACC_A83: '/sale/purchaseContract/prePayWriteOff/detail?id=:docId', // 预付款核销申请流程
   ACC_A84: '/sale/purchaseContract/paymentApplyList/detail?id=:docId', // 薪资流程
@@ -96,6 +110,7 @@ const flowToRouterMap = {
   ACC_A103: '/sale/purchaseContract/prePayWriteOff/detail?id=:docId', // 付款申请单:预付款核销
   ACC_A104: '/sale/purchaseContract/paymentApplyList/detail?id=:docId', // 付款申请单:研发采购
   ACC_A105: '/sale/purchaseContract/paymentApplyList/detail?id=:docId', // 付款申请单:行政运营类采购
+  ACC_A106: '/sale/purchaseContract/paymentApplyList/detail?id=:docId', // 付款申请单:行政运营类采购(协议)
   ACC_A107: '/sale/purchaseContract/paymentApplyList/detail?id=:docId', // 付款申请单:公司管理类
   ACC_A108: '/sale/purchaseContract/paymentApplyList/detail?id=:docId', // 付款申请单:资源赋能类采购
   ACC_A110: '/sale/purchaseContract/prePaymentApply/detail?id=:docId', // 付款申请单:预付款：预付款（产品贸易类）/预付款（服务贸易类）/预付款（其它）
@@ -128,6 +143,7 @@ const flowToRouterMap = {
   TSK_S20: '/sale/purchaseContract/Flow?id=:docId&pageMode=purchase', // 采购合同：行政运营类采购
   TSK_S21: '/sale/purchaseContract/Flow?id=:docId&pageMode=purchase', // 采购合同：公司管理类
   TSK_S22: '/sale/purchaseContract/Flow?id=:docId&pageMode=purchase', // 采购合同：资源赋能类采购
+  TSK_C01: '/sale/management/PartnerFlow?id=:docId', // 合作伙伴准入
 
   ADM_M01: '/plat/adminMgmt/useSealApply/approval?id=:docId', // 用印申请流程
   ADM_M02: '/workTable/contractMgmt/contractCreate/flow?id=:docId', // 台账合同新建审批流程
@@ -152,10 +168,9 @@ const flowToRouterMap = {
   SAL01: '/workTable/sale/saleOrder/flow?id=:docId', // 销售单审批流程
   SAL02: '/workTable/sale/collectionPlan/flow?id=:docId', // 收款开票流程
   SAL03: '/workTable/sale/saleOrder/flow?id=:docId', // 销售单调审批流程
-  // TODO 修改流程名称
-  PAY_AND_REC_INVOICE: '/workTable/payAndReceive/invoiceApply/flow?id=:docId', // 收付款管理----开票流程
+  ACC_A111: '/sale/contract/ChannelFeeDetail?id=:docId', //销售合同渠道费用
+
   RES_R04: '/user/center/myVacation/vacationFlow/indexNew?id=:docId', // 休假流程
-  PRO_P02: '/workTable/projectMgmt/projectMgmtList/projectApplyDisplay?id=:docId', //项目立项流程
 };
 
 /**

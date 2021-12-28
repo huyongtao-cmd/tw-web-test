@@ -367,11 +367,11 @@ class VacationMgmt extends PureComponent {
         },
         {
           title: '可用天数',
-          dataIndex: 'canUsedDays',
+          dataIndex: 'availableDays',
           width: 100,
           align: 'center',
-          render: (value, row, index) =>
-            sub(sub(row.totalDays, row.usedDays), row.frozenDay).toFixed(1),
+          // render: (value, row, index) =>
+          //   sub(sub(row.totalDays, row.usedDays), row.frozenDay).toFixed(1),
         },
         {
           title: '未开放天数',

@@ -72,6 +72,11 @@ class AddrDet extends React.PureComponent {
         type: `${DOMAIN}/clean`,
       });
     }
+    // 合作伙伴标签数据
+    dispatch({
+      type: `${DOMAIN}/getTagTree`,
+      payload: { key: 'COOP_TAG' },
+    });
   }
 
   // --------------- 剩下的私有函数写在这里 -----------------
@@ -197,10 +202,10 @@ class AddrDet extends React.PureComponent {
                 key: 'supply',
                 tab: <AddrDetT10.Title />,
               },
-              /*{
+              {
                 key: 'coop',
                 tab: <AddrDetT11.Title />,
-              },*/
+              },
             ]}
             onTabChange={this.onTabChange}
           >

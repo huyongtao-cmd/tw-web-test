@@ -36,6 +36,12 @@ class ExpenseClaimList extends React.PureComponent {
     date: moment().format('YYYY-MM-DD'),
   };
 
+  constructor(props) {
+    super(props);
+    const pathParam = fromQs();
+    this.state = { defaultSearchForm: pathParam };
+  }
+
   componentDidMount() {
     // outputHandle(expenseQuotaFindQuotas, [
     //   { busiAccItemId: 5, quotaDimension1Value: 'L2', quotaDimension2Value: '02' },
@@ -81,18 +87,6 @@ class ExpenseClaimList extends React.PureComponent {
 
   renderSearchForm = () => [
     <SearchFormItem key="expenseNo" fieldKey="expenseNo" label="报销单号" fieldType="BaseInput" />,
-    <SearchFormItem
-      key="createTime"
-      label="创建日期"
-      fieldType="BaseDateRangePicker"
-      fieldKey="createTime"
-    />,
-    <SearchFormItem
-      key="paymentDate"
-      label="付款日期"
-      fieldType="BaseDateRangePicker"
-      fieldKey="paymentDate"
-    />,
     <SearchFormItem
       key="chargeClassification"
       label="费用归属"
@@ -158,6 +152,18 @@ class ExpenseClaimList extends React.PureComponent {
       label="付款批次号"
       fieldType="BaseInput"
       fieldKey="paymentBatch"
+    />,
+    <SearchFormItem
+      key="createTime"
+      label="创建日期"
+      fieldType="BaseDateRangePicker"
+      fieldKey="createTime"
+    />,
+    <SearchFormItem
+      key="paymentDate"
+      label="付款日期"
+      fieldType="BaseDateRangePicker"
+      fieldKey="paymentDate"
     />,
   ];
 
@@ -284,6 +290,8 @@ class ExpenseClaimList extends React.PureComponent {
       },
     ];
 
+    const { defaultSearchForm } = this.state;
+
     return (
       <PageWrapper>
         <SearchTable
@@ -291,7 +299,7 @@ class ExpenseClaimList extends React.PureComponent {
           defaultAdvancedSearch={false}
           showSearchCardTitle={false}
           searchForm={this.renderSearchForm()}
-          defaultSearchForm={{}}
+          defaultSearchForm={defaultSearchForm}
           defaultSortBy="id"
           defaultSortDirection="DESC"
           wrapperInternalState={internalState => {
@@ -310,14 +318,16 @@ class ExpenseClaimList extends React.PureComponent {
               cb: internalState => {
                 const { selectedRowKeys, selectedRows, refreshData } = internalState;
                 const findFalseList = selectedRows.filter(
-                  v => v.expenseClaimStatus !== 'WAITING_TO_PAY' || !isEmpty(v.paymentBatch)
+                  v =>
+                    v.expenseClaimStatus !== 'WAITING_TO_PAY' ||
+                    (v.paymentBatch && v.paymentBatch.trim().length > 0)
                 );
                 if (!isEmpty(findFalseList)) {
                   createMessage({
                     type: 'warn',
                     description: remindString({
                       remindCode: '',
-                      defaultMessage: '仅“已通过待付款”状态的报销单允许付款导出！',
+                      defaultMessage: '仅“已通过待付款”状态且未导出的的报销单允许付款导出！',
                     }),
                   });
                   return;

@@ -358,7 +358,7 @@ class SystemUserDetail extends PureComponent {
           </FieldList>
         </Card>
 
-        {/* <br />
+        <br />
         <Card
           className="tw-card-adjust"
           title={
@@ -398,7 +398,7 @@ class SystemUserDetail extends PureComponent {
               />
             </Field>
           </FieldList>
-        </Card> */}
+        </Card>
       </PageHeaderWrapper>
     );
   }

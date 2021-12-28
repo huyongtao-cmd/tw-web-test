@@ -7,13 +7,12 @@ import router from 'umi/router';
 import { mountToTab } from '@/layouts/routerControl';
 import PageHeaderWrapper from '@/components/layout/PageHeaderWrapper';
 import DataTable from '@/components/common/DataTable';
-
 import { formatDT } from '@/utils/tempUtils/DateTime';
 import { flowToRouter } from '@/utils/flowToRouter';
+import { getType } from '@/services/user/equivalent/equivalent';
 import { Selection } from '@/pages/gen/field';
 import { selectIamAllUsers, selectIamUsers } from '@/services/gen/list';
 import FieldList from '@/components/layout/FieldList';
-import { tenantSelectProc } from '@/services/production/common/select';
 
 const DOMAIN = 'flowTodo';
 const { Field } = FieldList;
@@ -54,7 +53,26 @@ class Todo extends Component {
   };
 
   requestRealType = async rowData => {
-    router.push('/');
+    const { id, taskId, docId } = rowData;
+    const { status, response } = await getType(docId);
+    if (status === 200 && response.ok) {
+      const defKey =
+        // eslint-disable-next-line
+        response.datum === 'TASK_BY_PACKAGE'
+          ? 'ACC_A22.SUM'
+          : response.datum === 'TASK_BY_MANDAY'
+            ? 'ACC_A22.SINGLE'
+            : 'ACC_A22.COM';
+      const route = flowToRouter(defKey, {
+        // 此处不用进行流程标识改造
+        id,
+        taskId,
+        docId,
+        mode: 'edit',
+        originalUrl: window.location.origin + '/user/flow/process?type=todo',
+      });
+      router.push(route);
+    }
   };
 
   renderLink = (value, rowData) => {
@@ -144,7 +162,7 @@ class Todo extends Component {
           options: {
             initialValue: searchForm.defKey,
           },
-          tag: <Selection source={() => tenantSelectProc()} placeholder="请选择流程类型" />,
+          tag: <Selection.UDC code="COM.WF_DEFINE" placeholder="请选择流程类型" />,
         },
         {
           title: '相关信息',

@@ -306,7 +306,7 @@ class TaskOne extends Component {
       showColumn: false,
       // 根据选择的假期类型，筛选剩余假期
       dataSource: formData.vacationType
-        ? resVacationList.filter(v => v.vacationType === formData.vacationType)
+        ? resVacationList?.filter(v => v.vacationType === formData.vacationType)
         : resVacationList,
       onRow: () => {},
       showSearch: false,
@@ -364,10 +364,10 @@ class TaskOne extends Component {
         },
         {
           title: '可用天数',
-          dataIndex: 'canUsedDays',
+          dataIndex: 'availableDays',
           align: 'center',
-          render: (value, row, index) =>
-            sub(sub(row.totalDays, row.usedDays), row.frozenDay).toFixed(1),
+          // render: (value, row, index) =>
+          //   sub(sub(row.totalDays, row.usedDays), row.frozenDay).toFixed(1),
         },
         {
           title: '未开放天数',

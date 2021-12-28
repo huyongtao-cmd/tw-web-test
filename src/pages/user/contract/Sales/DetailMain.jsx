@@ -15,6 +15,7 @@ import PageHeaderWrapper from '@/components/layout/PageHeaderWrapper';
 import DescriptionList from '@/components/layout/DescriptionList';
 import Title from '@/components/layout/Title';
 import DataTable from '@/components/common/DataTable';
+import TreeSearch from '@/components/common/TreeSearch';
 
 const DOMAIN = 'userContractEditMain';
 const { Description } = DescriptionList;
@@ -61,6 +62,11 @@ class DetailMain extends PureComponent {
       type: `${DOMAIN}/getPageConfig`,
       payload: { pageNo: 'SALE_CONTRACT_DETAIL' },
     });
+    // 合同标签数据
+    dispatch({
+      type: `${DOMAIN}/getTagTree`,
+      payload: { key: 'CONTRACT_TAG' },
+    });
   }
 
   handleEdit = () => {
@@ -75,8 +81,19 @@ class DetailMain extends PureComponent {
   render() {
     const {
       dispatch,
-      userContractEditMain: { formData, subList, pageConfig = {} },
+      userContractEditMain: { formData, subList, pageConfig = {}, tagTree, checkedKeys, flatTags },
     } = this.props;
+
+    let checkedKeysTemp = checkedKeys;
+    if (checkedKeysTemp.length < 1) {
+      if (formData.tagIds) {
+        const arrayTemp = formData.tagIds.split(',');
+        checkedKeysTemp = arrayTemp.filter(item => {
+          const menu = flatTags[item];
+          return menu && (menu.children === null || menu.children.length === 0);
+        });
+      }
+    }
 
     const { pageBlockViews = [] } = pageConfig;
     if (!pageBlockViews || pageBlockViews.length < 2) {
@@ -197,6 +214,18 @@ class DetailMain extends PureComponent {
       </DescriptionList>,
       <Description key="createUserId">{formData.createUserName}</Description>,
       <Description key="createTime">{formData.createTime}</Description>,
+      <Description key="tagIds" term="合同标签">
+        <TreeSearch
+          checkable
+          // checkStrictly
+          showSearch={false}
+          placeholder="请输入关键字"
+          treeData={tagTree}
+          defaultExpandedKeys={tagTree.map(item => `${item.id}`)}
+          checkedKeys={checkedKeysTemp}
+          disabled
+        />
+      </Description>,
     ]
       .filter(
         des =>

@@ -81,9 +81,9 @@ export async function flowDetailRq(params) {
 
 // 绩效考核第三节点审批
 export async function examineByThreeRq(params) {
-  const { taskId, ...newParams } = params;
+  const { taskId } = params;
   return request.post(toUrl(examineByThree, { taskId }), {
-    body: newParams,
+    body: params,
   });
 }
 

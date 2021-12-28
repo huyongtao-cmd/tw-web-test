@@ -359,10 +359,10 @@ class VacationApplyCreate extends Component {
             },
             {
               title: '可用天数',
-              dataIndex: 'canUsedDays',
+              dataIndex: 'availableDays',
               align: 'center',
-              render: (value, row, index) =>
-                sub(sub(row.totalDays, row.usedDays), row.frozenDay).toFixed(1),
+              // render: (value, row, index) =>
+              //   sub(sub(row.totalDays, row.usedDays), row.frozenDay).toFixed(1),
             },
             {
               title: '未开放天数',
@@ -414,9 +414,9 @@ class VacationApplyCreate extends Component {
             },
             {
               title: '可用天数',
-              dataIndex: 'canUsedDays',
+              dataIndex: 'availableDays',
               align: 'center',
-              render: (value, row, index) => sub(row.totalDays, row.usedDays).toFixed(1),
+              // render: (value, row, index) => sub(row.totalDays, row.usedDays).toFixed(1),
             },
             {
               title: '备注',

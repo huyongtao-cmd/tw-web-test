@@ -137,6 +137,7 @@ class ContractEdit extends PureComponent {
       dispatch,
       salePurchaseAgreementsEdit,
       form,
+      isEdit,
     } = this.props;
     const param = fromQs();
 
@@ -171,7 +172,7 @@ class ContractEdit extends PureComponent {
         }}
       >
         <Input
-          disabled={pageFieldJson.purchaseAgreementNo.fieldMode !== 'EDITABLE'}
+          disabled={pageFieldJson.purchaseAgreementNo.fieldMode !== 'EDITABLE' || isEdit}
           placeholder="系统自动生成"
         />
       </Field>,
@@ -192,7 +193,7 @@ class ContractEdit extends PureComponent {
         }}
       >
         <Input
-          disabled={pageFieldJson.purchaseAgreementName.fieldMode !== 'EDITABLE'}
+          disabled={pageFieldJson.purchaseAgreementName.fieldMode !== 'EDITABLE' || isEdit}
           placeholder={`请输入${pageFieldJson.purchaseAgreementName.displayName}`}
         />
       </Field>,
@@ -215,7 +216,7 @@ class ContractEdit extends PureComponent {
         <Selection.UDC
           code="TSK:AGREEMENT_TYPE"
           placeholder={`请选择${pageFieldJson.agreementType.displayName}`}
-          disabled={pageFieldJson.agreementType.fieldMode !== 'EDITABLE'}
+          disabled={pageFieldJson.agreementType.fieldMode !== 'EDITABLE' || isEdit}
         />
       </Field>,
       <Field
@@ -237,7 +238,7 @@ class ContractEdit extends PureComponent {
         <Selection.UDC
           code="TSK:ACCEPTANCE_TYPE"
           placeholder={`请选择${pageFieldJson.acceptanceType.displayName}`}
-          disabled={pageFieldJson.acceptanceType.fieldMode !== 'EDITABLE'}
+          disabled={pageFieldJson.acceptanceType.fieldMode !== 'EDITABLE' || isEdit}
         />
       </Field>,
       <Field
@@ -260,7 +261,7 @@ class ContractEdit extends PureComponent {
           placeholder={`请选择${pageFieldJson.signDate.displayName}`}
           format="YYYY-MM-DD"
           className="x-fill-100"
-          disabled={pageFieldJson.signDate.fieldMode !== 'EDITABLE'}
+          disabled={pageFieldJson.signDate.fieldMode !== 'EDITABLE' || isEdit}
         />
       </Field>,
       <Field
@@ -286,7 +287,7 @@ class ContractEdit extends PureComponent {
           placeholder={['开始日期', '结束日期']}
           format="YYYY-MM-DD"
           className="x-fill-100"
-          disabled={pageFieldJson.effectiveStartDate.fieldMode !== 'EDITABLE'}
+          disabled={pageFieldJson.effectiveStartDate.fieldMode !== 'EDITABLE' || isEdit}
         />
       </Field>,
       <FieldLine
@@ -314,7 +315,7 @@ class ContractEdit extends PureComponent {
             showSearch
             onChange={this.handlePurchaseLegal}
             placeholder={`请选择${pageFieldJson.signingLegalNo.displayName}`}
-            disabled={pageFieldJson.signingLegalNo.fieldMode !== 'EDITABLE'}
+            disabled={pageFieldJson.signingLegalNo.fieldMode !== 'EDITABLE' || isEdit}
           />
         </Field>
         <Field
@@ -346,7 +347,7 @@ class ContractEdit extends PureComponent {
         <Selection.ColumnsForBu
           onChange={this.linkageBu}
           placeholder={`请选择${pageFieldJson.signingBuId.displayName}`}
-          disabled={pageFieldJson.signingBuId.fieldMode !== 'EDITABLE'}
+          disabled={pageFieldJson.signingBuId.fieldMode !== 'EDITABLE' || isEdit}
         />
       </Field>,
       <Field
@@ -371,7 +372,7 @@ class ContractEdit extends PureComponent {
           source={() => selectUsersWithBu()}
           placeholder={`请选择${pageFieldJson.purchaseInchargeResId.displayName}`}
           showSearch
-          disabled={pageFieldJson.purchaseInchargeResId.fieldMode !== 'EDITABLE'}
+          disabled={pageFieldJson.purchaseInchargeResId.fieldMode !== 'EDITABLE' || isEdit}
         />
       </Field>,
       <FieldLine
@@ -399,7 +400,7 @@ class ContractEdit extends PureComponent {
             showSearch
             onChange={this.handleSupplier}
             placeholder={`请选择${pageFieldJson.supplierLegalNo.displayName}`}
-            disabled={pageFieldJson.supplierLegalNo.fieldMode !== 'EDITABLE'}
+            disabled={pageFieldJson.supplierLegalNo.fieldMode !== 'EDITABLE' || isEdit}
           />
         </Field>
         <Field
@@ -431,7 +432,7 @@ class ContractEdit extends PureComponent {
         <UdcSelect
           code="COM.CURRENCY_KIND"
           placeholder={`请选择${pageFieldJson.currCode.displayName}`}
-          disabled={pageFieldJson.currCode.fieldMode !== 'EDITABLE'}
+          disabled={pageFieldJson.currCode.fieldMode !== 'EDITABLE' || isEdit}
         />
       </Field>,
       <Field
@@ -450,7 +451,7 @@ class ContractEdit extends PureComponent {
           ],
         }}
       >
-        <Input disabled={pageFieldJson.amt.fieldMode !== 'EDITABLE'} />
+        <Input disabled={pageFieldJson.amt.fieldMode !== 'EDITABLE' || isEdit} />
       </Field>,
       <FieldLine
         key="taxRate"
@@ -472,7 +473,10 @@ class ContractEdit extends PureComponent {
           }}
           wrapperCol={{ span: 23, xxl: 23 }}
         >
-          <Input disabled={pageFieldJson.taxRate.fieldMode !== 'EDITABLE'} className="x-fill-100" />
+          <Input
+            disabled={pageFieldJson.taxRate.fieldMode !== 'EDITABLE' || isEdit}
+            className="x-fill-100"
+          />
         </Field>
         <Field
           name="taxAmt"
@@ -488,7 +492,7 @@ class ContractEdit extends PureComponent {
           wrapperCol={{ span: 23, offset: 1, xxl: 23 }}
         >
           <InputNumber
-            disabled={pageFieldJson.taxAmt.fieldMode !== 'EDITABLE'}
+            disabled={pageFieldJson.taxAmt.fieldMode !== 'EDITABLE' || isEdit}
             className="x-fill-100"
           />
         </Field>
@@ -515,7 +519,7 @@ class ContractEdit extends PureComponent {
         <Input.TextArea
           placeholder={`请输入${pageFieldJson.agreementContent.displayName}`}
           rows={3}
-          disabled={pageFieldJson.agreementContent.fieldMode !== 'EDITABLE'}
+          disabled={pageFieldJson.agreementContent.fieldMode !== 'EDITABLE' || isEdit}
         />
       </Field>,
     ];
@@ -546,7 +550,7 @@ class ContractEdit extends PureComponent {
           placeholder={`请选择${pageFieldJson.invoice.displayName}`}
           source={allAbOusArr}
           transfer={{ key: 'id', code: 'id', name: 'name' }}
-          disabled={pageFieldJson.invoice.fieldMode !== 'EDITABLE'}
+          disabled={pageFieldJson.invoice.fieldMode !== 'EDITABLE' || isEdit}
         />
       </Field>,
       <Field
@@ -568,7 +572,7 @@ class ContractEdit extends PureComponent {
         <UdcSelect
           placeholder={`请选择${pageFieldJson.payMethod.displayName}`}
           code="ACC.PAY_METHOD"
-          disabled={pageFieldJson.payMethod.fieldMode !== 'EDITABLE'}
+          disabled={pageFieldJson.payMethod.fieldMode !== 'EDITABLE' || isEdit}
         />
       </Field>,
     ];
@@ -611,7 +615,7 @@ class ContractEdit extends PureComponent {
                 api="/api/op/v1/purchase_agreement/parity/sfs/token"
                 dataKey={formData.id}
                 listType="text"
-                disabled={false}
+                disabled={isEdit}
               />
             </Field>
             <Field label="协议附件" name="attache" {...FieldListLayout}>
@@ -619,7 +623,7 @@ class ContractEdit extends PureComponent {
                 api="/api/op/v1/purchase_agreement/agreement/sfs/token"
                 dataKey={formData.id}
                 listType="text"
-                disabled={false}
+                disabled={isEdit}
               />
             </Field>
             <Field label="上传盖章附件" name="attache" {...FieldListLayout}>
@@ -627,7 +631,7 @@ class ContractEdit extends PureComponent {
                 api="/api/op/v1/purchase_agreement/seal/sfs/token"
                 dataKey={formData.id}
                 listType="text"
-                disabled={false}
+                disabled={isEdit}
               />
             </Field>
           </FieldList>
@@ -656,7 +660,7 @@ class ContractEdit extends PureComponent {
         >
           <div className="tw-card-title">采购明细</div>
           <EditableDataTable
-            {...purchaseTableProps(DOMAIN, dispatch, salePurchaseAgreementsEdit, form)}
+            {...purchaseTableProps(DOMAIN, dispatch, salePurchaseAgreementsEdit, form, isEdit)}
           />
         </Card>
       </>

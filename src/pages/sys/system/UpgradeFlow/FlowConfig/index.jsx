@@ -10,7 +10,6 @@ import update from 'immutability-helper';
 import { Selection } from '@/pages/gen/field';
 import styles from './styles.less';
 import BaseSwitch from '@/components/production/basic/BaseSwitch';
-import BaseSelect from '@/components/production/basic/BaseSelect.tsx';
 
 const DOMAIN = 'flowUpgradeFlowConfig';
 
@@ -245,10 +244,9 @@ class FlowConfig extends Component {
           width: '15%',
           required: true,
           render: (value, row, index) => (
-            <BaseSelect
+            <Selection.UDC
               value={value}
-              // code="BPM:BTN_TYPE"
-              parentKey="COMMON:BPM:BTN_TYPE"
+              code="BPM:BTN_TYPE"
               placeholder="请选择按钮类型"
               onChange={val => handleItemChange(val, 'btnType', index)}
               allowClear={false}

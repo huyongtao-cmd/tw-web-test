@@ -1,17 +1,23 @@
 import React from 'react';
 import { connect } from 'dva';
 import router from 'umi/router';
-import { isNil } from 'ramda';
+import { isEmpty, isNil } from 'ramda';
 import SearchFormItem from '@/components/production/business/SearchFormItem.tsx';
 import Link from '@/components/production/basic/Link.tsx';
 import PageWrapper from '@/components/production/layout/PageWrapper.tsx';
 import SearchTable from '@/components/production/business/SearchTable.tsx';
 import message from '@/components/production/layout/Message';
 // @ts-ignore
-import { paymentRequestListPagingUri } from '@/services/production/pur';
+import {
+  paymentRequestListPagingUri,
+  paymentRequestCompletePayment,
+} from '@/services/production/pur';
 import { outputHandle } from '@/utils/production/outputUtil.ts';
 import { remindString } from '@/components/production/basic/Remind.tsx';
 import { handleEmptyProps } from '@/utils/production/objectUtils.ts';
+import createMessage from '@/components/core/AlertMessage';
+import { Modal } from 'antd';
+import BusinessErrorHandler from '@/utils/production/BusinessErrorHandler.tsx';
 
 const DOMAIN = 'paymentRequestList';
 
@@ -156,6 +162,13 @@ class PaymentRequestList extends React.PureComponent {
       defaultShow
     />,
     <SearchFormItem
+      key="paymentBatch"
+      fieldType="BaseInput"
+      label="付款批次号"
+      fieldKey="paymentBatch"
+      defaultShow
+    />,
+    <SearchFormItem
       key="createUserId"
       fieldType="UserSimpleSelect"
       label="创建人"
@@ -242,6 +255,11 @@ class PaymentRequestList extends React.PureComponent {
         ellipsis: true,
       },
       {
+        title: '付款批次号',
+        dataIndex: 'paymentBatch',
+        ellipsis: true,
+      },
+      {
         title: '创建人',
         dataIndex: 'createUserName',
         ellipsis: true,
@@ -268,7 +286,6 @@ class PaymentRequestList extends React.PureComponent {
           tableExtraProps={{ scroll: { x: 2400 } }}
           // onAddClick={() => router.push('/workTable/pur/purchaseDisplayPage?mode=EDIT')}
           onEditClick={data => {
-            console.log(data);
             if (data.paymentRequestStatus === 'CREATE') {
               router.push(`/workTable/pur/paymentRequestDisplayPage?id=${data.id}&mode=EDIT`);
             } else {
@@ -299,6 +316,84 @@ class PaymentRequestList extends React.PureComponent {
               disabled: internalState => {
                 const { selectedRowKeys } = internalState;
                 return selectedRowKeys.length === 0;
+              },
+            },
+            {
+              key: 'paymentExport',
+              title: '付款导出',
+              type: 'primary',
+              size: 'large',
+              loading: false,
+              cb: internalState => {
+                const { selectedRowKeys, selectedRows, refreshData } = internalState;
+                const findFalseList = selectedRows.filter(
+                  v =>
+                    v.paymentRequestStatus !== 'WAITING_TO_PAY' ||
+                    (v.paymentBatch && v.paymentBatch.trim().length > 0)
+                );
+                if (!isEmpty(findFalseList)) {
+                  createMessage({
+                    type: 'warn',
+                    description: remindString({
+                      remindCode: '',
+                      defaultMessage: '仅“已批准待付款”状态的且未导出的单据允许付款导出！',
+                    }),
+                  });
+                  return;
+                }
+                // eslint-disable-next-line no-restricted-globals
+                location.href = `${SERVER_URL}/api/production/pur/paymentRequest/payExport?keys=${selectedRowKeys.join(
+                  ','
+                )}`;
+              },
+              disabled: internalState => {
+                const { selectedRowKeys, selectedRows } = internalState;
+                return selectedRowKeys.length < 1;
+              },
+            },
+            {
+              key: 'completePayment',
+              title: '完成付款',
+              type: 'primary',
+              size: 'large',
+              loading: false,
+              cb: async internalState => {
+                const { selectedRowKeys, selectedRows, refreshData } = internalState;
+                const findFalseList = selectedRows.filter(
+                  v =>
+                    v.paymentRequestStatus !== 'WAITING_TO_PAY' ||
+                    !v.paymentBatch ||
+                    v.paymentBatch.trim().length === 0
+                );
+                if (!isEmpty(findFalseList)) {
+                  createMessage({
+                    type: 'warn',
+                    description: remindString({
+                      remindCode: '',
+                      defaultMessage: '仅“已批准待付款”状态的且已导出的单据允许完成付款！',
+                    }),
+                  });
+                  return;
+                }
+                const { ok, warns } = await outputHandle(paymentRequestCompletePayment, {
+                  keys: selectedRowKeys.join(','),
+                });
+                if (warns && warns.length > 0) {
+                  Modal.warn({
+                    title: '警告',
+                    content: React.createElement(BusinessErrorHandler, {
+                      warns,
+                    }),
+                    okText: '确认',
+                  });
+                } else {
+                  message({ type: 'success' });
+                }
+                refreshData();
+              },
+              disabled: internalState => {
+                const { selectedRowKeys, selectedRows } = internalState;
+                return selectedRowKeys.length < 1;
               },
             },
           ]}

@@ -66,13 +66,13 @@ class SystemRoleDetail extends PureComponent {
               ))}
             </Description>
           </DescriptionList>
-          {/* <DescriptionList size="large" col={1}>
+          <DescriptionList size="large" col={1}>
             <Description term={formatMessage({ id: 'sys.system.roles.raabs', desc: '能力清单' })}>
               {(formData.raabs || []).map(raab => (
                 <Tag key={raab.code}>{raab.name}</Tag>
               ))}
             </Description>
-          </DescriptionList> */}
+          </DescriptionList>
         </Card>
       </PageHeaderWrapper>
     );

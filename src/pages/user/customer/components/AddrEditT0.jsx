@@ -4,6 +4,8 @@ import { Input, Divider, Col, Row } from 'antd';
 import Title from '@/components/layout/Title';
 import CityTrigger from '@/pages/gen/field/CityTrigger';
 import { Selection } from '@/pages/gen/field';
+import TreeSearch from '@/components/common/TreeSearch';
+import Loading from '@/components/core/DataLoading';
 
 import { mountToTab } from '@/layouts/routerControl';
 import FieldList from '@/components/layout/FieldList';
@@ -55,12 +57,44 @@ class AddrEditT0 extends PureComponent {
     });
   };
 
+  onCheck = (checkedKeys, info, parm3, param4) => {
+    const { dispatch } = this.props;
+    const allCheckedKeys = checkedKeys.concat(info.halfCheckedKeys);
+    this.updateModelState({ checkedKeys, allCheckedKeys });
+    dispatch({
+      type: `${DOMAIN}/updateForm`,
+      payload: { tagIds: allCheckedKeys.length > 0 ? allCheckedKeys.join(',') : '' },
+    });
+  };
+
+  updateModelState = params => {
+    const { dispatch } = this.props;
+    dispatch({
+      type: `${DOMAIN}/updateState`,
+      payload: params,
+    });
+  };
+
   render() {
     const {
       form: { getFieldDecorator },
-      customerCreate: { formData, cityList, resDataSource },
+      customerCreate: { formData, cityList, resDataSource, checkedKeys },
+      treeLoading,
+      tagTree,
+      flatTags,
       dispatch,
     } = this.props;
+    let checkedKeysTemp = checkedKeys;
+    if (checkedKeysTemp.length < 1) {
+      if (formData.tagIds) {
+        const arrayTemp = formData.tagIds.split(',');
+        checkedKeysTemp = arrayTemp.filter(item => {
+          const menu = flatTags[item];
+          return menu && (menu.children === null || menu.children.length === 0);
+        });
+      }
+    }
+
     const { custRegIon, provInce, city } = formData;
     const cityArr = [custRegIon, provInce, city];
 
@@ -119,6 +153,35 @@ class AddrEditT0 extends PureComponent {
             wrapperCol={{ span: 19, xxl: 20 }}
           >
             <Input.TextArea rows={3} placeholder="请输入总部地址" />
+          </Field>
+          <Field
+            name="tagIds"
+            label="客户标签"
+            fieldCol={1}
+            labelCol={{ span: 4, xxl: 3 }}
+            wrapperCol={{ span: 19, xxl: 20 }}
+            decorator={{
+              initialValue: formData.tagIds || '',
+            }}
+          >
+            {!treeLoading ? (
+              <TreeSearch
+                checkable
+                // checkStrictly
+                showSearch={false}
+                placeholder="请输入关键字"
+                treeData={tagTree}
+                defaultExpandedKeys={tagTree.map(item => `${item.id}`)}
+                checkedKeys={checkedKeysTemp}
+                // defaultSelectedKeys={defaultSelectedKeys}
+                onCheck={this.onCheck}
+                // ref={ref => {
+                //   this.treeRef = ref;
+                // }}
+              />
+            ) : (
+              <Loading />
+            )}
           </Field>
           <Field
             name="custLabel1"

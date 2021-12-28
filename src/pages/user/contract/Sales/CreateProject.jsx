@@ -13,6 +13,7 @@ import AsyncSelect from '@/components/common/AsyncSelect';
 import { mountToTab } from '@/layouts/routerControl';
 import { selectUsers } from '@/services/sys/user';
 import { UdcSelect, FileManagerEnhance, DatePicker, Selection } from '@/pages/gen/field';
+import { selectProjectTmpl, selectProject } from '@/services/user/project/project';
 import update from 'immutability-helper';
 import { genFakeId } from '@/utils/mathUtils';
 import EditableDataTable from '@/components/common/EditableDataTable';
@@ -572,6 +573,31 @@ class ProjectDetail extends React.Component {
         }}
       >
         <Input disabled />
+      </Field>,
+      <Field
+        name="projTempId"
+        kwy="projTempId"
+        label={pageFieldJsonProject.projTempId.displayName}
+        sortNo={pageFieldJsonProject.projTempId.sortNo}
+        decorator={{
+          initialValue: formData.projTempId && formData.projTempId + '',
+          rules: [
+            {
+              required: !!pageFieldJsonProject.projTempId.requiredFlag,
+              message: `请选择${pageFieldJsonProject.projTempId.displayName}`,
+            },
+          ],
+        }}
+      >
+        <AsyncSelect
+          source={() => selectProjectTmpl().then(resp => resp.response)}
+          placeholder={`请选择${pageFieldJsonProject.projTempId.displayName}`}
+          showSearch
+          filterOption={(input, option) =>
+            option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }
+          // disabled={param.mode === 'update' && formData.projStatus !== 'CREATE'}
+        />
       </Field>,
       <Field
         name="planStartDate"
@@ -1252,7 +1278,8 @@ class ProjectDetail extends React.Component {
         label={pageFieldJsonProject.budgetSwitchFlag.displayName}
         sortNo={pageFieldJsonProject.budgetSwitchFlag.sortNo}
         decorator={{
-          initialValue: formData.budgetSwitchFlag,
+          // initialValue: formData.budgetSwitchFlag,
+          initialValue: 1,
           rules: [
             {
               required: !!pageFieldJsonProject.budgetSwitchFlag.requiredFlag,
@@ -1261,6 +1288,7 @@ class ProjectDetail extends React.Component {
           ],
         }}
         labelCol={{ span: 10, xxl: 8 }}
+        style={{ display: 'none' }}
       >
         <RadioGroup
           onChange={e => {
@@ -1297,6 +1325,30 @@ class ProjectDetail extends React.Component {
         }}
       >
         <Input disabled />
+      </Field>,
+      <Field
+        name="relatedProjId"
+        key="relatedProjId"
+        label={pageFieldJsonProject.relatedProjId.displayName}
+        sortNo={pageFieldJsonProject.relatedProjId.sortNo}
+        decorator={{
+          initialValue: formData.relatedProjId && formData.relatedProjId + '',
+          rules: [
+            {
+              required: !!pageFieldJsonProject.relatedProjId.requiredFlag,
+              message: `请选择${pageFieldJsonProject.relatedProjId.displayName}`,
+            },
+          ],
+        }}
+      >
+        <AsyncSelect
+          source={() => selectProject().then(resp => resp.response)}
+          placeholder={`请选择${pageFieldJsonProject.relatedProjId.displayName}`}
+          showSearch
+          filterOption={(input, option) =>
+            option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }
+        />
       </Field>,
       <Field
         name="performanceDesc"
@@ -1452,6 +1504,7 @@ class ProjectDetail extends React.Component {
               });
             }
           }}
+          disabled
         >
           <Radio value={1}>是</Radio>
           <Radio value={0}>否</Radio>
@@ -1533,6 +1586,7 @@ class ProjectDetail extends React.Component {
       userProjectCreate: { formData, dataSource, deleteKeys, pageConfig },
       form: { getFieldDecorator, setFieldsValue },
     } = this.props;
+
     // loading完成之前将按钮设为禁用
     const disabledBtn =
       loading.effects[`${DOMAIN}/queryContract`] ||

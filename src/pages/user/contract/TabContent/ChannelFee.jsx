@@ -17,6 +17,7 @@ import {
   pageColumnsBlockConfig,
 } from '@/utils/pageConfigUtils';
 import { add, div, mul, sub, genFakeId } from '@/utils/mathUtils';
+import { log } from 'lodash-decorators/utils';
 
 const particularColumns = [
   { dataIndex: 'code', title: '编号', span: 8 },
@@ -64,7 +65,7 @@ class ChannelFee extends PureComponent {
   componentDidMount() {
     // 初始得到主合同id给formData赋值
     const { dispatch } = this.props;
-    const { id } = fromQs();
+    const { id, mode } = fromQs();
     id &&
       dispatch({
         type: `${DOMAIN}/query`,
@@ -262,6 +263,10 @@ class ChannelFee extends PureComponent {
         amt: splitAmt,
         taxCost: mul(div(splitAmtSelectedRows[0].taxRate || 0, 100), splitAmt), // 计算税率
         netPay: mul(div(splitAmt, 100), add(+splitAmtSelectedRows[0].taxRate || 0, 100)), // 计算净支付额
+        applyStatus: null,
+        applyStatusName: null,
+        apprStatus: null,
+        apprStatusName: null,
       },
     ];
 
@@ -291,6 +296,7 @@ class ChannelFee extends PureComponent {
       ChannelFee: { formData, dataSource, delChannelCostConD, collectionPlanView },
       userContractEditSub: { pageConfig = {}, flag7 },
     } = this.props;
+    const { mode } = fromQs();
 
     const disabledFlag = formData.contractStatus !== 'CREATE' && false; // 董老师要求临时开放权限
 
@@ -307,6 +313,7 @@ class ChannelFee extends PureComponent {
       showCopy: false,
       showAdd: !disabledFlag,
       showDelete: !disabledFlag,
+      readOnly: mode === 'view',
       onAdd: newRow => {
         dispatch({
           type: `${DOMAIN}/updateState`,
@@ -331,6 +338,18 @@ class ChannelFee extends PureComponent {
       onDeleteItems: (selectedRowKeys, selectedRows) => {
         // 无父级id，删除的是主明细
         if (!selectedRows[0].minChannelCostConId) {
+          //判断删除的行的状态
+          if (
+            selectedRows[0].applyStatus !== 'CREATE' &&
+            selectedRows[0].applyStatus !== 'REJECTED' &&
+            selectedRows[0].id > 0
+          ) {
+            createMessage({
+              type: 'warn',
+              description: '只能对状态为新建或驳回进行删除操作！',
+            });
+            return;
+          }
           const newDataSource = dataSource.filter(
             row => !selectedRowKeys.filter(keyValue => keyValue === row.id).length
           );
@@ -349,6 +368,17 @@ class ChannelFee extends PureComponent {
         } else {
           // 删除的是子明细
           const supIndex = dataSource.findIndex(v => v.id === selectedRows[0].minChannelCostConId); // 主明细索引
+          //判断删除的行的状态
+          if (
+            dataSource[supIndex].applyStatus !== 'CREATE' &&
+            dataSource[supIndex].applyStatus !== 'REJECTED'
+          ) {
+            createMessage({
+              type: 'warn',
+              description: '只能对状态为新建或驳回进行删除操作！',
+            });
+            return;
+          }
           dataSource[supIndex].children = dataSource[supIndex].children.filter(
             row => !selectedRowKeys.filter(keyValue => keyValue === row.id).length
           );
@@ -409,7 +439,14 @@ class ChannelFee extends PureComponent {
                   onChange={e => {
                     this.onCellChanged(index, e, 'workType');
                   }}
-                  disabled={!!row.contractNo || disabledFlag}
+                  disabled={
+                    !!row.contractNo ||
+                    disabledFlag ||
+                    (row.applyStatus !== 'CREATE' &&
+                      row.applyStatus !== 'REJECTED' &&
+                      row.applyStatus)
+                  }
+                  //                   // disabled={row.applyStatus !== 'CREATE' && row.applyStatus !== 'REJECTED'}
                 />
               ),
           },
@@ -430,7 +467,13 @@ class ChannelFee extends PureComponent {
                   onChange={e => {
                     this.onCellChanged(index, e.target.value, 'reason');
                   }}
-                  disabled={!!row.contractNo || disabledFlag}
+                  disabled={
+                    !!row.contractNo ||
+                    disabledFlag ||
+                    (row.applyStatus !== 'CREATE' &&
+                      row.applyStatus !== 'REJECTED' &&
+                      row.applyStatus)
+                  }
                   placeholder="请输入具体理由"
                 />
               ),
@@ -452,7 +495,14 @@ class ChannelFee extends PureComponent {
                   onChange={e => {
                     this.onCellChanged(index, e, 'coopType');
                   }}
-                  disabled={!!row.contractNo || !!row.minChannelCostConId || disabledFlag}
+                  disabled={
+                    !!row.contractNo ||
+                    !!row.minChannelCostConId ||
+                    disabledFlag ||
+                    (row.applyStatus !== 'CREATE' &&
+                      row.applyStatus !== 'REJECTED' &&
+                      row.applyStatus)
+                  }
                 />
               ),
           },
@@ -472,7 +522,12 @@ class ChannelFee extends PureComponent {
                     this.onCellChanged(index, e.target.value, 'channelCostRem');
                   }}
                   placeholder="请输入合作方"
-                  disabled={disabledFlag}
+                  disabled={
+                    disabledFlag ||
+                    (row.applyStatus !== 'CREATE' &&
+                      row.applyStatus !== 'REJECTED' &&
+                      row.applyStatus)
+                  }
                 />
               ),
           },
@@ -493,7 +548,13 @@ class ChannelFee extends PureComponent {
                   onChange={e => {
                     this.onCellChanged(index, e, 'base');
                   }}
-                  disabled={!!row.contractNo || disabledFlag}
+                  disabled={
+                    !!row.contractNo ||
+                    disabledFlag ||
+                    (row.applyStatus !== 'CREATE' &&
+                      row.applyStatus !== 'REJECTED' &&
+                      row.applyStatus)
+                  }
                 />
               ),
           },
@@ -527,7 +588,13 @@ class ChannelFee extends PureComponent {
                   placeholder="请输入比例"
                   formatter={val => (val ? `${val}%` : '')}
                   parser={val => val.replace('%', '')}
-                  disabled={!!row.contractNo || disabledFlag}
+                  disabled={
+                    !!row.contractNo ||
+                    disabledFlag ||
+                    (row.applyStatus !== 'CREATE' &&
+                      row.applyStatus !== 'REJECTED' &&
+                      row.applyStatus)
+                  }
                 />
               ),
           },
@@ -558,7 +625,10 @@ class ChannelFee extends PureComponent {
                   !!row.contractNo ||
                   row?.children?.length > 0 ||
                   !!row.minChannelCostConId ||
-                  disabledFlag
+                  disabledFlag ||
+                  (row.applyStatus !== 'CREATE' &&
+                    row.applyStatus !== 'REJECTED' &&
+                    row.applyStatus)
                 }
               />
             ),
@@ -586,7 +656,10 @@ class ChannelFee extends PureComponent {
                   row?.children?.length > 0 ||
                   !!row.minChannelCostConId ||
                   row.reimExp === 'OUTSIDE' ||
-                  disabledFlag
+                  disabledFlag ||
+                  (row.applyStatus !== 'CREATE' &&
+                    row.applyStatus !== 'REJECTED' &&
+                    row.applyStatus)
                 }
               />
             ),
@@ -624,7 +697,14 @@ class ChannelFee extends PureComponent {
                       this.onCellChanged(index, mul(div(row.amt, 100), add(0, 100)), 'netPay');
                     }
                   }}
-                  disabled={!!row.contractNo || !!row.minChannelCostConId || disabledFlag}
+                  disabled={
+                    !!row.contractNo ||
+                    !!row.minChannelCostConId ||
+                    disabledFlag ||
+                    (row.applyStatus !== 'CREATE' &&
+                      row.applyStatus !== 'REJECTED' &&
+                      row.applyStatus)
+                  }
                 />
               ),
           },
@@ -653,7 +733,13 @@ class ChannelFee extends PureComponent {
                   onChange={e => {
                     this.onCellChanged(index, e || 0, 'salaryMethod');
                   }}
-                  disabled={!!row.contractNo || disabledFlag}
+                  disabled={
+                    !!row.contractNo ||
+                    disabledFlag ||
+                    (row.applyStatus !== 'CREATE' &&
+                      row.applyStatus !== 'REJECTED' &&
+                      row.applyStatus)
+                  }
                 />
               ),
           },
@@ -678,6 +764,11 @@ class ChannelFee extends PureComponent {
                   onChange={e => {
                     this.onCellChanged(index, e, 'receivingNode');
                   }}
+                  disabled={
+                    row.applyStatus !== 'CREATE' &&
+                    row.applyStatus !== 'REJECTED' &&
+                    row.applyStatus
+                  }
                 />
               ),
           },
@@ -698,7 +789,13 @@ class ChannelFee extends PureComponent {
                     this.onCellChanged(index, e.target.value, 'contractStatus');
                   }}
                   placeholder="请选择线下合同&沟通签署状态"
-                  disabled={!!row.contractNo || disabledFlag}
+                  disabled={
+                    !!row.contractNo ||
+                    disabledFlag ||
+                    (row.applyStatus !== 'CREATE' &&
+                      row.applyStatus !== 'REJECTED' &&
+                      row.applyStatus)
+                  }
                 />
               ),
           },
@@ -719,7 +816,13 @@ class ChannelFee extends PureComponent {
                     this.onCellChanged(index, e.target.value, 'contactName');
                   }}
                   placeholder="联系人姓名"
-                  disabled={!!row.contractNo || disabledFlag}
+                  disabled={
+                    !!row.contractNo ||
+                    disabledFlag ||
+                    (row.applyStatus !== 'CREATE' &&
+                      row.applyStatus !== 'REJECTED' &&
+                      row.applyStatus)
+                  }
                 />
               ),
           },
@@ -740,7 +843,13 @@ class ChannelFee extends PureComponent {
                     this.onCellChanged(index, e.target.value, 'contactPhone');
                   }}
                   placeholder="联系人电话"
-                  disabled={!!row.contractNo || disabledFlag}
+                  disabled={
+                    !!row.contractNo ||
+                    disabledFlag ||
+                    (row.applyStatus !== 'CREATE' &&
+                      row.applyStatus !== 'REJECTED' &&
+                      row.applyStatus)
+                  }
                 />
               ),
           },
@@ -758,9 +867,12 @@ class ChannelFee extends PureComponent {
             align: 'center',
             width: 180,
             render: (val, row) => {
-              const href = `/sale/purchaseContract/Detail?id=${
-                row.documentId
-              }&pageMode=purchase&from=CONTRACT`;
+              const href =
+                row.docType === '采购合同'
+                  ? `/sale/purchaseContract/Detail?id=${
+                      row.documentId
+                    }&pageMode=purchase&from=CONTRACT`
+                  : `/plat/expense/normal/view?id=${row.documentId}`;
               return (
                 <Link className="tw-link" to={href}>
                   {val}
@@ -772,6 +884,13 @@ class ChannelFee extends PureComponent {
             title: '明细状态',
             key: 'channelCostConDStatus',
             dataIndex: 'channelCostConDStatusName',
+            align: 'center',
+            width: 150,
+          },
+          {
+            title: '状态',
+            key: 'applyStatusName',
+            dataIndex: 'applyStatusName',
             align: 'center',
             width: 150,
           },
@@ -797,7 +916,6 @@ class ChannelFee extends PureComponent {
               });
               return;
             }
-
             if (isNil(formData.projectId)) {
               createMessage({
                 type: 'warn',
@@ -810,6 +928,22 @@ class ChannelFee extends PureComponent {
               createMessage({
                 type: 'warn',
                 description: '子合同尚未激活，不能生成采购合同！',
+              });
+              return;
+            }
+
+            if (
+              selectedRows.findIndex(
+                item =>
+                  dataSource.filter(
+                    targetMinChannelCostCon =>
+                      targetMinChannelCostCon.id === item.minChannelCostConId
+                  )[0].applyStatus !== 'ACTIVE'
+              ) > -1
+            ) {
+              createMessage({
+                type: 'warn',
+                description: '明细尚未激活，不能生成采购合同！',
               });
               return;
             }
@@ -891,11 +1025,191 @@ class ChannelFee extends PureComponent {
               return;
             }
 
+            if (selectedRows.filter(item => item.applyStatus !== 'ACTIVE').length > 0) {
+              createMessage({
+                type: 'warn',
+                description: '明细尚未激活，不能按金额拆！',
+              });
+              return;
+            }
+
             this.setState({
               splitAmtSelectedRows: selectedRows,
             });
 
             this.toggleVisible();
+          },
+        },
+        {
+          key: 'submit',
+          className: 'tw-btn-primary',
+          title: '提交',
+          loading: false,
+          hidden: false,
+          disabled: selectedRows =>
+            selectedRows.length !== 1 ||
+            selectedRows.filter(v => v.minChannelCostConId).length > 0 ||
+            selectedRows.filter(v => v.contractNo).length ||
+            disabledFlag,
+          minSelections: 0,
+          cb: (selectedRowKeys, selectedRows, queryParams) => {
+            if (isNil(selectedRows[0].amt)) {
+              createMessage({
+                type: 'warn',
+                description: '请先填写所选主明细金额，拆分明细后将不可更改！',
+              });
+              return;
+            }
+
+            if (isNil(selectedRows[0].taxRate)) {
+              createMessage({
+                type: 'warn',
+                description: '请先填写所选主明细税费率，拆分明细后将不可更改！',
+              });
+              return;
+            }
+
+            if (flag7) {
+              createMessage({
+                type: 'warn',
+                description: '页面存在未保存信息，请先保存！',
+              });
+              return;
+            }
+
+            if (formData.contractStatus !== 'ACTIVE') {
+              createMessage({
+                type: 'warn',
+                description: '子合同尚未激活，不能提交！',
+              });
+              return;
+            }
+            if (
+              selectedRows[0].applyStatus !== 'CREATE' &&
+              selectedRows[0].applyStatus !== 'REJECTED' &&
+              selectedRows[0].id > 0
+            ) {
+              createMessage({
+                type: 'warn',
+                description: '明细状态为新建或驳回才可提交！',
+              });
+              return;
+            }
+
+            // 提交前的校验
+            dispatch({
+              type: `${DOMAIN}/submit`,
+              payload: { id: selectedRowKeys[0] },
+            });
+
+            // dispatch({
+            //   type: `${DOMAIN}/save`,
+            // }).then(res => {
+            //   if (res.ok) {
+            //     // 提交前的校验
+            //     dispatch({
+            //       type: `${DOMAIN}/submit`,
+            //       payload: { id: selectedRowKeys[0] },
+            //     })
+            //   } else {
+            //     createMessage({ type: 'error', description: res.reason || '提交失败' });
+            //   }
+            // });
+          },
+        },
+        {
+          key: 'reimbursement',
+          className: 'tw-btn-primary',
+          title: '生成报销单',
+          loading: false,
+          hidden: false,
+          disabled: selectedRows =>
+            !selectedRows.filter(v => v.minChannelCostConId).length ||
+            selectedRows.filter(v => v.contractNo).length ||
+            disabledFlag ||
+            selectedRows.findIndex(
+              item =>
+                dataSource.filter(
+                  targetMinChannelCostCon => targetMinChannelCostCon.id === item.minChannelCostConId
+                )[0].salaryMethod !== 'PROJECT'
+            ) > -1,
+          minSelections: 0,
+          cb: (selectedRowKeys, selectedRows, queryParams) => {
+            if (flag7) {
+              createMessage({
+                type: 'warn',
+                description: '页面存在未保存信息，请先保存！',
+              });
+              return;
+            }
+
+            if (formData.contractStatus !== 'ACTIVE') {
+              createMessage({
+                type: 'warn',
+                description: '子合同尚未激活，不能生成报销单！',
+              });
+              return;
+            }
+
+            if (
+              selectedRows.findIndex(
+                item =>
+                  dataSource.filter(
+                    targetMinChannelCostCon =>
+                      targetMinChannelCostCon.id === item.minChannelCostConId
+                  )[0].applyStatus !== 'ACTIVE'
+              ) > -1
+            ) {
+              createMessage({
+                type: 'warn',
+                description: '明细尚未激活，不能生成报销单！',
+              });
+              return;
+            }
+
+            if (isEmpty(selectedRowKeys)) {
+              createMessage({
+                type: 'warn',
+                description: '请选择需要生成采购合同的渠道费用子明细！',
+              });
+              return;
+            }
+
+            const tt = selectedRows.filter(v => v.docType || v.documentNumber);
+            if (!isEmpty(tt)) {
+              createMessage({
+                type: 'warn',
+                description: '选择的渠道费用子明细已经生成报销单，不能再生成报销单！',
+              });
+              return;
+            }
+            // if (selectedRows.findIndex(
+            //   item =>
+            //     dataSource.filter(
+            //       targetMinChannelCostCon =>
+            //         targetMinChannelCostCon.id === item.minChannelCostConId
+            //     )[0].salaryMethod !== "PROJECT"
+            // ) > -1
+            // ) {
+            //   createMessage({
+            //     type: 'warn',
+            //     description:
+            //       '选择的渠道费用子明细具体支付方式不为项目报销，不能生成报销单！',
+            //   });
+            //   return;
+            // }
+
+            const selectedSortNo = selectedRows.map(v => v.id).join(',');
+            router.push(
+              `/plat/expense/normal/create?contractNo=${formData.contractNo}&contractId=${
+                formData.id
+              }&contractName=${
+                formData.contractName
+              }&channelCostConDIds=${selectedSortNo}&netPay=${selectedRows.reduce(
+                (p, e) => add(p, e.netPay),
+                0
+              )}`
+            );
           },
         },
       ],

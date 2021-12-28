@@ -16,6 +16,7 @@ import { queryUdc, queryCascaderUdc } from '@/services/gen/app';
 import createMessage from '@/components/core/AlertMessage';
 import {
   getPaymentApplyById,
+  getSumPaymentAmt,
   postPrePaymentApplySave,
   postPrePaymentApplyUpdate,
   postPaymentApplyFlowSubmit,
@@ -79,6 +80,17 @@ export default {
             },
           });
 
+          const params = {
+            paymentApplicationType: 'ADVANCEPAYWRITEOFF',
+            prePaymentNo: datum.twPaymentApplyEntity.paymentNo,
+          };
+          let paymentAmtTemp = datum.twPaymentApplyEntity.currPaymentAmt;
+          // 全部预付款核销金额累计
+          const getSumPaymentAmtResult = yield call(getSumPaymentAmt, params);
+          if (getSumPaymentAmtResult.status === 200) {
+            // 应付金额 = 预付款金额  - 全部预付款核销金额累计
+            paymentAmtTemp = sub(paymentAmtTemp || 0, getSumPaymentAmtResult.response.datum || 0);
+          }
           yield put({
             type: 'updateForm',
             payload: {
@@ -91,7 +103,7 @@ export default {
               id: '',
               paymentNo: '',
               prePaymentNo: datum.twPaymentApplyEntity.paymentNo,
-              paymentAmt: datum.twPaymentApplyEntity.currPaymentAmt,
+              paymentAmt: paymentAmtTemp,
               currPaymentAmt: 0,
               taxAmountAmt: sub(0, datum.twPaymentApplyEntity.taxAmount || 0),
             },

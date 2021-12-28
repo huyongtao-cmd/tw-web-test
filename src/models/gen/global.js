@@ -310,6 +310,42 @@ export default {
     },
 
     /**
+     * 查询首页配置（快捷菜单 个人首页）
+     * @param { payload } _ there is no need for me to use payload
+     * @param { call, put } Object
+     */ *querySysHomeConfig(_, { call, put, select }) {
+      const { tabData } = yield select(({ global }) => global);
+      const { response, status } = yield call(queryHomeConfig);
+      if (status === 200) {
+        const { datum = [] } = response;
+        const defaultHomePage = datum.find(item => item.wbStatus === 'YES');
+        let homepage = '/user/home';
+        const newTabData = Object.assign([], tabData);
+        if (defaultHomePage) {
+          homepage = defaultHomePage.wbLink;
+          let haveWbLink = false;
+          for (let i = 0; i < tabData.length; i += 1) {
+            if (tabData[i].includes(defaultHomePage.wbLink)) {
+              haveWbLink = true;
+            }
+          }
+          if (!haveWbLink) {
+            newTabData.unshift(defaultHomePage.wbLink);
+          }
+        }
+
+        yield put({
+          type: 'updateState',
+          payload: {
+            homeConfigData: Array.isArray(datum) ? datum : [],
+            tabData: newTabData,
+            homepage,
+          },
+        });
+      }
+    },
+
+    /**
      * 查询 Logo 和 右上角辅助菜单配置
      * @param { payload } _ there is no need for me to use payload
      * @param { call, put } Object
@@ -325,6 +361,31 @@ export default {
           payload: {
             logoInfo,
             extensionInfo,
+          },
+        });
+      }
+    },
+
+    /**
+     * 查询一些共用数据 很多页面都会用到的数据
+     * @param { payload }
+     * @param { call, put } Object
+     */ *queryCommonData(_, { call, put, select }) {
+      const { response = [], status } = yield call(queryBuList);
+      if (status === 200) {
+        yield put({
+          type: 'updateState',
+          payload: {
+            buList: response || [],
+          },
+        });
+      }
+      const { response: res, status: sts } = yield call(selectUsersWithBu);
+      if (sts === 200) {
+        yield put({
+          type: 'updateState',
+          payload: {
+            userList: Array.isArray(res) ? res : [],
           },
         });
       }

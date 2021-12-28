@@ -196,6 +196,7 @@ class ResPortrayal extends PureComponent {
           workYearSum,
           workMonthSum,
           selfEval,
+          avatar,
           selfTagging,
           twEvalResPortView, // 平台信息
           twResProjectTaskView, // 项目&任务经验
@@ -885,7 +886,7 @@ class ResPortrayal extends PureComponent {
                             right: '4%',
                           }}
                         >
-                          <Avatar shape="circle" size={100} icon="user" />
+                          <Avatar shape="circle" size={100} icon="user" src={avatar ?? ''} />
                         </div>
                       </div>
                     </div>

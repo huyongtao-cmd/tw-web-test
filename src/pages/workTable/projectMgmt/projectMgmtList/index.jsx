@@ -10,19 +10,23 @@ import { createConfirm } from '@/components/core/Confirm';
 import SearchTable, { DataOutput } from '@/components/production/business/SearchTable';
 import createMessage from '@/components/core/AlertMessage';
 import { outputHandle } from '@/utils/production/outputUtil';
+import {
+  ProductTableColumnsBlockConfig,
+  ProductSearchFormItemBlockConfig,
+} from '@/utils/pageConfigUtils';
 import { remindString } from '@/components/production/basic/Remind';
 
 // @ts-ignore
 import {
-  projectPagingRq,
-  projectDeleteRq,
+  projectManagementPgingRq,
+  projectManagementDeleteRq,
   projectManagementPartialRq,
 } from '@/services/workbench/project';
 
 const DOMAIN = 'projectMgmtList';
 
 @connect(({ loading, dispatch, projectMgmtList }) => ({
-  loading,
+  treeLoading: loading.effects[`${DOMAIN}/init`],
   dispatch,
   ...projectMgmtList,
 }))
@@ -67,11 +71,11 @@ class index extends React.PureComponent {
 
   componentDidMount() {
     // this.callModelEffects("init")
-    // const { dispatch } = this.props;
-    // dispatch({
-    //   type: `${DOMAIN}/getPageConfig`,
-    //   payload: { pageNo: 'PROJECT_TABLE' },
-    // });
+    const { dispatch } = this.props;
+    dispatch({
+      type: `${DOMAIN}/getPageConfig`,
+      payload: { pageNo: 'PROJECT_TABLE' },
+    });
   }
 
   fetchData = async params => {
@@ -80,27 +84,16 @@ class index extends React.PureComponent {
       [restparams.createTimeStart, restparams.createTimeEnd] = createTime;
     }
 
-    const { response } = await projectPagingRq(restparams);
+    const { response } = await projectManagementPgingRq(restparams);
     return response.data;
   };
 
   deleteData = async keys =>
-    outputHandle(projectDeleteRq, { ids: keys.join(',') }, undefined, false);
+    outputHandle(projectManagementDeleteRq, { ids: keys.join(',') }, undefined, false);
 
   changeStatus = async parmars => {
     const { response } = await projectManagementPartialRq(parmars);
     return response.data;
-  };
-
-  projectFlowPush = params => {
-    const { dispatch } = this.props;
-    dispatch({
-      type: `${DOMAIN}/flow`,
-      payload: {
-        ...params,
-        submit: true,
-      },
-    });
   };
 
   renderSearchForm = () => {
@@ -108,32 +101,55 @@ class index extends React.PureComponent {
 
     const fields = [
       <SearchFormItem
-        key="projectName"
-        fieldKey="projectName"
-        label="项目名称"
+        key="projectNameOrNo"
+        fieldKey="projectNameOrNo"
+        label="项目编号/名称"
         fieldType="BaseInput"
         defaultShow
       />,
       <SearchFormItem
-        key="projectNo"
-        fieldKey="projectNo"
-        label="项目编号"
-        fieldType="BaseInput"
+        key="inchargeCompany"
+        label="所属公司"
+        fieldType="BaseCustomSelect"
+        fieldKey="inchargeCompany"
+        parentKey="CUS:INTERNAL_COMPANY"
         defaultShow
       />,
-      // <SearchFormItem
-      //   key="ouId"
-      //   label="所属公司"
-      //   fieldType="BaseCustomSelect"
-      //   fieldKey="ouId"
-      //   parentKey="CUS:INTERNAL_COMPANY"
-      //   defaultShow
-      // />,
       <SearchFormItem
+        key="inchargeBuId"
+        label="项目负责部门"
+        fieldType="BuSimpleSelect"
+        fieldKey="inchargeBuId"
+        defaultShow
+      />,
+      <SearchFormItem
+        key="pmResId"
         label="项目负责人"
-        key="projectDutyResId"
-        fieldKey="projectDutyResId"
         fieldType="ResSimpleSelect"
+        fieldKey="pmResId"
+        defaultShow
+      />,
+      <SearchFormItem
+        key="relatedRes1Id"
+        label="项目相关资源"
+        fieldType="ResSimpleSelect"
+        fieldKey="relatedRes1Id"
+        defaultShow
+      />,
+      <SearchFormItem
+        label="项目类型1"
+        fieldKey="projectClass1"
+        key="projectClass1"
+        fieldType="BaseCustomSelect"
+        parentKey="CUS:PROJECT_CLASS1"
+        defaultShow
+      />,
+      <SearchFormItem
+        label="项目类型2"
+        fieldKey="projectClass2"
+        key="projectClass2"
+        fieldType="BaseCustomSelect"
+        parentKey="CUS:PROJECT_CLASS2"
         defaultShow
       />,
       <SearchFormItem
@@ -144,6 +160,14 @@ class index extends React.PureComponent {
         parentKey="PRO:PROJECT_STATUS"
         defaultShow
       />,
+      <SearchFormItem
+        label="相关产品"
+        fieldKey="relatedProductId"
+        key="relatedProductId"
+        fieldType="ProductSimpleSelect"
+        defaultShow
+      />,
+
       <SearchFormItem
         key="createUserId"
         label="创建人"
@@ -160,7 +184,14 @@ class index extends React.PureComponent {
       />,
     ];
 
-    return fields;
+    const fieldsConfig = ProductSearchFormItemBlockConfig(
+      pageConfig,
+      'blockKey',
+      'PROJECT_TABLE_SEARCHFORMITEM',
+      fields
+    );
+
+    return fieldsConfig;
   };
 
   renderColumns = () => {
@@ -177,7 +208,7 @@ class index extends React.PureComponent {
           <Link
             onClick={() =>
               router.push(
-                `/workTable/projectMgmt/projectMgmtList/projectApplyDisplay?id=${
+                `/workTable/projectMgmt/projectMgmtList/projectOverview?id=${
                   row.id
                 }&mode=DESCRIPTION`
               )
@@ -194,15 +225,21 @@ class index extends React.PureComponent {
         align: 'center',
       },
       {
-        title: '项目类型',
-        key: 'businessClass1',
-        dataIndex: 'businessClass1Desc',
+        title: '相关产品',
+        key: 'relatedProductId',
+        dataIndex: 'relatedProductIdDesc',
         align: 'center',
       },
       {
-        title: '业务类型',
-        key: 'businessClass2',
-        dataIndex: 'businessClass2Desc',
+        title: '项目类型1',
+        key: 'projectClass1',
+        dataIndex: 'projectClass1Desc',
+        align: 'center',
+      },
+      {
+        title: '项目类型2',
+        key: 'projectClass2',
+        dataIndex: 'projectClass2Desc',
         align: 'center',
       },
       {
@@ -214,25 +251,37 @@ class index extends React.PureComponent {
       {
         title: '所属公司',
         key: 'inchargeCompany',
-        dataIndex: 'ouIdDesc',
+        dataIndex: 'inchargeCompanyDesc',
         align: 'center',
       },
       {
-        title: '销售负责部门',
+        title: '项目负责部门',
         key: 'inchargeBuId',
-        dataIndex: 'salesDutyBuIdDesc',
+        dataIndex: 'inchargeBuIdDesc',
         align: 'center',
       },
       {
-        title: '销售负责人',
-        key: 'salesDutyResId',
-        dataIndex: 'salesDutyResIdDesc',
+        title: '项目负责人',
+        key: 'pmResId',
+        dataIndex: 'pmResIdDesc',
         align: 'center',
       },
       {
-        title: '城市',
-        key: 'city',
-        dataIndex: 'cityDesc',
+        title: '项目相关资源2',
+        key: 'relatedRes2Id',
+        dataIndex: 'relatedRes2IdDesc',
+        align: 'center',
+      },
+      {
+        title: '项目相关资源3',
+        key: 'relatedRes3Id',
+        dataIndex: 'relatedRes3IdDesc',
+        align: 'center',
+      },
+      {
+        title: '项目相关资源1',
+        key: 'relatedRes1Id',
+        dataIndex: 'relatedRes1IdDesc',
         align: 'center',
       },
       {
@@ -243,20 +292,26 @@ class index extends React.PureComponent {
       },
       {
         title: '创建时间',
-        key: 'createTimeDesc',
-        dataIndex: 'createTimeDesc',
+        key: 'createTime',
+        dataIndex: 'createTime',
         align: 'center',
-        // render: value => value.replace('T', ' '),
+        render: value => value.replace('T', ' '),
       },
     ];
 
-    return fields;
+    const fieldsConfig = ProductTableColumnsBlockConfig(
+      pageConfig,
+      'blockKey',
+      'PROJECT_TABLE_COLUMNS',
+      fields
+    );
+
+    return fieldsConfig;
   };
 
   render() {
-    const { loading } = this.props;
     const { getInternalState } = this.state;
-    const loadingBtn = loading.effects[`${DOMAIN}/flow`];
+
     return (
       <PageWrapper>
         <SearchTable
@@ -270,9 +325,7 @@ class index extends React.PureComponent {
           defaultSearchForm={{}}
           fetchData={this.fetchData}
           columns={this.renderColumns()}
-          onAddClick={() =>
-            router.push('/workTable/projectMgmt/projectMgmtList/projectApplyDisplay?mode=ADD')
-          }
+          onAddClick={() => router.push('/workTable/projectMgmt/projectMgmtList/edit')}
           onEditClick={data => {
             const { selectedRows } = getInternalState();
             const tt = selectedRows.filter(v => v.projectStatus !== 'CREATE');
@@ -286,9 +339,7 @@ class index extends React.PureComponent {
               });
               return;
             }
-            router.push(
-              `/workTable/projectMgmt/projectMgmtList/projectApplyDisplay?id=${data.id}&mode=EDIT`
-            );
+            router.push(`/workTable/projectMgmt/projectMgmtList/edit?id=${data.id}&mode=EDIT`);
           }}
           deleteData={data => {
             const { selectedRows } = getInternalState();
@@ -305,25 +356,118 @@ class index extends React.PureComponent {
             }
             return this.deleteData(data);
           }}
+          // tableExtraProps={{
+          //   scroll: {
+          //     x: 1500,
+          //   },
+          // }}
           extraButtons={[
             {
               key: 'adjust',
-              title: '正式立项',
+              title: '调整',
               type: 'primary',
               size: 'large',
-              loading: loadingBtn,
+              loading: false,
               cb: internalState => {
                 // eslint-disable-next-line no-console
                 const { selectedRowKeys, selectedRows } = internalState;
-                const tt = selectedRows.filter(v => v.projectStatus === 'READY');
-                if (isEmpty(tt)) {
+                const tt = selectedRows.filter(v => v.projectStatus !== 'ACTIVE');
+                if (!isEmpty(tt)) {
                   createMessage({
                     type: 'warn',
-                    description: `仅“预立项”状态的项目允许正式立项！`,
+                    description: remindString({
+                      remindCode: 'COM:ALLOW_ADJUST_CHECK',
+                      defaultMessage: `仅“激活”状态允许调整！`,
+                    }),
                   });
                   return;
                 }
-                this.projectFlowPush(selectedRows[0]);
+                router.push(
+                  `/workTable/projectMgmt/projectMgmtList/edit?id=${
+                    selectedRows[0].id
+                  }&mode=EDIT&scene=adjust`
+                );
+              },
+              disabled: internalState => {
+                const { selectedRowKeys } = internalState;
+                return selectedRowKeys.length !== 1;
+              },
+            },
+            {
+              key: 'active',
+              title: '激活',
+              type: 'primary',
+              size: 'large',
+              loading: false,
+              cb: internalState => {
+                const { selectedRowKeys, selectedRows } = internalState;
+                const tt = selectedRows.filter(v => v.projectStatus !== 'CLOSE');
+                if (!isEmpty(tt)) {
+                  createMessage({
+                    type: 'warn',
+                    description: remindString({
+                      remindCode: 'COM:E:ALLOW_REACTIVE_CHECK',
+                      defaultMessage: `仅“已关闭”的项目允许激活！`,
+                    }),
+                  });
+                  return;
+                }
+
+                createConfirm({
+                  content: remindString({
+                    remindCode: 'COM:W:REACTIVE_WARN',
+                    defaultMessage: '继续操作将重新激活选中的数据，请确认是否继续？',
+                  }),
+                  onOk: () => {
+                    this.changeStatus({
+                      id: selectedRowKeys.join(','),
+                      projectStatus: 'ACTIVE',
+                    }).then(res => {
+                      const { refreshData } = internalState;
+                      refreshData();
+                    });
+                  },
+                });
+              },
+              disabled: internalState => {
+                const { selectedRowKeys } = internalState;
+                return selectedRowKeys.length !== 1;
+              },
+            },
+            {
+              key: 'close',
+              title: '关闭',
+              type: 'primary',
+              size: 'large',
+              loading: false,
+              cb: internalState => {
+                const { selectedRowKeys, selectedRows } = internalState;
+                const tt = selectedRows.filter(v => v.projectStatus !== 'ACTIVE');
+                if (!isEmpty(tt)) {
+                  createMessage({
+                    type: 'warn',
+                    description: remindString({
+                      remindCode: 'COM:ALLOW_CLOSE_CHECK',
+                      defaultMessage: `仅“激活”状态允许关闭！`,
+                    }),
+                  });
+                  return;
+                }
+                createConfirm({
+                  content: remindString({
+                    remindCode: 'COM:W:CLOSE_WARN',
+                    defaultMessage: '继续操作将关闭选中的数据，请确认是否继续？',
+                  }),
+                  onOk: () => {
+                    this.changeStatus({
+                      id: selectedRowKeys.join(','),
+                      projectStatus: 'CLOSE',
+                    }).then(res => {
+                      const { refreshData } = internalState;
+                      refreshData();
+                    });
+                  },
+                });
               },
               disabled: internalState => {
                 const { selectedRowKeys } = internalState;
@@ -331,11 +475,6 @@ class index extends React.PureComponent {
               },
             },
           ]}
-          // tableExtraProps={{
-          //   scroll: {
-          //     x: 1500,
-          //   },
-          // }}
         />
       </PageWrapper>
     );

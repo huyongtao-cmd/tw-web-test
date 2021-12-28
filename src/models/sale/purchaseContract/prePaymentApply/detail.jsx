@@ -2,6 +2,9 @@
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable no-shadow */
 /* eslint-disable prefer-const */
+/* eslint-disable no-sequences */
+/* eslint-disable no-param-reassign */
+/* eslint-disable guard-for-in */
 import { isEmpty } from 'ramda';
 import { add as mathAdd, sub } from '@/utils/mathUtils';
 import moment from 'moment';
@@ -25,6 +28,7 @@ import {
   postPaymentAppFirstFlowSubmit,
   postPaymentSlipFlowBatchSubmit,
   postPaymentSlipBatchOperation,
+  getPurchaseByDocPro,
 } from '@/services/sale/purchaseContract/paymentApplyList';
 import { businessPageDetailByNo } from '@/services/sys/system/pageConfig';
 
@@ -36,6 +40,7 @@ export default {
     payDetailList: [], // 付款明细
     payRecordList: [], // 付款记录
     bearDepList: [], // 费用承担部门
+    paymentPlanAdvPayList: [], //付款计划-预付款
     invoiceVerDetail: [],
     pageConfig: {},
     fieldsConfig: {
@@ -51,13 +56,14 @@ export default {
     *query({ payload }, { call, put, all, select }) {
       const { id } = payload;
       const { status, response } = yield call(getPaymentApplyById, id);
+      const { formData, fieldsConfig } = yield select(
+        ({ prePaymentApplyDetail }) => prePaymentApplyDetail
+      );
       let scenes = '';
       if (status === 200) {
         if (response.ok) {
           const { datum } = response;
           scenes = datum.twPaymentApplyEntity.scene;
-
-          console.info(scenes + '场景');
           if (datum.twPaymentApplyEntity.receivingUnit) {
             yield put({
               type: 'selectAccountByNo',
@@ -88,6 +94,21 @@ export default {
             }
           }
 
+          // 采购合同
+          let arr = datum.twPaymentPlanAdvpayEntities || [];
+          if (fieldsConfig.taskKey === 'ACC_A110_01_SUBMIT_i') {
+            const data = yield call(getPurchaseByDocPro, datum.twPaymentApplyEntity.docNo);
+            arr.push(...data.response.twPaymentPlanAdvpayViews);
+          }
+          let twPaymentPlanAdvpayViews = [];
+          let obj = {};
+          // eslint-disable-next-line no-plusplus
+          for (let i = 0; i < arr.length; i++) {
+            if (!obj[arr[i].payplayId]) {
+              twPaymentPlanAdvpayViews.push(arr[i]);
+              obj[arr[i].payplayId] = true;
+            }
+          }
           // 申请单信息表单中收款公司带出财务的收款公司
           if (datum.twPaymentApplyEntity.paymentCompany1) {
             yield put({
@@ -124,6 +145,8 @@ export default {
               payRecordList: datum.twPaymentSlipEntities || [],
               bearDepList: datum.twCostUndertakeDeptEntities || [],
               invoiceVerDetail: datum.twInvoiceVerDetailEntities || [],
+              paymentPlanAdvPayList: twPaymentPlanAdvpayViews || [],
+              // paymentPlanAdvPayList: fieldsConfig.taskKey === "ACC_A110_01_SUBMIT_i" ? data.response.twPaymentPlanAdvpayViews : datum.twPaymentPlanAdvpayEntities || [],
             },
           });
           // if (datum.twPaymentApplyEntity.supplierLegalNo) {
@@ -150,27 +173,36 @@ export default {
 
     // 保存
     *save({ payload }, { call, select, put, all }) {
-      const { formData, payDetailList, payRecordList, bearDepList } = yield select(
-        ({ prePaymentApplyDetail }) => prePaymentApplyDetail
-      );
+      const {
+        formData,
+        payDetailList,
+        payRecordList,
+        bearDepList,
+        paymentPlanAdvPayList,
+      } = yield select(({ prePaymentApplyDetail }) => prePaymentApplyDetail);
+      const expHexiaoDate = formData.expHexiaoDate
+        ? moment(formData.expHexiaoDate).format('YYYY-MM-DD')
+        : '';
       const { scene } = payload;
       let id = '';
       if (formData.id) {
         const { status, response } = yield call(postPrePaymentApplyUpdate, {
-          twPaymentApplyEntity: { ...formData, scene },
+          twPaymentApplyEntity: { ...formData, scene, expHexiaoDate },
           twPurchasePaymentPlanEntities: payDetailList,
           twPaymentSlipEntities: payRecordList || [],
           twCostUndertakeDeptEntities: bearDepList,
+          twPaymentPlanAdvpayEntities: paymentPlanAdvPayList || [],
         });
         if (response.ok) {
           id = response.datum;
         }
       } else {
         const { status, response } = yield call(postPrePaymentApplySave, {
-          twPaymentApplyEntity: { ...formData, scene },
+          twPaymentApplyEntity: { ...formData, scene, expHexiaoDate },
           twPurchasePaymentPlanEntities: payDetailList,
           twPaymentSlipEntities: payRecordList || [],
           twCostUndertakeDeptEntities: bearDepList,
+          twPaymentPlanAdvpayEntities: paymentPlanAdvPayList || [],
         });
         if (response.ok) {
           id = response.datum;

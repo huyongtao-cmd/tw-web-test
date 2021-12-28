@@ -11,6 +11,8 @@ import createMessage from '@/components/core/AlertMessage';
 import { FileManagerEnhance } from '@/pages/gen/field';
 import { fromQs } from '@/utils/stringUtils';
 import styles from './index.less';
+import Base64 from 'crypto-js/enc-base64';
+import Utf8 from 'crypto-js/enc-utf8';
 
 const { Description } = DescriptionList;
 
@@ -47,6 +49,16 @@ class MessageDetail extends PureComponent {
     const {
       userMessageInfo: { detailFormData = {} },
     } = this.props;
+
+    //获取token对象
+    const token = localStorage.getItem('token_auth');
+    // 对生成的token(ticket)进行加密：使用 Base64
+    const ticket = Base64.stringify(Utf8.parse(token));
+    let releaseBodyTemp = detailFormData.releaseBody;
+    if (releaseBodyTemp) {
+      releaseBodyTemp = releaseBodyTemp.replace('ticket', 'ticket=' + ticket);
+    }
+
     return (
       <PageHeaderWrapper title="消息详情">
         <Card className="tw-card-rightLine">
@@ -86,7 +98,7 @@ class MessageDetail extends PureComponent {
               className={`${
                 styles.paper
               } ant-col-xs-20 ant-col-sm-20 ant-col-md-20 ant-col-lg-20 ant-col-xl-18 ant-col-xxl-15`}
-              dangerouslySetInnerHTML={{ __html: detailFormData.releaseBody }}
+              dangerouslySetInnerHTML={{ __html: releaseBodyTemp }}
             />
           </Card>
         )}

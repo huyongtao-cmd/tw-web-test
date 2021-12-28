@@ -16,6 +16,7 @@ import {
 import { outputHandle } from '@/utils/production/outputUtil.ts';
 import { remindString } from '@/components/production/basic/Remind.tsx';
 import { Modal } from 'antd';
+import { fromQs } from '@/utils/production/stringUtil.ts';
 
 const DOMAIN = 'purchaseList';
 
@@ -26,6 +27,12 @@ const DOMAIN = 'purchaseList';
 }))
 class PurchaseList extends React.PureComponent {
   state = { visible: false, selectedRowKey: '', refreshDataFunction: '' };
+
+  constructor(props) {
+    super(props);
+    const pathParam = fromQs();
+    this.state = { defaultSearchForm: pathParam };
+  }
 
   componentDidMount() {}
 
@@ -82,6 +89,14 @@ class PurchaseList extends React.PureComponent {
       advanced
     />,
     <SearchFormItem
+      key="chargeProjectId"
+      fieldType="ProjectSimpleSelect"
+      label="费用承担项目"
+      fieldKey="chargeProjectId"
+      defaultShow
+      advanced
+    />,
+    <SearchFormItem
       key="poClass1"
       fieldType="BaseCustomSelect"
       label="采购类型1"
@@ -107,14 +122,6 @@ class PurchaseList extends React.PureComponent {
       defaultShow
       advanced
       parentKey="CUS:CHARGE_CLASSIFICATION"
-    />,
-    <SearchFormItem
-      key="chargeProjectId"
-      fieldType="ProjectSimpleSelect"
-      label="费用承担项目"
-      fieldKey="chargeProjectId"
-      defaultShow
-      advanced
     />,
     <SearchFormItem
       key="chargeCompany"
@@ -337,6 +344,8 @@ class PurchaseList extends React.PureComponent {
       },
     ];
 
+    const { defaultSearchForm } = this.state;
+
     return (
       <PageWrapper>
         <SearchTable
@@ -346,7 +355,7 @@ class PurchaseList extends React.PureComponent {
           defaultSortBy="id"
           defaultSortDirection="DESC"
           searchForm={this.renderSearchForm()}
-          defaultSearchForm={{}}
+          defaultSearchForm={defaultSearchForm}
           fetchData={this.fetchData}
           columns={columns}
           tableExtraProps={{ scroll: { x: 2400 } }}

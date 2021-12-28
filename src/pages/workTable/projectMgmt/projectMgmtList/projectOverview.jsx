@@ -199,9 +199,9 @@ class index extends Component {
             size="large"
             type="primary"
             onClick={() => {
-              router.push(`/workTable/projectMgmt/projectMgmtList/weeklyList`);
+              router.push(`/workTable/bud/budgetList?chargeProjectId=${projectView.id}`);
             }}
-            disabled={disabledBtn || true}
+            disabled={disabledBtn}
           >
             项目预算
           </Button>
@@ -209,9 +209,11 @@ class index extends Component {
             size="large"
             type="primary"
             onClick={() => {
-              router.push(`/workTable/projectMgmt/projectMgmtList/weeklyList`);
+              router.push(
+                `/workTable/reimburseMgmt/expenseClaimList?chargeProjectId=${projectView.id}`
+              );
             }}
-            disabled={disabledBtn || true}
+            disabled={disabledBtn}
           >
             报销列表
           </Button>
@@ -219,9 +221,9 @@ class index extends Component {
             size="large"
             type="primary"
             onClick={() => {
-              router.push(`/workTable/projectMgmt/projectMgmtList/weeklyList`);
+              router.push(`/workTable/pur/purchaseList?chargeProjectId=${projectView.id}`);
             }}
-            disabled={disabledBtn || true}
+            disabled={disabledBtn}
           >
             采购单
           </Button>

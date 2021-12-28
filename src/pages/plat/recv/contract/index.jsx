@@ -4,7 +4,7 @@ import Link from 'umi/link';
 import router from 'umi/router';
 import moment from 'moment';
 import { isEmpty } from 'ramda';
-import { Input, InputNumber, Radio } from 'antd';
+import { Input, InputNumber, Radio, Icon, Modal, Form, Popover, Table, Tooltip, Tabs } from 'antd';
 import { formatDT } from '@/utils/tempUtils/DateTime';
 import update from 'immutability-helper';
 import createMessage from '@/components/core/AlertMessage';
@@ -12,6 +12,7 @@ import createMessage from '@/components/core/AlertMessage';
 import DataTable from '@/components/common/DataTable';
 import PageHeaderWrapper from '@/components/layout/PageHeaderWrapper';
 import { Selection, DatePicker, BuVersion } from '@/pages/gen/field';
+import FieldList from '@/components/layout/FieldList';
 
 import { createConfirm } from '@/components/core/Confirm';
 import { mountToTab } from '@/layouts/routerControl';
@@ -25,7 +26,10 @@ import { toQs, toUrl } from '@/utils/stringUtils';
 import { getBuVersionAndBuParams } from '@/utils/buVersionUtils';
 
 const DOMAIN = 'contractRecv';
+const { Field } = FieldList;
+
 const { RangePicker } = DatePicker;
+const { TabPane } = Tabs;
 const applyColumns = [
   { dataIndex: 'code', title: '编号', span: 12 },
   { dataIndex: 'name', title: '名称', span: 12 },
@@ -37,11 +41,25 @@ const formItemLayout = {
 
 @connect(({ loading, contractRecv, dispatch }) => ({
   dispatch,
-  loading: loading.effects[`${DOMAIN}/query`],
+  loading,
   contractRecv,
 }))
+@Form.create({
+  onValuesChange(props, changedValues) {
+    if (!isEmpty(changedValues)) {
+      props.dispatch({
+        type: `${DOMAIN}/updateForm`,
+        payload: changedValues,
+      });
+    }
+  },
+})
 @mountToTab()
 class ContractRecv extends PureComponent {
+  state = {
+    visible: false,
+  };
+
   componentDidMount() {
     this.fetchData({ offset: 0, limit: 10, sortBy: 'recvNo', sortDirection: 'DESC' });
   }
@@ -84,17 +102,71 @@ class ContractRecv extends PureComponent {
     dispatch({ type: `${DOMAIN}/updateState`, payload: { recvPlanList: newDataList, flag: true } });
   };
 
+  // 行编辑触发事件
+  onModalCellChanged = (index, value, name) => {
+    const {
+      contractRecv: { recvPlanList },
+      dispatch,
+    } = this.props;
+
+    const newDataSource = recvPlanList;
+    newDataSource[index] = {
+      ...newDataSource[index],
+      [name]: value,
+    };
+    dispatch({
+      type: `${DOMAIN}/updateState`,
+      payload: { recvPlanList: newDataSource },
+    });
+  };
+
+  handleOk = () => {
+    const {
+      form: { validateFieldsAndScroll },
+      dispatch,
+      contractRecv: { formData },
+    } = this.props;
+    validateFieldsAndScroll((error, values) => {
+      if (!error) {
+        const { recvOrInvDate, ...restValues } = values;
+        formData.recvOrInvDate = formatDT(recvOrInvDate);
+
+        dispatch({
+          type: `${DOMAIN}/updateRecvOrInvDate`,
+          payload: { ...formData, ...restValues },
+        }).then(res => {
+          if (res.ok) {
+            const { index, name } = formData;
+            this.onModalCellChanged(index, recvOrInvDate, name);
+
+            this.setState({
+              visible: false,
+            });
+            dispatch({
+              type: `${DOMAIN}/updateForm`,
+              payload: {},
+            });
+          }
+        });
+      }
+    });
+  };
+
   render() {
     const {
       dispatch,
       loading,
-      contractRecv: { recvPlanList, total, searchForm, flag },
+      contractRecv: { recvPlanList, total, searchForm, flag, formData, logList },
+      form: { getFieldDecorator },
     } = this.props;
+
+    const { visible } = this.state;
+    const { type } = formData;
 
     const tableProps = {
       columnsCache: DOMAIN,
       dispatch,
-      loading,
+      loading: loading.effects[`${DOMAIN}/query`],
       expirys: 0,
       total,
       rowKey: 'id',
@@ -118,6 +190,10 @@ class ContractRecv extends PureComponent {
           case 'expectRecvDate':
             filter.expectRecvDateStart = formatDT(changedValues.expectRecvDate[0]);
             filter.expectRecvDateEnd = formatDT(changedValues.expectRecvDate[1]);
+            break;
+          case 'expectInvDate':
+            filter.expectInvDateStart = formatDT(changedValues.expectInvDate[0]);
+            filter.expectInvDateEnd = formatDT(changedValues.expectInvDate[1]);
             break;
           case 'invDate':
             filter.invDateStart = formatDT(changedValues.invDate[0]);
@@ -534,6 +610,20 @@ class ContractRecv extends PureComponent {
           tag: <Selection.UDC code="ACC.RECV_STATUS" placeholder="请选择收款状态" />,
         },
         {
+          title: '预期开票日期',
+          dataIndex: 'expectInvDate',
+          options: {
+            initialValue: searchForm.expectInvDate,
+          },
+          tag: (
+            <RangePicker
+              placeholder={['开始日期', '结束日期']}
+              format="YYYY-MM-DD"
+              className="x-fill-100"
+            />
+          ),
+        },
+        {
           title: '预期收款日期',
           dataIndex: 'expectRecvDate',
           options: {
@@ -811,13 +901,81 @@ class ContractRecv extends PureComponent {
           title: '预计收款日期',
           dataIndex: 'expectRecvDate',
           sorter: true,
-          width: 150,
+          width: 180,
           render: (value, row, index) => (
-            <DatePicker
-              className="x-fill-100 deeperColor"
+            <Input
               value={value}
-              size="small"
-              onChange={this.onCellChanged(row.id, 'expectRecvDate')}
+              disabled
+              addonAfter={
+                <Popover
+                  title="预计收款日期修改日志"
+                  content={
+                    <Table
+                      rowKey="id"
+                      bordered
+                      columns={[
+                        {
+                          title: '修改记录',
+                          dataIndex: 'oldRecvOrInvDate',
+                          key: 'oldRecvOrInvDate',
+                          render: (val, rows) => `${val || ''}-->${rows.recvOrInvDate || ''}`,
+                        },
+                        {
+                          title: '修改人',
+                          dataIndex: 'createUserName',
+                          key: 'createUserName',
+                        },
+                        {
+                          title: '修改原因',
+                          dataIndex: 'reason',
+                          key: 'reason',
+                          render: val =>
+                            val && val.length > 15 ? (
+                              <Tooltip placement="left" title={val}>
+                                <pre>{`${val.substr(0, 15)}...`}</pre>
+                              </Tooltip>
+                            ) : (
+                              <pre>{val}</pre>
+                            ),
+                        },
+                        {
+                          title: '修改时间',
+                          dataIndex: 'createTime',
+                          key: 'createTime',
+                          render: val => val.replace('T', ' '),
+                        },
+                      ]}
+                      dataSource={row.recvDateChangeLog || []}
+                    />
+                  }
+                  trigger={!isEmpty(row.recvDateChangeLog) ? 'hover' : ''}
+                >
+                  <Icon
+                    style={{
+                      color: !isEmpty(row.recvDateChangeLog) ? 'red' : '',
+                      cursor: 'pointer',
+                    }}
+                    onClick={() => {
+                      this.setState({
+                        visible: true,
+                      });
+                      dispatch({
+                        type: `${DOMAIN}/updateForm`,
+                        payload: {
+                          type: 'RECV',
+                          recvOrInvDate: value,
+                          oldRecvOrInvDate: value,
+                          recvplanId: row.id,
+                          index,
+                          name: 'expectRecvDate',
+                        },
+                      });
+                      dispatch({ type: `${DOMAIN}/queryLog`, payload: row.id });
+                    }}
+                    type="setting"
+                  />
+                </Popover>
+              }
             />
           ),
         },
@@ -843,7 +1001,87 @@ class ContractRecv extends PureComponent {
           sorter: true,
         },
         {
-          title: '开票日期',
+          title: '预计开票日期',
+          dataIndex: 'expectInvDate',
+          width: 180,
+          render: (value, row, index) => (
+            <Input
+              value={value}
+              disabled
+              addonAfter={
+                <Popover
+                  title="预计开票日期修改日志"
+                  content={
+                    <Table
+                      rowKey="id"
+                      bordered
+                      columns={[
+                        {
+                          title: '修改记录',
+                          dataIndex: 'oldRecvOrInvDate',
+                          key: 'oldRecvOrInvDate',
+                          render: (val, rows) => `${val || ''}-->${rows.recvOrInvDate || ''}`,
+                        },
+                        {
+                          title: '修改人',
+                          dataIndex: 'createUserName',
+                          key: 'createUserName',
+                        },
+                        {
+                          title: '修改原因',
+                          dataIndex: 'reason',
+                          key: 'reason',
+                          render: val =>
+                            val && val.length > 15 ? (
+                              <Tooltip placement="left" title={val}>
+                                <pre>{`${val.substr(0, 15)}...`}</pre>
+                              </Tooltip>
+                            ) : (
+                              <pre>{val}</pre>
+                            ),
+                        },
+                        {
+                          title: '修改时间',
+                          dataIndex: 'createTime',
+                          key: 'createTime',
+                          render: val => val.replace('T', ' '),
+                        },
+                      ]}
+                      dataSource={row.invDateChangeLog || []}
+                    />
+                  }
+                  trigger={!isEmpty(row.invDateChangeLog) ? 'hover' : ''}
+                >
+                  <Icon
+                    style={{
+                      color: !isEmpty(row.invDateChangeLog) ? 'red' : '',
+                      cursor: 'pointer',
+                    }}
+                    onClick={() => {
+                      this.setState({
+                        visible: true,
+                      });
+                      dispatch({
+                        type: `${DOMAIN}/updateForm`,
+                        payload: {
+                          type: 'INV',
+                          recvOrInvDate: value,
+                          oldRecvOrInvDate: value,
+                          recvplanId: row.id,
+                          index,
+                          name: 'expectInvDate',
+                        },
+                      });
+                    }}
+                    type="setting"
+                  />
+                </Popover>
+              }
+            />
+          ),
+        },
+        {
+          title: '实际开票日期',
           dataIndex: 'invDate',
           width: 130,
           sorter: true,
@@ -891,9 +1129,103 @@ class ContractRecv extends PureComponent {
       ],
     };
 
+    const columns = [
+      {
+        title: '调整日期',
+        dataIndex: 'createTime',
+        key: 'createTime',
+        render: value => <span>{formatDT(moment(value))}</span>,
+      },
+      {
+        title: '调整人',
+        dataIndex: 'createUserName',
+        key: 'createUserName',
+      },
+      {
+        title: '调整前日期',
+        dataIndex: 'oldRecvOrInvDate',
+        key: 'oldRecvOrInvDate',
+      },
+      {
+        title: '调整后日期',
+        key: 'recvOrInvDate',
+        dataIndex: 'recvOrInvDate',
+      },
+      {
+        title: '发催款函',
+        dataIndex: 'flag1',
+        key: 'flag1',
+        render: value => <span>{value ? '是' : '否'}</span>,
+      },
+      {
+        title: '修改原因',
+        dataIndex: 'reason',
+        key: 'reason',
+      },
+    ];
     return (
       <PageHeaderWrapper title="收款计划列表">
         <DataTable {...tableProps} />
+        <Modal
+          centered
+          title="变更详情"
+          visible={visible}
+          onOk={() => {
+            this.handleOk();
+          }}
+          destroyOnClose
+          confirmLoading={loading.effects[`${DOMAIN}/updateRecvOrInvDate`]}
+          onCancel={() => {
+            this.setState({
+              visible: false,
+            });
+          }}
+          width={800}
+        >
+          <Tabs defaultActiveKey="1">
+            <TabPane tab="变更记录" key="1">
+              <FieldList
+                layout="horizontal"
+                getFieldDecorator={getFieldDecorator}
+                col={2}
+                noReactive
+              >
+                <Field
+                  name="recvOrInvDate"
+                  label={type === 'RECV' ? '预计收款日期' : '预计开票日期'}
+                  labelCol={{ span: 10, xxl: 10 }}
+                  wrapperCol={{ span: 12, xxl: 12 }}
+                  decorator={{
+                    initialValue: formData.recvOrInvDate || '',
+                    rules: [{ required: true, message: '必填' }],
+                  }}
+                >
+                  <DatePicker className="x-fill-100" />
+                </Field>
+                <Field
+                  name="reason"
+                  label="修改原因"
+                  fieldCol={1}
+                  labelCol={{ span: 5, xxl: 5 }}
+                  wrapperCol={{ span: 17, xxl: 17 }}
+                  decorator={{
+                    initialValue: formData.reason || '',
+                    rules: [{ required: true, message: '必填' }],
+                  }}
+                >
+                  <Input.TextArea rows={3} placeholder="请输入修改原因" />
+                </Field>
+              </FieldList>
+            </TabPane>
+            {type === 'RECV' ? (
+              <TabPane tab="变更历史" key="2">
+                <Table columns={columns} dataSource={logList} />
+              </TabPane>
+            ) : (
+              ''
+            )}
+          </Tabs>
+        </Modal>
       </PageHeaderWrapper>
     );
   }

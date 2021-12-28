@@ -47,7 +47,10 @@ class TicketMgmt extends PureComponent {
       tripDateObject.tripDateStart = tripDateStart;
       tripDateObject.tripDateEnd = tripDateEnd;
     }
-    dispatch({ type: `${DOMAIN}/query`, payload: { ...restParams, ...bookingDateObject } });
+    dispatch({
+      type: `${DOMAIN}/query`,
+      payload: { ...restParams, ...bookingDateObject, ...tripDateObject },
+    });
   };
 
   onCellChange = (rowData, rowField) => rowFieldValue => {

@@ -9,6 +9,7 @@ import PageHeaderWrapper from '@/components/layout/PageHeaderWrapper';
 import DataTable from '@/components/common/DataTable';
 import { formatDT } from '@/utils/tempUtils/DateTime';
 import { flowToRouter } from '@/utils/flowToRouter';
+import { getType } from '@/services/user/equivalent/equivalent';
 import { selectIamUsers } from '@/services/gen/list';
 import { Selection } from '@/pages/gen/field';
 import createMessage from '@/components/core/AlertMessage';
@@ -44,7 +45,26 @@ class Procs extends Component {
   };
 
   requestRealType = async rowData => {
-    router.push('/');
+    const { id, taskId, docId } = rowData;
+    const { status, response } = await getType(docId);
+    if (status === 200 && response.ok) {
+      const defKey =
+        // eslint-disable-next-line
+        response.datum === 'TASK_BY_PACKAGE'
+          ? 'ACC_A22.SUM'
+          : response.datum === 'TASK_BY_MANDAY'
+            ? 'ACC_A22.SINGLE'
+            : 'ACC_A22.COM';
+      const route = flowToRouter(defKey, {
+        // 不能改成procIden
+        id,
+        taskId,
+        docId,
+        mode: 'view',
+        originalUrl: window.location.origin + '/user/flow/process?type=procs',
+      });
+      router.push(route);
+    }
   };
 
   renderLink = (value, rowData) => {

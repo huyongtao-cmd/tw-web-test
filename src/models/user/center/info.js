@@ -6,6 +6,7 @@ import {
   findResListById,
   findResEqva,
   updateCenter,
+  getOwerPhotoFileRq,
 } from '@/services/plat/res/resprofile';
 import { queryPersonVideo } from '@/services/user/center/selfEvaluation';
 import { createNotify } from '@/components/core/Notify';
@@ -71,6 +72,7 @@ export default {
     computerDataSource: [],
     pageConfig: {},
     videoUrl: '',
+    owerPhotoFile: '',
   },
 
   effects: {
@@ -240,6 +242,22 @@ export default {
           },
         });
       }
+    },
+
+    // 获取文件图片
+    *getOwerPhotoFileFn({ payload }, { call, put, select }) {
+      const { response } = yield call(getOwerPhotoFileRq, payload);
+      const { ok, datum } = response;
+      if (ok) {
+        yield put({
+          type: 'updateState',
+          payload: {
+            owerPhotoFile: datum?.owerPhotoFile ?? '',
+          },
+        });
+        return datum?.owerPhotoFile ?? '';
+      }
+      return false;
     },
   },
 

@@ -1,4 +1,8 @@
 /* eslint-disable react/jsx-filename-extension */
+/* eslint-disable no-unneeded-ternary */
+/* eslint-disable no-nested-ternary */
+/* eslint-disable prefer-destructuring */
+/* eslint-disable consistent-return */
 import React, { Component } from 'react';
 import { Card, Form, Input, DatePicker, InputNumber, Button, Divider, Radio } from 'antd';
 import { UdcSelect, FileManagerEnhance, Selection } from '@/pages/gen/field';
@@ -10,12 +14,14 @@ import { add as mathAdd, sub, div, mul, checkIfNumber, genFakeId } from '@/utils
 import Link from 'umi/link';
 import { getLink } from '@/pages/sale/purchaseContract/linkConfig';
 
+//付款明细
 export function payDetailTableProps(
   DOMAIN,
   dispatch,
   loading,
   form,
   readOnly,
+  mode,
   prePaymentApplyDetail
 ) {
   const { payDetailList, formData, fieldsConfig, pageConfig } = prePaymentApplyDetail;
@@ -31,6 +37,7 @@ export function payDetailTableProps(
       });
     }
   }
+
   const onCellChanged = (rowIndex, rowField) => rowFieldValue => {
     const val = rowFieldValue && rowFieldValue.target ? rowFieldValue.target.value : rowFieldValue;
     if (rowField === 'currentPaymentAmt') {
@@ -98,7 +105,7 @@ export function payDetailTableProps(
           parser={v => v.replace(/\$\s?|(,*)/g, '')}
           className="number-left x-fill-100"
           value={value}
-          disabled={readOnly}
+          disabled={readOnly || mode === 'view'}
           placeholder={`请输入${pageFieldJson.currentPaymentAmt.displayName}`}
           onChange={onCellChanged(index, 'currentPaymentAmt')}
         />
@@ -119,7 +126,7 @@ export function payDetailTableProps(
           parser={v => v.replace(/\$\s?|(,*)/g, '')}
           className="number-left x-fill-100"
           value={value}
-          disabled={readOnly}
+          disabled={readOnly || mode === 'view'}
           placeholder={`请输入${pageFieldJson.paymentAmt.displayName}`}
           onChange={onCellChanged(index, 'paymentAmt')}
         />
@@ -144,7 +151,7 @@ export function payDetailTableProps(
         <Input
           className="x-fill-100"
           value={value}
-          disabled={readOnly}
+          disabled={readOnly || mode === 'view'}
           placeholder={`请输入${pageFieldJson.docTypeName.displayName}`}
           onChange={onCellChanged(index, 'docTypeName')}
         />
@@ -183,7 +190,7 @@ export function payDetailTableProps(
           placeholder={`请选择${pageFieldJson.paymentDate.displayName}`}
           format="YYYY-MM-DD"
           value={value ? moment(value) : ''}
-          disabled={readOnly}
+          disabled={readOnly || mode === 'view'}
           className="x-fill-100"
         />
       ),
@@ -208,11 +215,35 @@ export function payDetailTableProps(
         <Input
           className="x-fill-100"
           value={value}
-          disabled={readOnly}
+          disabled={readOnly || mode === 'view'}
           placeholder={`请输入${pageFieldJson.contractNodeName.displayName}`}
           onChange={onCellChanged(index, 'contractNodeName')}
         />
       ),
+    },
+    {
+      title: `${pageFieldJson.recvAmt.displayName}`,
+      sortNo: `${pageFieldJson.recvAmt.sortNo}`,
+      key: 'recvAmt',
+      dataIndex: 'recvAmt',
+      className: 'text-center',
+      width: 100,
+    },
+    {
+      title: `${pageFieldJson.actualRecvAmt.displayName}`,
+      sortNo: `${pageFieldJson.actualRecvAmt.sortNo}`,
+      key: 'actualRecvAmt',
+      dataIndex: 'actualRecvAmt',
+      className: 'text-center',
+      width: 100,
+    },
+    {
+      title: `${pageFieldJson.text.displayName}`,
+      sortNo: `${pageFieldJson.text.sortNo}`,
+      key: 'text',
+      dataIndex: 'text',
+      className: 'text-center',
+      width: 100,
     },
   ];
   const columnsFilterList = columnsList.filter(
@@ -220,13 +251,13 @@ export function payDetailTableProps(
   );
 
   const tableProps = {
-    readOnly,
+    readOnly: readOnly || mode === 'view',
     rowKey: 'id',
     showCopy: false,
     // loading: loading.effects[`${DOMAIN}/queryPurchase`],
     pagination: false,
     scroll: {
-      x: 1000,
+      x: 1300,
     },
     dataSource: payDetailList,
     onAdd: newRow => {

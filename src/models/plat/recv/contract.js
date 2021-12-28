@@ -1,9 +1,16 @@
-import { queryRecvplanList, saveRecvplanList, defaultRuleRq } from '@/services/plat/recv/Contract';
+import {
+  queryRecvplanList,
+  saveRecvplanList,
+  defaultRuleRq,
+  updateRecvOrInvDateRq,
+} from '@/services/plat/recv/Contract';
 import createMessage from '@/components/core/AlertMessage';
+import { getChangeLog } from '@/services/sale/prompt/prompt';
 
 export default {
   namespace: 'contractRecv',
   state: {
+    formData: {},
     searchForm: {
       // 子合同编号
       subContractNo: null,
@@ -33,6 +40,7 @@ export default {
     delList: [],
     total: 0,
     flag: false,
+    logList: [],
   },
   effects: {
     *query({ payload }, { call, put, select }) {
@@ -44,6 +52,32 @@ export default {
           total: response.total,
         },
       });
+    },
+
+    *queryLog({ payload }, { call, put, select }) {
+      const { response: changeLog } = yield call(getChangeLog, {
+        recvplanId: payload,
+      });
+      yield put({
+        type: 'updateState',
+        payload: {
+          logList: Array.isArray(changeLog.data) ? changeLog.data : [],
+        },
+      });
+    },
+
+    *updateRecvOrInvDate({ payload }, { call, put, select }) {
+      const { status, response } = yield call(updateRecvOrInvDateRq, payload);
+      if (status === 100) {
+        // 主动取消请求
+        return {};
+      }
+      if (response.ok) {
+        createMessage({ type: 'success', description: '操作成功' });
+        return response;
+      }
+      createMessage({ type: 'error', description: '操作失败' });
+      return response;
     },
     *save({ payload }, { call, put, select }) {
       const { recvPlanList, delList } = yield select(({ contractRecv }) => contractRecv);
@@ -79,6 +113,14 @@ export default {
     },
   },
   reducers: {
+    updateForm(state, { payload }) {
+      const { formData } = state;
+      const newFormData = { ...formData, ...payload };
+      return {
+        ...state,
+        formData: newFormData,
+      };
+    },
     updateState(state, action) {
       return {
         ...state,

@@ -63,6 +63,10 @@ export async function customSelectionClearCache(param) {
 export async function customSelectionCascader(param) {
   return request.get(toQs(system.customSelectionCascaderUri, param));
 }
+// 自定义选择项树形结构 key必填
+export async function customSelectionTreeFun(param) {
+  return request.get(toUrl(system.customSelectionTreeUri, param));
+}
 
 // 系统国际化
 export async function systemLocalePortal(param) {

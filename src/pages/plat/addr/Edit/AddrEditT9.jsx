@@ -4,10 +4,8 @@ import { Input } from 'antd';
 import Title from '@/components/layout/Title';
 import FieldList from '@/components/layout/FieldList';
 import { UdcSelect } from '@/pages/gen/field';
-import FileUpload from '@/components/common/FileUpload';
+
 import { AddrEditContext } from './index';
-import BaseSelect from '@/components/production/basic/BaseSelect.tsx';
-import BaseInput from '@/components/production/basic/BaseInput.tsx';
 
 const { Field } = FieldList;
 
@@ -31,58 +29,43 @@ const AddrEditT9 = props => (
           <Input disabled placeholder="[系统自动生成]" />
         </Field>
         <Field
+          name="supplierNo"
+          label="客户ID"
+          decorator={{
+            initialValue: custData.id,
+          }}
+        >
+          <Input disabled placeholder="[系统自动生成]" />
+        </Field>
+        <Field
           name="custCat1"
           label="客户类别"
           decorator={{
             initialValue: custData.custCat1,
+            rules: [
+              {
+                required: true,
+                message: '请选择客户类别',
+              },
+            ],
           }}
         >
-          <BaseSelect parentKey="COM:AB:CUST_TYPE1" />
+          <UdcSelect code="TSK:CUST_CAT1" placeholder="请选择客户类别" />
         </Field>
         <Field
           name="custCat2"
-          label="行业类别"
+          label="客户小类"
           decorator={{
             initialValue: custData.custCat2,
+            rules: [
+              {
+                required: true,
+                message: '请选择客户小类',
+              },
+            ],
           }}
         >
-          <BaseSelect parentKey="COM:AB:CUST_TYPE2" />
-        </Field>
-        <Field
-          name="custCat3"
-          label="客户属地"
-          decorator={{
-            initialValue: custData.custCat3,
-          }}
-        >
-          <BaseSelect parentKey="FUNCTION:REGION:NAME" />
-        </Field>
-        <Field
-          name="custRegion"
-          label="分属集团"
-          decorator={{
-            initialValue: custData.custRegion,
-          }}
-        >
-          <BaseInput />
-        </Field>
-        <Field
-          name="custCat4"
-          label="最终客户关系"
-          decorator={{
-            initialValue: custData.custCat4,
-          }}
-        >
-          <BaseSelect parentKey="COM:AB:CUST_TYPE4" />
-        </Field>
-        <Field
-          name="attachmentIds"
-          label="附件"
-          decorator={{
-            initialValue: custData.attachmentIds,
-          }}
-        >
-          <FileUpload fileList={custData.attachments} />
+          <UdcSelect code="TSK:CUST_CAT2" placeholder="请选择客户小类" />
         </Field>
       </FieldList>
     )}

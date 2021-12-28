@@ -170,8 +170,8 @@ class BuResInfo extends PureComponent {
           width: 100,
         },
         pageFieldJson.coopType.visibleFlag && {
-          title: `${pageFieldJson.dateTo.displayName}`,
-          sortNo: `${pageFieldJson.dateTo.sortNo}`,
+          title: `${pageFieldJson.coopType.displayName}`,
+          sortNo: `${pageFieldJson.coopType.sortNo}`,
           dataIndex: 'coopTypeDesc',
           align: 'center',
           width: 100,

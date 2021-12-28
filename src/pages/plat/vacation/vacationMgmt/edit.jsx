@@ -274,14 +274,21 @@ class VacationEdit extends PureComponent {
         <RadioGroup
           onChange={e => {
             this.setState({ isInLieu: e.target.value });
-            if (e.target.value === 'ANNUAL') {
-              setFieldsValue({
-                overtime: null,
-                extrWorkProjId: null,
-                extrWorkProjIName: null,
-                extrWorkId: null,
-                extrWorkPlanName: null,
-              });
+            if (e.target.value === 'ANNUAL' || e.target.value === 'ANNUAL_W') {
+              const dates1 = [
+                moment()
+                  .startOf('year')
+                  .format('YYYY-MM-DD'),
+                moment()
+                  .endOf('year')
+                  .format('YYYY-MM-DD'),
+              ];
+              const expirationDate1 = moment()
+                .add(1, 'years')
+                .month(2)
+                .endOf('month')
+                .format('YYYY-MM-DD');
+
               dispatch({
                 type: `${DOMAIN}/updateForm`,
                 payload: {
@@ -290,12 +297,24 @@ class VacationEdit extends PureComponent {
                   extrWorkProjIName: null,
                   extrWorkId: null,
                   extrWorkPlanName: null,
+                  dates: dates1,
+                  expirationDate: expirationDate1,
                 },
+              });
+              setFieldsValue({
+                overtime: null,
+                extrWorkProjId: null,
+                extrWorkProjIName: null,
+                extrWorkId: null,
+                extrWorkPlanName: null,
+                dates: dates1,
+                expirationDate: expirationDate1,
               });
             }
           }}
         >
-          <Radio value="ANNUAL">年休</Radio>
+          <Radio value="ANNUAL">法定年休</Radio>
+          <Radio value="ANNUAL_W">福利年休</Radio>
           <Radio value="IN_LIEU">调休</Radio>
         </RadioGroup>
       </Field>,
@@ -471,7 +490,12 @@ class VacationEdit extends PureComponent {
           ],
         }}
       >
-        <DatePicker.RangePicker className="x-fill-100" format="YYYY-MM-DD" />
+        <DatePicker.RangePicker
+          key={formData.dates}
+          // disabled={formData.vacationType === 'ANNUAL' || formData.vacationType === 'ANNUAL_W'}
+          className="x-fill-100"
+          format="YYYY-MM-DD"
+        />
       </Field>,
       <Field
         name="expirationDate"
@@ -599,296 +623,6 @@ class VacationEdit extends PureComponent {
           bordered={false}
         >
           {!loading.effects[`${DOMAIN}/getPageConfig`] ? this.renderPage() : <Loading />}
-          {/* <FieldList layout="horizontal" getFieldDecorator={getFieldDecorator} col={2}>
-            <Field
-              name="vacationYear"
-              label="年度"
-              decorator={{
-                initialValue: formData.vacationYear || undefined,
-                rules: [
-                  {
-                    required: true,
-                    message: '年度',
-                  },
-                ],
-              }}
-            >
-              <DatePicker.YearPicker
-                className="x-fill-100"
-                format="YYYY"
-                placeholder="请选择年度"
-              />
-            </Field>
-            <Field
-              name="resId"
-              label="资源"
-              decorator={{
-                initialValue: formData.resId || undefined,
-                rules: [
-                  {
-                    required: true,
-                    message: '请选择资源',
-                  },
-                ],
-              }}
-            >
-              <Selection.ResFilterDimission
-                className="x-fill-100"
-                // source={resDataSource}
-                source={() => selectUserMultiCol()}
-                columns={particularColumns}
-                transfer={{ key: 'id', code: 'id', name: 'name' }}
-                dropdownMatchSelectWidth={false}
-                showSearch
-                onColumnsChange={value => {
-                  setFieldsValue({
-                    extrWorkProjId: null,
-                    extrWorkProjName: null,
-                    extrWorkId: null,
-                    extrWorkPlanName: null,
-                  });
-                }}
-                placeholder="请选择资源"
-              />
-            </Field>
-            <Field
-              name="vacationType"
-              label="假期类型"
-              decorator={{
-                initialValue: formData.vacationType || undefined,
-                rules: [
-                  {
-                    required: true,
-                    message: '请选择假期类型',
-                  },
-                ],
-              }}
-            >
-              <RadioGroup onChange={e => this.setState({ isInLieu: e.target.value })}>
-                <Radio value="ANNUAL">年休</Radio>
-                <Radio value="IN_LIEU">调休</Radio>
-              </RadioGroup>
-            </Field>
-            {isInLieu === 'IN_LIEU' && (
-              <Field
-                name="overtime"
-                label="是否加班调休"
-                decorator={{
-                  initialValue: formData.overtime || undefined,
-                  rules: [
-                    {
-                      required: true,
-                      message: '是否加班调休必填',
-                    },
-                  ],
-                }}
-              >
-                <RadioGroup>
-                  <Radio value="YES">是</Radio>
-                  <Radio value="NO">否</Radio>
-                </RadioGroup>
-              </Field>
-            )}
-            {isInLieu === 'IN_LIEU' &&
-              formData.overtime === 'YES' && (
-                <Field
-                  name="extrWorkProjId"
-                  label="加班项目"
-                  decorator={{
-                    initialValue:
-                      formData.extrWorkProjId && formData.extrWorkProjName
-                        ? {
-                            code: formData.extrWorkProjId,
-                            name: formData.extrWorkProjName,
-                          }
-                        : null,
-                    rules: [
-                      {
-                        required: formData.overtime === 'YES' || false,
-                        message: '加班项目必填',
-                      },
-                    ],
-                  }}
-                >
-                  <SelectWithCols
-                    labelKey="name"
-                    className="x-fill-100"
-                    columns={particularColumns}
-                    dataSource={projSource}
-                    onChange={value => {
-                      setFieldsValue({
-                        extrWorkId: null,
-                        extrWorkPlanName: null,
-                      });
-                      if (!isNil(value)) {
-                        // 加班计划列表
-                        dispatch({
-                          type: `${DOMAIN}/updateState`,
-                          payload: {
-                            extrWorkSource: extrWorkList.filter(d => d.workReasonId === value.id),
-                          },
-                        });
-                      } else {
-                        dispatch({
-                          type: `${DOMAIN}/updateState`,
-                          payload: {
-                            extrWorkSource: extrWorkList,
-                            formData: {
-                              ...formData,
-                              extrWorkId: undefined,
-                            },
-                          },
-                        });
-                      }
-                    }}
-                    selectProps={{
-                      showSearch: true,
-                      disabled: !(isInLieu === 'IN_LIEU' && formData.overtime === 'YES'),
-                      onSearch: value => {
-                        dispatch({
-                          type: `${DOMAIN}/updateState`,
-                          payload: {
-                            projSource: projList.filter(
-                              d =>
-                                d.code.indexOf(value) > -1 ||
-                                d.name.toLowerCase().indexOf(value.toLowerCase()) > -1
-                            ),
-                          },
-                        });
-                      },
-                      allowClear: true,
-                    }}
-                  />
-                </Field>
-              )}
-            {isInLieu === 'IN_LIEU' &&
-              formData.overtime === 'YES' && (
-                <Field
-                  name="extrWorkId"
-                  label="加班安排"
-                  decorator={{
-                    initialValue:
-                      formData.extrWorkId && formData.extrWorkPlanName
-                        ? {
-                            code: formData.extrWorkId,
-                            name: formData.extrWorkPlanName,
-                          }
-                        : null,
-                    rules: [
-                      {
-                        required: formData.overtime === 'YES' || false,
-                        message: '加班安排必填',
-                      },
-                    ],
-                  }}
-                >
-                  <SelectWithCols
-                    labelKey="name"
-                    className="x-fill-100"
-                    columns={extrWorkColumns}
-                    dataSource={
-                      formData.extrWorkProjId
-                        ? extrWorkSource.filter(d => d.workReasonId === formData.extrWorkProjId)
-                        : extrWorkSource
-                    }
-                    onChange={value => {}}
-                    selectProps={{
-                      showSearch: true,
-                      disabled: !(
-                        isInLieu === 'IN_LIEU' &&
-                        formData.overtime === 'YES' &&
-                        !isNil(formData.extrWorkProjId)
-                      ),
-                      onSearch: value => {
-                        dispatch({
-                          type: `${DOMAIN}/updateState`,
-                          payload: {
-                            extrWorkSource: extrWorkList.filter(
-                              d =>
-                                d.code.indexOf(value) > -1 ||
-                                d.name.toLowerCase().indexOf(value.toLowerCase()) > -1
-                            ),
-                          },
-                        });
-                      },
-                      allowClear: true,
-                    }}
-                  />
-                </Field>
-              )}
-            <Field
-              name="dates"
-              label="起始/截止"
-              decorator={{
-                initialValue: formData.dates || '',
-                rules: [
-                  {
-                    required: true,
-                    message: '请选择起始/截止时间',
-                  },
-                ],
-              }}
-            >
-              <DatePicker.RangePicker className="x-fill-100" format="YYYY-MM-DD" />
-            </Field>
-            <Field
-              name="expirationDate"
-              label="有效期"
-              decorator={{
-                initialValue: formData.expirationDate || undefined,
-                rules: [
-                  {
-                    required: true,
-                    message: '请选择效期',
-                  },
-                ],
-              }}
-            >
-              <DatePicker className="x-fill-100" format="YYYY-MM-DD" />
-            </Field>
-            <Field
-              name="totalDays"
-              label="总天数"
-              decorator={{
-                initialValue: formData.totalDays || '',
-                rules: [
-                  {
-                    required: true,
-                    message: '请输入总天数',
-                  },
-                ],
-              }}
-            >
-              <Input placeholder="请输入总天数" />
-            </Field>
-            <Field
-              name="usedDays"
-              label="已用天数"
-              decorator={{
-                initialValue: formData.usedDays || '',
-                rules: [
-                  {
-                    required: true,
-                    message: '请输入已用天数',
-                  },
-                ],
-              }}
-            >
-              <Input placeholder="请输入已用天数" />
-            </Field>
-            <Field
-              name="remark"
-              label="备注"
-              fieldCol={1}
-              labelCol={{ span: 4, xxl: 3 }}
-              wrapperCol={{ span: 19, xxl: 20 }}
-              decorator={{
-                initialValue: formData.remark || '',
-              }}
-            >
-              <Input.TextArea rows={3} placeholder="请输入备注" />
-            </Field>
-          </FieldList> */}
         </Card>
       </PageHeaderWrapper>
     );

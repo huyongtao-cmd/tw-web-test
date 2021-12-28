@@ -10,9 +10,9 @@ import moment from 'moment';
 import math from 'mathjs';
 import createMessage from '@/components/core/AlertMessage';
 import { fromQs } from '@/utils/stringUtils';
-import { add as mathAdd, checkIfNumber, div, mul, sub } from '@/utils/mathUtils';
+import { add, checkIfNumber, div, mul, sub } from '@/utils/mathUtils';
 import { formatDT } from '@/utils/tempUtils/DateTime';
-import { isEmpty, takeLast, add, isNil, gte, lte } from 'ramda';
+import { isEmpty } from 'ramda';
 import { toIsoDate } from '@/utils/timeUtils';
 import BpmConnection from '@/pages/gen/BpmMgmt/BpmConnection';
 
@@ -36,19 +36,20 @@ const tabConf = [
   },
 ];
 
-const contentListSelected = (form, operationKey, mode) => {
+const contentListSelected = (form, operationKey, mode, entrance) => {
   const contentList = {
     prePayInfo: <PrePayInfo form={form} mode={mode} />,
     DEPARTMENT: <BearDepInfo form={form} mode={mode} />,
-    billInfo: <BillInfo form={form} mode={mode} />,
+    billInfo: <BillInfo form={form} mode={mode} entrance={entrance} />,
   };
   return contentList[operationKey];
 };
-@connect(({ loading, prePaymentApplyEdit, dispatch, user }) => ({
+@connect(({ loading, prePaymentApplyEdit, dispatch, user, emergencyPayment }) => ({
   loading,
   prePaymentApplyEdit,
   dispatch,
   user,
+  emergencyPayment,
 }))
 @Form.create({
   onFieldsChange(props, changedFields) {
@@ -74,11 +75,12 @@ class Edit extends Component {
     super(props);
     this.state = {
       operationKey: 'prePayInfo',
+      loadings: false,
     };
   }
 
   componentDidMount() {
-    const { mode, id, scene = '14', docNo } = fromQs();
+    const { mode, id, scene = '14', docNo, source } = fromQs();
     const {
       dispatch,
       user: {
@@ -94,7 +96,7 @@ class Edit extends Component {
     }).then(res => {
       dispatch({
         type: `${DOMAIN}/query`,
-        payload: { mode, id, docNo, scene },
+        payload: { mode, id, docNo, scene, source },
       });
     });
   }
@@ -109,15 +111,63 @@ class Edit extends Component {
   handleSave = () => {
     const {
       form: { validateFieldsAndScroll },
+      emergencyPayment,
       dispatch,
       prePaymentApplyEdit,
+      user: {
+        user: {
+          extInfo: { resId },
+        },
+      },
     } = this.props;
-    const { mode, scene = '14' } = fromQs();
-    const { payDetailList, formData } = prePaymentApplyEdit;
+    const { mode, id, scene = '14', docNo, status, entrance, source } = fromQs();
+    const { payDetailList, formData, paymentPlanAdvPayList, payRecordList } = prePaymentApplyEdit;
+    const {
+      flowNo,
+      remark,
+      paymentNo,
+      purchaseName,
+      purchasePaymentName,
+      purchaseInchargeResId,
+    } = emergencyPayment.formData;
+    let PaymentAmt = 0; // 付款记录总金额
     validateFieldsAndScroll((error, values) => {
       if (!error) {
         if (payDetailList.length !== 0) {
           if (formData.currPaymentAmt > 0) {
+            // 采购合同 预付款 校验付款计划参考校验
+            if (formData.docType === 'CONTRACT') {
+              // 付款计划参考-预付款 合计付款金额 不能大于 预付款的本次付款金额
+              let currentPaymentAmtAdvPaySum = 0;
+              paymentPlanAdvPayList.forEach(paymentPlanAdvPay => {
+                currentPaymentAmtAdvPaySum = add(
+                  currentPaymentAmtAdvPaySum,
+                  paymentPlanAdvPay.currentPaymentAmt
+                );
+              });
+              if (currentPaymentAmtAdvPaySum !== formData.currPaymentAmt) {
+                createMessage({
+                  type: 'warn',
+                  description: '【付款计划参考】本次付款金额合计值与本单据付款金额不一致',
+                });
+                return;
+              }
+            }
+            if (entrance === 'flow' && payRecordList.length === 0) {
+              createMessage({ type: 'error', description: '请填写付款单记录' });
+              return;
+            }
+            // 付款记录核销总计
+            if (payRecordList.length > 0) {
+              payRecordList.map(item => {
+                PaymentAmt = add(PaymentAmt, item.paymentAmt);
+              });
+            }
+
+            if (entrance === 'flow' && formData.currPaymentAmt !== PaymentAmt) {
+              createMessage({ type: 'error', description: '付款金额应与付款记录金额不一致' });
+              return;
+            }
             dispatch({
               type: `${DOMAIN}/save`,
               payload: {
@@ -126,9 +176,33 @@ class Edit extends Component {
             }).then(resq => {
               if (resq) {
                 createMessage({ type: 'success', description: '保存成功' });
-                closeThenGoto(
-                  `/sale/purchaseContract/paymentApplyList/index?refresh=${Math.random()}`
-                );
+                if (entrance === 'flow') {
+                  dispatch({
+                    type: `emergencyPayment/submit`,
+                    payload: {
+                      applyResId: undefined,
+                      flowNo,
+                      paymentNo: undefined,
+                      purchaseInchargeResId,
+                      purchasePaymentName: purchaseName,
+                      purchasePaymentNo: paymentNo,
+                      remark,
+                    },
+                  });
+                  dispatch({
+                    type: `${DOMAIN}/getPageConfig`,
+                    payload: { pageNo: `PAYMENT_APPLY_EDIT:${CONFIGSCENE[scene]}`, resId, mode },
+                  }).then(res => {
+                    dispatch({
+                      type: `${DOMAIN}/query`,
+                      payload: { mode, id, docNo, scene, source },
+                    });
+                  });
+                } else {
+                  closeThenGoto(
+                    `/sale/purchaseContract/paymentApplyList/index?refresh=${Math.random()}`
+                  );
+                }
               } else {
                 createMessage({ type: 'error', description: '保存失败' });
               }
@@ -144,18 +218,40 @@ class Edit extends Component {
   };
 
   // 提交
-  handleSubmit = () => {
+  handleSubmit = async () => {
+    // await this.setState({
+    //   loadings: true,
+    // });
     const {
       form: { validateFieldsAndScroll },
       dispatch,
       prePaymentApplyEdit,
     } = this.props;
-    const { scene = '14' } = fromQs();
-    const { payDetailList, formData } = prePaymentApplyEdit;
+    const { scene = '14', status } = fromQs();
+    const { payDetailList, formData, paymentPlanAdvPayList } = prePaymentApplyEdit;
     validateFieldsAndScroll((error, values) => {
       if (!error) {
         if (payDetailList.length !== 0) {
           if (formData.currPaymentAmt > 0) {
+            // 采购合同 预付款 校验付款计划参考校验
+            if (formData.docType === 'CONTRACT') {
+              // 付款计划参考-预付款 合计付款金额 不能大于 预付款的本次付款金额
+              let currentPaymentAmtAdvPaySum = 0;
+              paymentPlanAdvPayList.forEach(paymentPlanAdvPay => {
+                currentPaymentAmtAdvPaySum = add(
+                  currentPaymentAmtAdvPaySum,
+                  paymentPlanAdvPay.currentPaymentAmt
+                );
+              });
+              if (currentPaymentAmtAdvPaySum !== formData.currPaymentAmt) {
+                // this.setState({ loadings: false });
+                createMessage({
+                  type: 'warn',
+                  description: '【付款计划参考】本次付款金额合计值与本单据付款金额不一致',
+                });
+                return;
+              }
+            }
             dispatch({
               type: `${DOMAIN}/save`,
               payload: {
@@ -175,18 +271,22 @@ class Edit extends Component {
                         `/sale/purchaseContract/paymentApplyList/index?refresh=${Math.random()}`
                       );
                     } else {
+                      // this.setState({ loadings: false });
                       createMessage({ type: 'error', description: resq.reason || '提交失败' });
                     }
                   });
                 }
               } else {
+                // this.setState({ loadings: false });
                 createMessage({ type: 'error', description: res.reason || '提交失败' });
               }
             });
           } else {
+            // this.setState({ loadings: false });
             createMessage({ type: 'warn', description: '本次付款/核销金额必须要大于0' });
           }
         } else {
+          // this.setState({ loadings: false });
           createMessage({ type: 'warn', description: '付款明细不能为空' });
         }
       }
@@ -194,10 +294,10 @@ class Edit extends Component {
   };
 
   render() {
-    const { operationKey } = this.state;
+    const { operationKey, loadings } = this.state;
     const { form, loading, prePaymentApplyEdit } = this.props;
     const { formData, pageConfig } = prePaymentApplyEdit;
-    const { mode } = fromQs();
+    const { mode, status, entrance } = fromQs();
 
     // 获取工作流组件相关数据
     let docId;
@@ -239,26 +339,55 @@ class Edit extends Component {
         >
           {mode !== 'view' && (
             <Card className="tw-card-rightLine">
-              <Button
-                className="tw-btn-primary"
-                icon="save"
-                size="large"
-                disabled={false}
-                loading={loading.effects[`${DOMAIN}/save`]}
-                onClick={this.handleSave}
-              >
-                <Title id="misc.save" defaultMessage="保存" />
-              </Button>
-              <Button
-                className="tw-btn-primary"
-                icon="save"
-                size="large"
-                loading={loading.effects[`${DOMAIN}/submit`]}
-                disabled={false}
-                onClick={this.handleSubmit}
-              >
-                <Title id="misc.submit" defaultMessage="提交" />
-              </Button>
+              {entrance && entrance === 'flow' ? (
+                <>
+                  <Button
+                    className="tw-btn-primary"
+                    size="large"
+                    loading={loading.effects[`${DOMAIN}/save`]}
+                    disabled={false}
+                    onClick={this.handleSave}
+                  >
+                    <Title id="misc.confirm" defaultMessage="确认" />
+                  </Button>
+                  <Button
+                    className="tw-btn-primary"
+                    size="large"
+                    disabled={false}
+                    onClick={() => {
+                      closeThenGoto('/sale/purchaseContract/emergencyPayment');
+                    }}
+                  >
+                    <Title id="misc.close" defaultMessage="关闭" />
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    className="tw-btn-primary"
+                    icon="save"
+                    size="large"
+                    disabled={false}
+                    loading={loading.effects[`${DOMAIN}/save`]}
+                    onClick={this.handleSave}
+                  >
+                    <Title id="misc.save" defaultMessage="保存" />
+                  </Button>
+                  <Button
+                    className="tw-btn-primary"
+                    icon="save"
+                    size="large"
+                    loading={
+                      loading.effects[`${DOMAIN}/save`] || loading.effects[`${DOMAIN}/submit`]
+                    }
+                    // loading={loadings}
+                    disabled={false}
+                    onClick={this.handleSubmit}
+                  >
+                    <Title id="misc.submit" defaultMessage="提交" />
+                  </Button>
+                </>
+              )}
             </Card>
           )}
           <Card
@@ -268,7 +397,7 @@ class Edit extends Component {
             tabList={tabConf}
             onTabChange={this.onOperationTabChange}
           >
-            {contentListSelected(form, operationKey, mode)}
+            {contentListSelected(form, operationKey, mode, entrance)}
           </Card>
           {mode === 'view' &&
             docId &&

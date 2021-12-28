@@ -1,5 +1,4 @@
 import { findRoles, remove, disable, enable } from '@/services/sys/iam/roles';
-import createMessage from '@/components/core/AlertMessage';
 
 const defaultSearchForm = {
   nameLike: undefined,
@@ -38,12 +37,10 @@ export default {
 
     *removeRole({ payload }, { call, select, put }) {
       const { id } = payload;
-      const { response } = yield call(remove, id);
-      if (response.ok) {
+      const data = yield call(remove, id);
+      if (data.status === 200) {
         const { searchForm } = yield select(({ sysroles }) => sysroles);
         yield put({ type: 'query', payload: searchForm });
-      } else {
-        createMessage({ type: 'error', description: response.errors[0].msg });
       }
     },
 

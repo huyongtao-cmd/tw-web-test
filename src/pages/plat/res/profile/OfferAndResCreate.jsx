@@ -578,6 +578,25 @@ class offerAndResCreate extends PureComponent {
         />
       </Field>,
       <Field
+        name="resourceManager"
+        // key="resourceManager"
+        label="资源经理"
+        sortNo={pResId.sortNo}
+        decorator={{
+          initialValue: formData.resourceManager || '',
+        }}
+      >
+        <Selection.Columns
+          className="x-fill-100"
+          source={resDataSource}
+          columns={particularColumns}
+          transfer={{ key: 'id', code: 'id', name: 'name' }}
+          dropdownMatchSelectWidth={false}
+          showSearch
+          onColumnsChange={value => {}}
+        />
+      </Field>,
+      <Field
         name="remark"
         key="remark"
         label={remark.displayName}

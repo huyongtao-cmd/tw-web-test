@@ -1,5 +1,6 @@
 import { findOppoById } from '@/services/user/management/opportunity';
 import { businessPageDetailByNos, businessPageDetailByNo } from '@/services/sys/system/pageConfig';
+import { queryCascaderUdc } from '@/services/gen/app';
 
 const formDataModal = {
   //  ###### 客户信息 ######
@@ -73,6 +74,7 @@ const formDataModal = {
   internalResId: null, // ': '来源人
   internalResName: null, // ': '来源人
   profitDesc: null, // 利益承诺
+  smallClass: [], //产品小类
 };
 export default {
   namespace: 'userOppsDetail',
@@ -144,6 +146,22 @@ export default {
         return response;
       }
       return {};
+    },
+
+    *UDC_SmallClass({ payload }, { call, put }) {
+      const { response } = yield call(queryCascaderUdc, {
+        defId: 'TSK:SALE_TYPE2',
+        parentDefId: 'TSK:SALE_TYPE1',
+        parentVal: payload,
+      });
+      if (response) {
+        yield put({
+          type: 'updateState',
+          payload: {
+            smallClass: Array.isArray(response) ? response : [],
+          },
+        });
+      }
     },
   },
 

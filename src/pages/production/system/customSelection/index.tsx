@@ -294,7 +294,7 @@ class CustomSelectionIndex extends React.PureComponent<Props, any> {
                 fieldKey="remark"
                 form={form}
               />
-               
+
                <FormItem
                 fieldType="BaseInput"
                 label="拓展字段1"
@@ -350,11 +350,17 @@ class CustomSelectionIndex extends React.PureComponent<Props, any> {
                 fieldKey="extVarchar8"
                 form={form}
               />
-              
+
               <FormItem
                 fieldType="BaseInput"
                 label="拓展字段9"
                 fieldKey="extVarchar9"
+                form={form}
+              />
+              <FormItem
+                fieldType="BaseInput"
+                label="ID"
+                fieldKey="id"
                 form={form}
               />
             </BusinessForm>

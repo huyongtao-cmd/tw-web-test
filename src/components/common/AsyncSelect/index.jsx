@@ -122,7 +122,7 @@ class AsyncSelect extends Component {
         // filterOption={false}
         showSearch
         filterOption={(input, option) =>
-          option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          option.props.children?.toLowerCase().indexOf(input.toLowerCase()) >= 0
         }
         {...otherProps}
         value={value}

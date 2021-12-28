@@ -61,7 +61,7 @@ export default {
         ({ salePurchaseAgreementsList }) => salePurchaseAgreementsList
       );
       if (response && response.ok) {
-        createMessage({ type: 'success', description: '激活成功' });
+        createMessage({ type: 'success', description: '激活已进入审批流程!' });
         yield put({
           type: 'queryList',
           payload: params,

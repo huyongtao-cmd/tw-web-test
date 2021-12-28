@@ -1,5 +1,5 @@
 import React, { PureComponent } from 'react';
-import { DatePicker, InputNumber, Input, Select } from 'antd';
+import { DatePicker, InputNumber, Input, Select, Radio } from 'antd';
 import moment from 'moment';
 import { formatMessage } from 'umi/locale';
 import FieldList from '@/components/layout/FieldList';
@@ -9,11 +9,13 @@ import AsyncSelect from '@/components/common/AsyncSelect';
 import { selectCoop } from '@/services/gen/list';
 
 const { Field } = FieldList;
+const RadioGroup = Radio.Group;
 // const DOMAIN = 'userOppsDetail';
 
 class OppoCreateSale extends PureComponent {
   state = {
     prodSource: [],
+    describeFlag: 0,
   };
 
   componentDidMount() {
@@ -61,7 +63,7 @@ class OppoCreateSale extends PureComponent {
       userOppsDetail: { formData, saleType2Data, pageConfig },
       form: { getFieldDecorator },
     } = this.props;
-    const { prodSource } = this.state;
+    const { prodSource, describeFlag } = this.state;
     // console.log(pageConfig);
     if (!pageConfig.pageBlockViews || pageConfig.pageBlockViews.length < 1) {
       return <div />;
@@ -290,6 +292,52 @@ class OppoCreateSale extends PureComponent {
         }}
       >
         <UdcSelect code="TSK.OPPO_LEVEL" />
+      </Field>,
+      <Field
+        name="isNeedPartner"
+        key="isNeedPartner"
+        label={pageFieldJson.isNeedPartner.displayName}
+        decorator={{
+          initialValue: formData.isNeedPartner,
+          rules: [
+            {
+              required: !!pageFieldJson.isNeedPartner.requiredFlag,
+              message: `请选择${pageFieldJson.isNeedPartner.displayName}`,
+            },
+          ],
+        }}
+      >
+        <RadioGroup
+          onChange={e => {
+            formData.isNeedPartner = e.target.value;
+            this.setState({
+              describeFlag: e.target.value,
+            });
+          }}
+        >
+          <Radio value={1}>是</Radio>
+          <Radio value={0}>否</Radio>
+        </RadioGroup>
+      </Field>,
+      <Field
+        name="partnerDesc"
+        key="partnerDesc"
+        sortNo={pageFieldJson.partnerDesc.sortNo}
+        label={pageFieldJson.partnerDesc.displayName}
+        fieldCol={1}
+        labelCol={{ span: 4, xxl: 3 }}
+        wrapperCol={{ span: 20, xxl: 21 }}
+        decorator={{
+          initialValue: formData.partnerDesc,
+          rules: [
+            {
+              required: describeFlag === 1,
+              message: `请输入${pageFieldJson.partnerDesc.displayName}`,
+            },
+          ],
+        }}
+      >
+        <Input.TextArea placeholder="请描述对合作伙伴的要求（产品、行业、规模等）" rows={3} />
       </Field>,
     ];
     const filterList = fields

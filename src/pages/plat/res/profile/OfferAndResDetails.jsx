@@ -1303,6 +1303,24 @@ class offerAndResDetails extends Component {
                         />
                       </Field>
                     )}
+                    <Field
+                      name="resourceManager"
+                      label="资源经理"
+                      decorator={{
+                        initialValue: formData.resourceManager || '',
+                      }}
+                    >
+                      <Selection.Columns
+                        className="x-fill-100"
+                        source={resDataSource}
+                        columns={particularColumns}
+                        transfer={{ key: 'id', code: 'id', name: 'name' }}
+                        dropdownMatchSelectWidth={false}
+                        showSearch
+                        onColumnsChange={value => {}}
+                        disabled={!!disabledOrHidden.presId}
+                      />
+                    </Field>
                     {hasIn('internal', disabledOrHidden) && (
                       <FieldLine
                         label="内部推荐"
@@ -2368,6 +2386,20 @@ class offerAndResDetails extends Component {
                               disabled={!!disabledOrHidden.internDate}
                               className="x-fill-100"
                               format="YYYY-MM-DD"
+                            />
+                          </Field>
+                        )
+                      : null}
+
+                    {taskKey === 'ACC_A30_06_MESSAGE_ENTERING'
+                      ? hasIn('internDate', disabledOrHidden) && (
+                          // eslint-disable-next-line react/jsx-indent
+                          <Field name="owerPhoto" label="上传照片">
+                            <FileManagerEnhance
+                              api="/api/person/v1/res/owerPhoto/sfs/token"
+                              dataKey={formData.resId}
+                              listType="jpg/jpeg/png/gif"
+                              disabled={false}
                             />
                           </Field>
                         )

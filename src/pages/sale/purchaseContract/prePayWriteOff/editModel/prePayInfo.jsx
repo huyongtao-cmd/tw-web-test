@@ -3,51 +3,31 @@
 /* eslint-disable array-callback-return */
 import React, { PureComponent } from 'react';
 import { connect } from 'dva';
-import { Card, Form, Input, DatePicker, InputNumber, Button, Divider, Radio } from 'antd';
+import { Card, Form, Input, DatePicker, InputNumber, Button, Divider, Radio, Checkbox } from 'antd';
 import moment from 'moment';
-import classnames from 'classnames';
-import { formatMessage } from 'umi/locale';
-import { isEmpty, takeLast, add, isNil, gte, lte } from 'ramda';
-import update from 'immutability-helper';
-
-import PageHeaderWrapper from '@/components/layout/PageHeaderWrapper';
-import { mountToTab, closeThenGoto } from '@/layouts/routerControl';
-import Title from '@/components/layout/Title';
+import { mountToTab } from '@/layouts/routerControl';
 import AsyncSelect from '@/components/common/AsyncSelect';
 import FieldList from '@/components/layout/FieldList';
 import EditableDataTable from '@/components/common/EditableDataTable';
-import { UdcSelect, FileManagerEnhance, Selection } from '@/pages/gen/field';
-import { fromQs, getGuid } from '@/utils/stringUtils';
+import { UdcSelect, Selection } from '@/pages/gen/field';
 
-import DataTable from '@/components/common/DataTable';
-
-import { formatDT } from '@/utils/tempUtils/DateTime';
-import { toIsoDate } from '@/utils/timeUtils';
-import { add as mathAdd, sub, div, mul, checkIfNumber, genFakeId } from '@/utils/mathUtils';
-import router from 'umi/router';
-
-import { selectBu, selectSupplier } from '@/services/user/Contract/sales';
-import { selectBus } from '@/services/org/bu/bu';
+import { div } from '@/utils/mathUtils';
 import { selectUsers } from '@/services/sys/user';
-import {
-  selectAbOus,
-  selectUsersWithBu,
-  selectOus,
-  selectCusts,
-  selectAllAbOu,
-} from '@/services/gen/list';
-import {
-  selectAccountByNo,
-  getPaymentApplyTempds,
-} from '@/services/sale/purchaseContract/paymentApplyList';
+
+import Link from 'umi/link';
+import { getLink } from '@/pages/sale/purchaseContract/linkConfig';
+
+import { selectAbOus, selectAllAbOu } from '@/services/gen/list';
+import { getPaymentApplyTempds } from '@/services/sale/purchaseContract/paymentApplyList';
 import createMessage from '@/components/core/AlertMessage';
+import { createConfirm } from '@/components/core/Confirm';
 
 import { writeOffTableProps, payDetailTableProps } from './prePayInfoConfig';
 import { payRecordTableProps } from './payRecordConfig';
 import style from '../../style.less';
 
 const DOMAIN = 'prePayWriteOffEdit';
-const { Field, FieldLine } = FieldList;
+const { Field } = FieldList;
 const FieldListLayout = {
   labelCol: { span: 9 },
   wrapperCol: { span: 15 },
@@ -72,6 +52,15 @@ const docNoColumns = [
 }))
 @mountToTab()
 class PrePayInfo extends PureComponent {
+  constructor(props) {
+    super(props);
+    this.state = {
+      docTypeTemp: '',
+      docNoTemp: '',
+      payDetailListTemp: '',
+    };
+  }
+
   // 供应商
   handleSupplier = (key, data) => {
     const { form, dispatch } = this.props;
@@ -251,53 +240,34 @@ class PrePayInfo extends PureComponent {
             className="x-fill-100"
           />
         </Field>,
-        <FieldLine
+        <Field
+          name="paymentCompany1"
+          key="paymentCompany1"
           label={pageFieldJson.paymentCompany1.displayName}
           sortNo={pageFieldJson.paymentCompany1.sortNo}
           required={pageFieldJson.paymentCompany1.requiredFlag}
           {...FieldListLayout}
+          decorator={{
+            initialValue: formData.paymentCompany1 || '',
+            rules: [
+              {
+                required: pageFieldJson.paymentCompany1.requiredFlag,
+                message: `请选择${pageFieldJson.paymentCompany1.displayName}`,
+              },
+            ],
+          }}
+          // wrapperCol={{ span: 23, xxl: 23 }}
         >
-          <Field
-            name="paymentCompany1"
-            key="paymentCompany1"
-            decorator={{
-              initialValue: formData.paymentCompany1 || '',
-              rules: [
-                {
-                  required: pageFieldJson.paymentCompany1.requiredFlag,
-                  message: `请选择${pageFieldJson.paymentCompany1.displayName}`,
-                },
-              ],
-            }}
-            wrapperCol={{ span: 23, xxl: 23 }}
-          >
-            <AsyncSelect
-              source={() => selectAbOus().then(resp => resp.response)}
-              showSearch
-              filterOption={(input, option) =>
-                option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-              }
-              disabled={this.pageFieldMode(pageFieldJson.paymentCompany1.fieldMode)}
-              placeholder={`请选择${pageFieldJson.paymentCompany1.displayName}`}
-            />
-          </Field>
-          <Field
-            name="paymentCompany1"
-            key="paymentCompany1"
-            decorator={{
-              initialValue: formData.paymentCompany1 || '',
-              rules: [
-                {
-                  required: pageFieldJson.paymentCompany1.requiredFlag,
-                  message: `请选择${pageFieldJson.paymentCompany1.displayName}`,
-                },
-              ],
-            }}
-            wrapperCol={{ span: 23, offset: 1, xxl: 23 }}
-          >
-            <Input disabled />
-          </Field>
-        </FieldLine>,
+          <AsyncSelect
+            source={() => selectAbOus().then(resp => resp.response)}
+            showSearch
+            filterOption={(input, option) =>
+              option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }
+            disabled={this.pageFieldMode(pageFieldJson.paymentCompany1.fieldMode)}
+            placeholder={`请选择${pageFieldJson.paymentCompany1.displayName}`}
+          />
+        </Field>,
         <Field
           name="supplierLegalNo"
           key="supplierLegalNo"
@@ -395,7 +365,11 @@ class PrePayInfo extends PureComponent {
             formatter={v => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
             parser={v => v.replace(/\$\s?|(,*)/g, '')}
             className="number-left x-fill-100"
-            disabled={this.pageFieldMode(pageFieldJson.currPaymentAmt.fieldMode)}
+            disabled={
+              formData.noDocVerification
+                ? false
+                : this.pageFieldMode(pageFieldJson.currPaymentAmt.fieldMode)
+            }
             placeholder={`请输入${pageFieldJson.currPaymentAmt.displayName}`}
           />
         </Field>,
@@ -491,6 +465,118 @@ class PrePayInfo extends PureComponent {
             disabled={this.pageFieldMode(pageFieldJson.demandNo.fieldMode)}
           />
         </Field>,
+        // 无发票核销
+        <Field
+          name="noInvoiceVerification"
+          key="noInvoiceVerification"
+          label={pageFieldJson.noInvoiceVerification.displayName}
+          sortNo={pageFieldJson.noInvoiceVerification.sortNo}
+          {...FieldListLayout}
+          decorator={{
+            initialValue: formData.noInvoiceVerification || '',
+          }}
+        >
+          <Checkbox
+            checked={formData.noInvoiceVerification}
+            disabled={this.pageFieldMode(pageFieldJson.noInvoiceVerification.fieldMode)}
+            onChange={e => {
+              const { dispatch } = this.props;
+              let flag = e.target.value;
+              if (flag === true) {
+                //取消选中无发票核销
+                //1 发票核销金额与 本次付款金额校验  2 费用分摊金额校验；
+                // see src/pages/sale/purchaseContract/constConfig.js 219
+              } else {
+                //选中无发票核销
+                createConfirm({
+                  content: '勾选后，会清空发票核销明细，确认继续吗？',
+                  onOk: () => {
+                    dispatch({
+                      type: `${DOMAIN}/updateState`,
+                      payload: {
+                        invoiceVerDetail: [],
+                      },
+                    });
+                  },
+                });
+              }
+            }}
+          >
+            {/*无发票核销*/}
+          </Checkbox>
+        </Field>,
+        // 无单据核销
+        <Field
+          name="noDocVerification"
+          key="noDocVerification"
+          label={pageFieldJson.noDocVerification.displayName}
+          sortNo={pageFieldJson.noDocVerification.sortNo}
+          {...FieldListLayout}
+          decorator={{
+            initialValue: formData.noDocVerification || '',
+          }}
+        >
+          <Checkbox
+            checked={formData.noDocVerification}
+            disabled={this.pageFieldMode(pageFieldJson.noDocVerification.fieldMode)}
+            onChange={e => {
+              const { prePayWriteOffEdit, dispatch } = this.props;
+              const { docTypeTemp, docNoTemp, payDetailListTemp } = this.state;
+              const { payDetailList, formData } = prePayWriteOffEdit;
+              let flag = e.target.value;
+              if (flag === true) {
+                //取消选中无单据核销
+                //1 本次付款金额不可编辑
+                pageFieldJson.currPaymentAmt.fieldMode = 'UNEDITABLE';
+                //2 关联单据类型 必选校验
+                //3 还原关联单据类型、关联单据号
+                let newFormData = formData;
+                newFormData.docType = docTypeTemp;
+                newFormData.docNo = docNoTemp;
+                newFormData.noDocVerification = false;
+                dispatch({
+                  type: `${DOMAIN}/updateState`,
+                  payload: {
+                    formData: newFormData,
+                    //4、还原 付款明细
+                    payDetailList: payDetailListTemp,
+                  },
+                });
+              } else {
+                //选中无单据核销
+                createConfirm({
+                  content: '勾选后，会清空关联单据类型、关联单据号、付款明细，确认继续吗？',
+                  onOk: () => {
+                    //1、本次付款金额 手动输入
+                    pageFieldJson.currPaymentAmt.fieldMode = false;
+                    // 清空之前先把旧的数据存起来
+                    this.setState({
+                      //2、关联单据类型 不必填
+                      //3、关联单据类型、关联单据号放空
+                      docTypeTemp: formData.docType,
+                      docNoTemp: formData.docNo,
+                      //4、付款明细清空 非必填
+                      payDetailListTemp: payDetailList,
+                    });
+                    let newFormData = formData;
+                    newFormData.docType = '';
+                    newFormData.docNo = '';
+                    newFormData.noDocVerification = true;
+                    dispatch({
+                      type: `${DOMAIN}/updateState`,
+                      payload: {
+                        formData: newFormData,
+                        payDetailList: [],
+                      },
+                    });
+                  },
+                });
+              }
+            }}
+          >
+            {/*无单据核销*/}
+          </Checkbox>
+        </Field>,
         <Field
           name="note"
           key="note"
@@ -527,6 +613,7 @@ class PrePayInfo extends PureComponent {
   // 相关单据
   renderRelatedPageConfig = () => {
     const { prePayWriteOffEdit, mode } = this.props;
+
     const { pageConfig, formData, opportunityList, docNoList } = prePayWriteOffEdit;
     if (pageConfig) {
       if (!pageConfig.pageBlockViews || pageConfig.pageBlockViews.length < 1) {
@@ -540,6 +627,12 @@ class PrePayInfo extends PureComponent {
       pageFieldViews.forEach(field => {
         pageFieldJson[field.fieldKey] = field;
       });
+      const { noDocVerification } = formData;
+      // 无单据核销是否选中
+      let noDocVerificationCheck = false;
+      if (noDocVerification === true) {
+        noDocVerificationCheck = true;
+      }
       const fields = [
         <Field
           name="docType"
@@ -551,7 +644,7 @@ class PrePayInfo extends PureComponent {
             initialValue: formData.docType || '',
             rules: [
               {
-                required: pageFieldJson.docType.requiredFlag,
+                required: noDocVerificationCheck ? false : pageFieldJson.docType.requiredFlag,
                 message: `请选择${pageFieldJson.docType.displayName}`,
               },
             ],
@@ -589,31 +682,49 @@ class PrePayInfo extends PureComponent {
             showSearch
             onChange={this.handleDocNoDetail}
             placeholder={`请输入${pageFieldJson.docNo.displayName}`}
-            limit={20}
+            // limit={20}
             disabled={this.pageFieldMode(pageFieldJson.docNo.fieldMode)}
           />
         </Field>,
-        <Field
-          name="relatedSalesContract"
-          key="relatedSalesContract"
-          label={pageFieldJson.relatedSalesContract.displayName}
-          sortNo={pageFieldJson.relatedSalesContract.sortNo}
-          {...FieldListLayout}
-          decorator={{
-            initialValue: formData.relatedSalesContract || '',
-            rules: [
-              {
-                required: pageFieldJson.relatedSalesContract.requiredFlag,
-                message: `请输入${pageFieldJson.relatedSalesContract.displayName}`,
-              },
-            ],
-          }}
-        >
-          <Input
-            disabled={this.pageFieldMode(pageFieldJson.relatedSalesContract.fieldMode)}
-            placeholder={`请输入${pageFieldJson.relatedSalesContract.displayName}`}
-          />
-        </Field>,
+        this.pageFieldMode(pageFieldJson.relatedSalesContract.fieldMode) &&
+        formData.relatedSalesContract ? (
+          <Field
+            name="relatedSalesContract"
+            key="relatedSalesContract"
+            label={pageFieldJson.relatedSalesContract.displayName}
+            sortNo={pageFieldJson.relatedSalesContract.sortNo}
+            {...FieldListLayout}
+          >
+            <Link
+              className="tw-link"
+              to={getLink('salesContract', null, { id: formData.relatedSalesContractId })}
+            >
+              {formData.relatedSalesContract}
+            </Link>
+          </Field>
+        ) : (
+          <Field
+            name="relatedSalesContract"
+            key="relatedSalesContract"
+            label={pageFieldJson.relatedSalesContract.displayName}
+            sortNo={pageFieldJson.relatedSalesContract.sortNo}
+            {...FieldListLayout}
+            decorator={{
+              initialValue: formData.relatedSalesContract || '',
+              rules: [
+                {
+                  required: pageFieldJson.relatedSalesContract.requiredFlag,
+                  message: `请输入${pageFieldJson.relatedSalesContract.displayName}`,
+                },
+              ],
+            }}
+          >
+            <Input
+              disabled={this.pageFieldMode(pageFieldJson.relatedSalesContract.fieldMode)}
+              placeholder={`请输入${pageFieldJson.relatedSalesContract.displayName}`}
+            />
+          </Field>
+        ),
         <Field
           name="opportunity"
           key="opportunity"
@@ -643,27 +754,45 @@ class PrePayInfo extends PureComponent {
             disabled={this.pageFieldMode(pageFieldJson.opportunity.fieldMode)}
           />
         </Field>,
-        <Field
-          name="relatedProjectNo"
-          key="relatedProjectNo"
-          label={pageFieldJson.relatedProjectNo.displayName}
-          sortNo={pageFieldJson.relatedProjectNo.sortNo}
-          {...FieldListLayout}
-          decorator={{
-            initialValue: formData.relatedProjectNo || '',
-            rules: [
-              {
-                required: pageFieldJson.relatedProjectNo.requiredFlag,
-                message: `请输入${pageFieldJson.relatedProjectNo.displayName}`,
-              },
-            ],
-          }}
-        >
-          <Input
-            disabled={this.pageFieldMode(pageFieldJson.relatedProjectNo.fieldMode)}
-            placeholder={`请输入${pageFieldJson.relatedProjectNo.displayName}`}
-          />
-        </Field>,
+        this.pageFieldMode(pageFieldJson.relatedProjectNo.fieldMode) &&
+        formData.relatedProjectNo ? (
+          <Field
+            name="relatedProjectNo"
+            key="relatedProjectNo"
+            label={pageFieldJson.relatedProjectNo.displayName}
+            sortNo={pageFieldJson.relatedProjectNo.sortNo}
+            {...FieldListLayout}
+          >
+            <Link
+              className="tw-link"
+              to={getLink('project', null, { id: formData.relatedProjectId })}
+            >
+              {formData.relatedProjectNo}
+            </Link>
+          </Field>
+        ) : (
+          <Field
+            name="relatedProjectNo"
+            key="relatedProjectNo"
+            label={pageFieldJson.relatedProjectNo.displayName}
+            sortNo={pageFieldJson.relatedProjectNo.sortNo}
+            {...FieldListLayout}
+            decorator={{
+              initialValue: formData.relatedProjectNo || '',
+              rules: [
+                {
+                  required: pageFieldJson.relatedProjectNo.requiredFlag,
+                  message: `请输入${pageFieldJson.relatedProjectNo.displayName}`,
+                },
+              ],
+            }}
+          >
+            <Input
+              disabled={this.pageFieldMode(pageFieldJson.relatedProjectNo.fieldMode)}
+              placeholder={`请输入${pageFieldJson.relatedProjectNo.displayName}`}
+            />
+          </Field>
+        ),
         <Field
           name="relatedTaskName"
           key="relatedTaskName"
@@ -706,27 +835,44 @@ class PrePayInfo extends PureComponent {
             placeholder={`请输入${pageFieldJson.attributionPayApply.displayName}`}
           />
         </Field>,
-        <Field
-          name="prePaymentNo"
-          key="prePaymentNo"
-          label={pageFieldJson.prePaymentNo.displayName}
-          sortNo={pageFieldJson.prePaymentNo.sortNo}
-          {...FieldListLayout}
-          decorator={{
-            initialValue: formData.prePaymentNo || '',
-            rules: [
-              {
-                required: pageFieldJson.prePaymentNo.requiredFlag,
-                message: `请输入${pageFieldJson.prePaymentNo.displayName}`,
-              },
-            ],
-          }}
-        >
-          <Input
-            disabled={this.pageFieldMode(pageFieldJson.prePaymentNo.fieldMode)}
-            placeholder={`请输入${pageFieldJson.prePaymentNo.displayName}`}
-          />
-        </Field>,
+        this.pageFieldMode(pageFieldJson.prePaymentNo.fieldMode) && formData.prePaymentNo ? (
+          <Field
+            name="prePaymentNo"
+            key="prePaymentNo"
+            label={pageFieldJson.prePaymentNo.displayName}
+            sortNo={pageFieldJson.prePaymentNo.sortNo}
+            {...FieldListLayout}
+          >
+            <Link
+              className="tw-link"
+              to={getLink('prePayment', null, { id: formData.prePaymentId })}
+            >
+              {formData.prePaymentNo}
+            </Link>
+          </Field>
+        ) : (
+          <Field
+            name="prePaymentNo"
+            key="prePaymentNo"
+            label={pageFieldJson.prePaymentNo.displayName}
+            sortNo={pageFieldJson.prePaymentNo.sortNo}
+            {...FieldListLayout}
+            decorator={{
+              initialValue: formData.prePaymentNo || '',
+              rules: [
+                {
+                  required: pageFieldJson.prePaymentNo.requiredFlag,
+                  message: `请输入${pageFieldJson.prePaymentNo.displayName}`,
+                },
+              ],
+            }}
+          >
+            <Input
+              disabled={this.pageFieldMode(pageFieldJson.prePaymentNo.fieldMode)}
+              placeholder={`请输入${pageFieldJson.prePaymentNo.displayName}`}
+            />
+          </Field>
+        ),
       ];
       const filterList = fields
         .filter(field => !field.key || pageFieldJson[field.key].visibleFlag === 1)

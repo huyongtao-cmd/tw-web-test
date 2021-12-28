@@ -1,11 +1,12 @@
 import React from 'react';
 import { Input } from 'antd';
-import { isEmpty } from 'ramda';
+
 import Title from '@/components/layout/Title';
 import FieldList from '@/components/layout/FieldList';
+import AsyncSelect from '@/components/common/AsyncSelect';
+import { UdcSelect } from '@/pages/gen/field';
 
 import { AddrEditContext } from './index';
-import BaseSelect from '@/components/production/basic/BaseSelect.tsx';
 
 const { Field } = FieldList;
 
@@ -52,10 +53,10 @@ const AddrEditT1 = props => (
           popover={{
             placement: 'topLeft',
             trigger: 'hover',
-            content: '个人填写个人信息，公司填写公司信息。',
+            content: '个人填写个人信息，公司填写公司信息，BU不用填写详细信息。',
           }}
         >
-          <BaseSelect parentKey="COM:AB:TYPE" disabled={!!formData.abNo} />
+          <UdcSelect code="COM:AB_TYPE" placeholder="请选择地址簿类型" disabled={!!formData.abNo} />
         </Field>
         <Field
           name="idenNo"
@@ -81,17 +82,12 @@ const AddrEditT1 = props => (
           name="relateType"
           label="相关主档"
           decorator={{
-            initialValue: (function() {
-              if (formData.relateType && !isEmpty(formData.relateType)) {
-                return Array.isArray(formData.relateType)
-                  ? formData.relateType
-                  : formData.relateType.split(',');
-              }
-              return [];
-            })(),
+            initialValue: Array.isArray(formData.relateType)
+              ? formData.relateType
+              : formData.relateType && formData.relateType.split(','),
           }}
         >
-          <BaseSelect mode="multiple" parentKey="COM:AB:RELATE_TYPE" placeholder="请选择相关主档" />
+          <UdcSelect mode="multiple" code="TSK:AB_RELATE_TYPE" placeholder="请选择相关主档" />
         </Field>
 
         <Field
@@ -99,9 +95,22 @@ const AddrEditT1 = props => (
           label="法人地址薄"
           decorator={{
             initialValue: formData.legalAbNo,
+            rules: [
+              {
+                required: formData.abType === '03',
+                message: '请输入法人地址薄',
+              },
+            ],
           }}
         >
-          <BaseSelect descList={abOuSel} placeholder="法人地址薄" />
+          <AsyncSelect
+            source={abOuSel}
+            placeholder="法人地址薄"
+            showSearch
+            filterOption={(input, option) =>
+              option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }
+          />
         </Field>
       </FieldList>
     )}

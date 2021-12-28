@@ -15,6 +15,7 @@ import { closeThenGoto, mountToTab } from '@/layouts/routerControl';
 import { fromQs } from '@/utils/stringUtils';
 import { selectUsersWithBu } from '@/services/gen/list';
 import { isNil } from 'ramda';
+import Link from 'umi/link';
 
 const DOMAIN = 'activeSubContractView';
 const { Field, FieldLine } = FieldList;
@@ -61,7 +62,6 @@ class ActiveSubView extends PureComponent {
   componentDidMount() {
     const { dispatch } = this.props;
     const { id, taskId } = fromQs();
-
     taskId &&
       dispatch({
         type: `${DOMAIN}/fetchConfig`,
@@ -295,6 +295,7 @@ class ActiveSubView extends PureComponent {
     };
 
     const { mode, taskId, id } = fromQs();
+    const { contractId, mainContractId } = formData;
 
     return (
       <PageHeaderWrapper>
@@ -392,7 +393,13 @@ class ActiveSubView extends PureComponent {
                 }}
                 {...FieldListLayout}
               >
-                <Input disabled={readOnly} />
+                {/* <Input disabled={readOnly} /> */}
+                <Link
+                  className="tw-link"
+                  to={`/sale/contract/salesSubDetail?mainId=${mainContractId}&id=${contractId}`}
+                >
+                  {formData.contractNo}
+                </Link>
               </Field>
 
               <Field
@@ -688,7 +695,7 @@ class ActiveSubView extends PureComponent {
                   api="/api/op/v1/contract/sub/sfs/token"
                   dataKey={subContractId}
                   listType="text"
-                  preview={taskKey === 'ACC_A62_01_ABILITY_SUBMIT_i' ? false : true}
+                  preview={taskKey !== 'ACC_A62_01_ABILITY_SUBMIT_i'}
                 />
               </Field>
               <Field

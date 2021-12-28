@@ -73,7 +73,7 @@ export default {
           yield put({
             type: 'updateState',
             payload: {
-              resVacationList: data.resVacationList,
+              resVacationList: data.resVacationList === null ? [] : data.resVacationList,
             },
           });
         } else {

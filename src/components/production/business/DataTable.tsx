@@ -14,7 +14,6 @@ import {PaginationConfig, SelectionSelectFn, SorterResult} from "antd/lib/table"
 
 interface Props<T> {
   title?: string; // 表格标题
-  showHandleRow?:Boolean; //是否显示操作栏（包括按钮，导出，列控制）
   showExport?: boolean; // 是否显示导出按钮
   showColumnSwitch?: boolean; // 是否显示列控制器
   onRow?: (record: T, index: number) => any; // 表格行事件,比如点击,双击等
@@ -25,7 +24,6 @@ interface Props<T> {
   loading?: boolean;
   pagination?: PaginationConfig | false,
   prodSelection?:TableRowSelection<T> | false; // 表格选择控制
-  getCheckboxProps?: (data: T[]) => object; // 选择框的默认属性配置
   onChange?: (pagination: PaginationConfig, filters: Record<keyof T, string[]>, sorter: SorterResult<T>) => void;
   [propName: string]: any, // 其它属性
 }
@@ -98,8 +96,6 @@ class DataTable<T> extends React.PureComponent<Props<T>, any> {
       loading,
       onChange,
       onRow,
-      getCheckboxProps,
-      showHandleRow,
       ...rest
     } = this.props;
 
@@ -116,9 +112,6 @@ class DataTable<T> extends React.PureComponent<Props<T>, any> {
         onSelectAll:prodSelection.onSelectAll,
       }
     }
-    if(getCheckboxProps){
-      prodRowSelection.rowSelection.getCheckboxProps = getCheckboxProps
-    }
 
     const wrappedColumns = columns.filter(column=> hiddenColumns.indexOf(column.dataIndex)<0);
 
@@ -126,7 +119,7 @@ class DataTable<T> extends React.PureComponent<Props<T>, any> {
       <Card
         title={title}
       >
-        {showHandleRow && <div className={`${styles['prod-table-operations']}`}>
+        <div className={`${styles['prod-table-operations']}`}>
           <Row type="flex" justify="center" align="bottom">
             <Col span={18}>
               {buttons}
@@ -159,7 +152,7 @@ class DataTable<T> extends React.PureComponent<Props<T>, any> {
 
             </Col>
           </Row>
-        </div>}
+        </div>
 
         <Table
           bordered
@@ -183,7 +176,6 @@ class DataTable<T> extends React.PureComponent<Props<T>, any> {
 }
 
 DataTable.defaultProps = {
-  showHandleRow:true
 };
 
 export default DataTable;

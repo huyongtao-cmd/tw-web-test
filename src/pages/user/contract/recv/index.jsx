@@ -2,7 +2,7 @@ import React, { PureComponent } from 'react';
 import { connect } from 'dva';
 import Link from 'umi/link';
 import router from 'umi/router';
-import { Input, DatePicker } from 'antd';
+import { Input, DatePicker, Radio } from 'antd';
 import { isEmpty } from 'ramda';
 import { formatDT } from '@/utils/tempUtils/DateTime';
 import createMessage from '@/components/core/AlertMessage';
@@ -16,6 +16,7 @@ import { selectCust } from '@/services/user/Contract/sales';
 import { selectBus } from '@/services/org/bu/bu';
 import { selectUsersWithBu } from '@/services/gen/list';
 import { getBuVersionAndBuParams } from '@/utils/buVersionUtils';
+import SyntheticField from '@/components/common/SyntheticField';
 
 const DOMAIN = 'recvContract';
 const { RangePicker } = DatePicker;
@@ -235,6 +236,15 @@ class RecvContract extends PureComponent {
           },
           tag: <Input placeholder="请输入参考合同号" />,
         },
+
+        {
+          title: '子合同状态',
+          dataIndex: 'contractStatus',
+          options: {
+            initialValue: searchForm.contractStatus,
+          },
+          tag: <Selection.UDC code="TSK:CONTRACT_STATUS" placeholder="请选择子合同状态" />,
+        },
         {
           title: '收款号',
           dataIndex: 'recvNo',
@@ -388,6 +398,11 @@ class RecvContract extends PureComponent {
           dataIndex: 'userdefinedNo',
           width: 120,
           sorter: true,
+        },
+        {
+          title: '子合同状态',
+          dataIndex: 'contractStatusDesc',
+          align: 'center',
         },
         {
           title: '收款状态',

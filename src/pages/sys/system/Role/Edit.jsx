@@ -205,7 +205,7 @@ class SystemRoleDetail extends PureComponent {
           </ReactiveWrapper>
         </Card>
         <br />
-        {/* <Card
+        <Card
           className="tw-card-adjust"
           title={<Title icon="profile" id="sys.system.roles.raabs" defaultMessage="能力清单" />}
           bordered={false}
@@ -226,7 +226,7 @@ class SystemRoleDetail extends PureComponent {
               <RoleRaabsTransfer defaultCheckedKeys={raabCodes || []} onChange={this.handleRaabs} />
             </ReactiveWrapper>
           </DescriptionList>
-        </Card> */}
+        </Card>
       </PageHeaderWrapper>
     );
   }

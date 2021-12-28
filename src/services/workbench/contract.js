@@ -3,12 +3,6 @@ import api from '@/api';
 import { toQs, toUrl } from '@/utils/stringUtils';
 
 const {
-  contractSave,
-  contractPaging,
-  contractDetail,
-  contractDelete,
-  contractOverall,
-  contractPartial,
   // =======合同管理=======
   pcontractSave,
   pcontractSubmit,
@@ -28,50 +22,6 @@ const {
   rulesTemplateChangeDisable,
   rulesTemplateRulesDetail,
 } = api.workbench.contract;
-const { addrList, companySelect } = api.user;
-// =====================郡州合同管理=====================
-// 合同管理-保存接口 post
-export async function contractSaveRq(params) {
-  return request.post(contractSave, {
-    body: params,
-  });
-}
-
-// 合同管理-列表查询接口 GET
-export async function contractPagingRq(payload) {
-  return request.get(toQs(contractPaging, payload));
-}
-
-// 合同管理-详情接口 GET
-export async function contractDetailRq(payload) {
-  return request.get(toUrl(contractDetail, payload));
-}
-
-// 合同管理-删除接口 PATCH
-export async function contractDeleteRq(id) {
-  return request.patch(toUrl(contractDelete, id));
-}
-
-// 合同管理-整体更新接口 PUT
-export async function contractOverallRq(params) {
-  return request.put(contractOverall, {
-    body: params,
-  });
-}
-// 合同管理-指定更新接口 PUT
-export async function contractPartialRq(params) {
-  return request.put(contractPartial, {
-    body: params,
-  });
-}
-//查询地址簿下拉列表
-export async function addrListRq(payload) {
-  return request.get(toQs(addrList, payload));
-}
-//查询公司下拉列表
-export async function companySelectRq(payload) {
-  return request.get(toQs(companySelect, payload));
-}
 
 // =====================规则模板管理======================
 

@@ -15,6 +15,7 @@ import {
   budgetPartialModify,
 } from '@/services/production/bud';
 import { outputHandle } from '@/utils/production/outputUtil.ts';
+import { fromQs } from '@/utils/production/stringUtil.ts';
 
 const DOMAIN = 'budgetList';
 
@@ -24,6 +25,14 @@ const DOMAIN = 'budgetList';
   ...budgetList,
 }))
 class BudgetList extends React.PureComponent {
+  state = {};
+
+  constructor(props) {
+    super(props);
+    const pathParam = fromQs();
+    this.state = { defaultSearchForm: pathParam };
+  }
+
   componentDidMount() {}
 
   fetchData = async params => {
@@ -202,6 +211,8 @@ class BudgetList extends React.PureComponent {
       },
     ];
 
+    const { defaultSearchForm } = this.state;
+
     return (
       <PageWrapper>
         <SearchTable
@@ -211,7 +222,7 @@ class BudgetList extends React.PureComponent {
           defaultSortBy="id"
           defaultSortDirection="DESC"
           searchForm={this.renderSearchForm()}
-          defaultSearchForm={{}}
+          defaultSearchForm={defaultSearchForm}
           fetchData={this.fetchData}
           columns={columns}
           onAddClick={() => router.push('/workTable/bud/budgetDisplayPage?mode=EDIT')}

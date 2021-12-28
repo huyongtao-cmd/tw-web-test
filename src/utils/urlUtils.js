@@ -34,12 +34,11 @@ export function addParam(url, paramKey, paramVal) {
 // 删除url参数
 export function delParam(url, paramKey) {
   const reg = new RegExp('([&?]?)' + paramKey + '=[^&]+(&?)', 'g');
-  var newUrl = url.replace(reg, function(a, b, c) {
-    if (c.length == 0) {
+  const newUrl = url.replace(reg, (a, b, c) => {
+    if (c.length === 0) {
       return '';
-    } else {
-      return b;
     }
+    return b;
   });
   return newUrl;
 }

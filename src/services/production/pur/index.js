@@ -58,6 +58,10 @@ export async function paymentComplete(param) {
 export async function paymentRequestLogicalDelete(param) {
   return request.patch(toQs(pur.paymentRequestLogicalDeleteUri, param));
 }
+// 完成付款
+export async function paymentRequestCompletePayment(param) {
+  return request.get(toQs(pur.paymentRequestCompletePaymentUri, param));
+}
 
 export async function purchaseCheck(param) {
   return request.put(pur.purchaseCheckUri, { body: param });

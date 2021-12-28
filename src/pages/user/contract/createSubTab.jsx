@@ -24,6 +24,8 @@ import { mountToTab, closeThenGoto } from '@/layouts/routerControl';
 
 import { selectContract, selectFinperiod, selectBuProduct } from '@/services/user/Contract/sales';
 import { selectBus } from '@/services/org/bu/bu';
+import TreeSearch from '@/components/common/TreeSearch';
+import Loading from '@/components/core/DataLoading';
 
 const DOMAIN = 'userContractCreateSub';
 const { Field, FieldLine } = FieldList;
@@ -41,6 +43,7 @@ const subjCol = [
 ];
 
 @connect(({ loading, dispath, userContractCreateSub }) => ({
+  treeLoading: loading.effects[`${DOMAIN}/getTagTree`],
   dispath,
   loading,
   userContractCreateSub,
@@ -101,6 +104,13 @@ class CreateSubContract extends PureComponent {
     dispatch({ type: `${DOMAIN}/bu` });
     dispatch({ type: `${DOMAIN}/user` });
     dispatch({ type: `${DOMAIN}/salesRegionBu` });
+
+    // 合同标签数据
+    dispatch({
+      type: `${DOMAIN}/getTagTree`,
+      payload: { key: 'CONTRACT_TAG' },
+    });
+
     // 加载页面配置
     dispatch({
       type: `${DOMAIN}/getPageConfig`,
@@ -148,11 +158,30 @@ class CreateSubContract extends PureComponent {
     });
   };
 
+  onCheck = (checkedKeys, info, parm3, param4) => {
+    const { dispatch } = this.props;
+    const allCheckedKeys = checkedKeys.concat(info.halfCheckedKeys);
+    this.updateModelState({ checkedKeys, allCheckedKeys });
+    dispatch({
+      type: `${DOMAIN}/updateForm`,
+      payload: { tagIds: allCheckedKeys.length > 0 ? allCheckedKeys.join(',') : '' },
+    });
+  };
+
+  updateModelState = params => {
+    const { dispatch } = this.props;
+    dispatch({
+      type: `${DOMAIN}/updateState`,
+      payload: params,
+    });
+  };
+
   render() {
     const { operationkey } = this.state;
     const {
       loading,
       dispatch,
+      treeLoading,
       userContractCreateSub: {
         formData,
         smallClass,
@@ -165,6 +194,8 @@ class CreateSubContract extends PureComponent {
         deliResDataSource = [],
         preSaleResDataSource = [],
         pageConfig = {},
+        tagTree,
+        checkedKeys,
       },
       form: { getFieldDecorator, setFields },
     } = this.props;
@@ -204,7 +235,6 @@ class CreateSubContract extends PureComponent {
         tab: <span className="tw-card-multiTab-disabled">采购需求处理</span>,
       },
     ];
-
     const baseInfo = [
       <Field
         name="contractName"
@@ -236,6 +266,18 @@ class CreateSubContract extends PureComponent {
         }}
       >
         <Input disabled={readOnly} placeholder="系统生成" />
+      </Field>,
+
+      <Field
+        key="custId"
+        name="custName"
+        label="客户"
+        decorator={{
+          initialValue: formData.custName,
+        }}
+        {...FieldListLayout}
+      >
+        <Input disabled />
       </Field>,
 
       <Field
@@ -275,33 +317,23 @@ class CreateSubContract extends PureComponent {
       >
         <Input placeholder="请输入参考合同号" />
       </Field>,
-
       <Field
         key="signBuId"
-        name="signBuName"
+        name="signBuId"
         label="签单BU"
         decorator={{
-          initialValue: formData.signBuName,
+          initialValue: formData.signBuId,
           rules: [
             {
-              required: false,
+              required: true,
               message: '请选择签单BU',
             },
           ],
         }}
         {...FieldListLayout}
       >
-        <AsyncSelect
-          source={() => selectBus().then(resp => resp.response)}
-          placeholder="请选择签单BU"
-          showSearch
-          filterOption={(input, option) =>
-            option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-          }
-          disabled={readOnly}
-        />
+        <Selection.ColumnsForBu disabled={readOnly} />
       </Field>,
-
       <Field
         key="salesmanResId"
         name="salesmanResName"
@@ -319,19 +351,12 @@ class CreateSubContract extends PureComponent {
       >
         <Input disabled />
       </Field>,
-
       <Field
         key="deliBuId"
         name="deliBuId"
         label="交付BU"
         decorator={{
-          initialValue:
-            formData.deliBuId && formData.deliBuName
-              ? {
-                  code: formData.deliBuId,
-                  name: formData.deliBuName,
-                }
-              : null,
+          initialValue: formData.deliBuId,
           rules: [
             {
               required: true,
@@ -341,31 +366,8 @@ class CreateSubContract extends PureComponent {
         }}
         {...FieldListLayout}
       >
-        <SelectWithCols
-          labelKey="name"
-          placeholder="请选择主交付BU"
-          columns={subjCol}
-          dataSource={deliBuDataSource}
-          selectProps={{
-            showSearch: true,
-            onSearch: value => {
-              dispatch({
-                type: `${DOMAIN}/updateState`,
-                payload: {
-                  deliBuDataSource: buData.filter(
-                    d =>
-                      d.code.indexOf(value) > -1 ||
-                      d.name.toLowerCase().indexOf(value.toLowerCase()) > -1
-                  ),
-                },
-              });
-            },
-            allowClear: true,
-            style: { width: '100%' },
-          }}
-        />
+        <Selection.ColumnsForBu />
       </Field>,
-
       <Field
         key="deliResId"
         name="deliResId"
@@ -416,13 +418,7 @@ class CreateSubContract extends PureComponent {
         name="preSaleBuId"
         label="售前BU"
         decorator={{
-          initialValue:
-            formData.preSaleBuId && formData.preSaleBuName
-              ? {
-                  code: formData.preSaleId,
-                  name: formData.preSaleName,
-                }
-              : null,
+          initialValue: formData.preSaleBuId,
           rules: [
             {
               required: true,
@@ -432,31 +428,8 @@ class CreateSubContract extends PureComponent {
         }}
         {...FieldListLayout}
       >
-        <SelectWithCols
-          labelKey="name"
-          placeholder="请选择售前BU"
-          columns={subjCol}
-          dataSource={preSaleBuDataSource}
-          selectProps={{
-            showSearch: true,
-            onSearch: value => {
-              dispatch({
-                type: `${DOMAIN}/updateState`,
-                payload: {
-                  preSaleBuDataSource: buData.filter(
-                    d =>
-                      d.code.indexOf(value) > -1 ||
-                      d.name.toLowerCase().indexOf(value.toLowerCase()) > -1
-                  ),
-                },
-              });
-            },
-            allowClear: true,
-            style: { width: '100%' },
-          }}
-        />
+        <Selection.ColumnsForBu />
       </Field>,
-
       <Field
         key="preSaleResId"
         name="preSaleResId"
@@ -637,6 +610,12 @@ class CreateSubContract extends PureComponent {
         label="附件"
         decorator={{
           initialValue: formData.attache,
+          rules: [
+            {
+              required: true,
+              message: '请上传附件~',
+            },
+          ],
         }}
         {...FieldListLayout}
       >
@@ -730,6 +709,41 @@ class CreateSubContract extends PureComponent {
         {...FieldListLayout}
       >
         <Selection.UDC code="TSK:CONT_PAPER_STATUS" placeholder="请选择纸质合同状态" />
+      </Field>,
+      <Field
+        key="platType"
+        name="platType"
+        label="平台合同类型"
+        decorator={{
+          initialValue: formData.platType,
+        }}
+        {...FieldListLayout}
+      >
+        <Selection.UDC disabled={readOnly} code="TSK.PLAT_TYPE" placeholder="请选择平台合同类型" />
+      </Field>,
+      <Field
+        key="tagIds"
+        name="tagIds"
+        label="合同标签"
+        decorator={{
+          initialValue: formData.tagIds,
+        }}
+        {...FieldListLayout}
+      >
+        {!treeLoading ? (
+          <TreeSearch
+            checkable
+            // checkStrictly
+            showSearch={false}
+            placeholder="请输入关键字"
+            treeData={tagTree}
+            defaultExpandedKeys={tagTree.map(item => `${item.id}`)}
+            checkedKeys={checkedKeys}
+            onCheck={this.onCheck}
+          />
+        ) : (
+          <Loading />
+        )}
       </Field>,
       <Field
         key="paperDesc"
@@ -1086,6 +1100,27 @@ class CreateSubContract extends PureComponent {
           code="TSK:BUSINESS_TYPE"
           placeholder="请选择需求类别"
           disabled={formData.contractStatus === 'ACTIVE'}
+        />
+      </Field>,
+      <Field
+        key="saleClass"
+        name="saleClass"
+        label="销售分类"
+        decorator={{
+          initialValue: formData.saleClass,
+          rules: [
+            {
+              required: true,
+              message: '请选择销售分类',
+            },
+          ],
+        }}
+        {...FieldListLayout}
+      >
+        <Selection.UDC
+          // disabled={sourceDisabled}
+          code="CON:SALE_CLASS"
+          placeholder="请选择销售分类"
         />
       </Field>,
     ]

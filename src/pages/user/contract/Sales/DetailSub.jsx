@@ -18,6 +18,7 @@ import FeeReadOnly from '../TabContent/FeeReadOnly';
 import PurchaseDemandDealReadOnly from '../TabContent/PurchaseDemandDealReadOnly';
 import ChannelFeeReadOnly from '../TabContent/ChannelFeeReadOnly';
 import BpmConnection from '@/pages/gen/BpmMgmt/BpmConnection';
+import TreeSearch from '@/components/common/TreeSearch';
 
 const DOMAIN = 'userContractEditSub';
 const { Description } = DescriptionList;
@@ -95,6 +96,12 @@ class SubDetail extends PureComponent {
         // }
       }
     });
+
+    // 合同标签数据
+    dispatch({
+      type: `${DOMAIN}/getTagTree`,
+      payload: { key: 'CONTRACT_TAG' },
+    });
     dispatch({
       type: `${DOMAIN}/updateState`,
       payload: {
@@ -130,6 +137,13 @@ class SubDetail extends PureComponent {
     router.goBack();
   };
 
+  yeedoc = () => {
+    const {
+      userContractEditSub: { formData },
+    } = this.props;
+    window.open(formData.linkUrl);
+  };
+
   // 根据权限配置中的表单字段修改visible属性
   filterTabByField = (pageTabViews, formData, resId, baseBuId) => {
     const arr = JSON.parse(JSON.stringify(pageTabViews));
@@ -153,13 +167,31 @@ class SubDetail extends PureComponent {
 
   render() {
     const {
-      userContractEditSub: { formData, operationkeyDetail, pageConfig = {} },
+      userContractEditSub: {
+        formData,
+        operationkeyDetail,
+        pageConfig = {},
+        tagTree,
+        checkedKeys,
+        flatTags,
+      },
       user: {
         user: {
           extInfo: { resId, baseBuId },
         },
       },
     } = this.props;
+
+    let checkedKeysTemp = checkedKeys;
+    if (checkedKeysTemp.length < 1) {
+      if (formData.tagIds) {
+        const arrayTemp = formData.tagIds.split(',');
+        checkedKeysTemp = arrayTemp.filter(item => {
+          const menu = flatTags[item];
+          return menu && (menu.children === null || menu.children.length === 0);
+        });
+      }
+    }
 
     const { pageBlockViews = [] } = pageConfig;
     if (!pageBlockViews || pageBlockViews.length < 1) {
@@ -185,13 +217,15 @@ class SubDetail extends PureComponent {
       keyList = resArr.filter(view => view.visible).map(view => view.tabKey);
     }
     const permissionTabList = operationTabList.filter(tab => keyList.indexOf(tab.key) > -1);
-
     const baseInfo = [
       <Description key="contractName" term="子合同名称">
         {formData.contractName}
       </Description>,
       <Description key="contractNo" term="编号">
         {formData.contractNo}
+      </Description>,
+      <Description key="custName" term="客户">
+        {formData.custName}
       </Description>,
       <Description key="mainContractId" term="主合同">
         {formData.mainContractName}
@@ -262,6 +296,7 @@ class SubDetail extends PureComponent {
       <Description key="paperStatus" term="纸质合同状态">
         {formData.paperStatusDesc}
       </Description>,
+
       <Description key="emptyField" term="占位" style={{ visibility: 'hidden' }}>
         , 占位
       </Description>,
@@ -270,16 +305,30 @@ class SubDetail extends PureComponent {
           <pre>{formData.paperDesc}</pre>
         </Description>
       </DescriptionList>,
+
       <DescriptionList key="remark" size="large" col={1}>
         <Description term={pageFieldJson.remark.displayName}>
           <pre>{formData.remark}</pre>
         </Description>
       </DescriptionList>,
+      <Description key="platType">{formData.platTypeDesc}</Description>,
       <Description key="createUserId" term="创建人">
         {formData.createUserName}
       </Description>,
       <Description key="createTime" term="创建日期">
         {formData.createTime}
+      </Description>,
+      <Description key="tagIds" term="合同标签">
+        <TreeSearch
+          checkable
+          // checkStrictly
+          showSearch={false}
+          placeholder="请输入关键字"
+          treeData={tagTree}
+          defaultExpandedKeys={tagTree.map(item => `${item.id}`)}
+          checkedKeys={checkedKeysTemp}
+          disabled
+        />
       </Description>,
     ]
       .filter(desc => pageFieldJson[desc.key].visibleFlag === 1)
@@ -331,6 +380,9 @@ class SubDetail extends PureComponent {
       </Description>,
       <Description key="demandType" term="需求类型">
         {formData.demandTypeName}
+      </Description>,
+      <Description key="saleClass" term="销售分类">
+        {formData.saleClassName}
       </Description>,
     ]
       .filter(desc => pageFieldJson[desc.key].visibleFlag === 1)
@@ -411,11 +463,24 @@ class SubDetail extends PureComponent {
       ChannelFee: <ChannelFeeReadOnly />,
     };
 
-    const allBpm = [{ docId: formData.flowId, procDefKey: 'ACC_A62', title: '子合同激活审批流程' }];
+    // const allBpm = [{ docId: formData.flowId, procDefKey: 'ACC_A62', title: '子合同激活审批流程' }];
+    const allBpm = [
+      { docId: formData.flowId, procDefKey: 'ACC_A62', title: '子合同激活审批流程' },
+      { docId: formData.id, procDefKey: 'ACC_A112', title: '虚拟合同审批流程' },
+    ];
 
     return (
       <PageHeaderWrapper title="销售子合同详情">
         <Card className="tw-card-rightLine">
+          <Button
+            lassName="tw-btn-primary"
+            type="primary"
+            size="large"
+            onClick={this.yeedoc}
+            hidden={formData.linkUrl === '' || formData.linkUrl === null}
+          >
+            电子合同变更
+          </Button>
           {/* <Button
             className="tw-btn-primary"
             type="primary"

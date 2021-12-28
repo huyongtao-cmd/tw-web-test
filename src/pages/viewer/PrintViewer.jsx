@@ -92,8 +92,11 @@ class PrintViewer extends React.Component {
             position: 'relative',
           }}
         >
-          <BarCode content={data.formData.reimNo} style={{ position: 'absolute', right: '50px' }} />
-          <div dangerouslySetInnerHTML={{ __html: result || '' }} />
+          <BarCode
+            content={data.formData.reimNo}
+            style={{ position: 'absolute', right: '50px', top: '80px' }}
+          />
+          <div dangerouslySetInnerHTML={{ __html: result || '' }} style={{ marginTop: 80 }} />
         </div>
         <br />
         <iframe id="fake-window" style={{ display: 'none' }} />

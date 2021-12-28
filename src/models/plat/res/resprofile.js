@@ -5,6 +5,8 @@ import {
   resLeaveUpdateRq,
   initLeaveChecksRq,
   sync2ELP,
+  batchEditLevelRq,
+  batchUploadOwerPhotoFun,
 } from '@/services/plat/res/resprofile';
 import { businessPageDetailByNo } from '@/services/sys/system/pageConfig';
 import { queryCascaderUdc } from '@/services/gen/app';
@@ -105,6 +107,19 @@ export default {
         createMessage({ type: 'warn', description: response.reason || '同步失败' });
       }
     },
+
+    *batchEditLevelRq({ payload }, { call, select, put }) {
+      const { ids, value } = payload;
+      const { response, status } = yield call(batchEditLevelRq, { ids, value });
+      if (response.ok) {
+        createMessage({ type: 'success', description: '保存成功' });
+      } else {
+        createMessage({ type: 'warn', description: response.reason || '保存失败' });
+      }
+
+      return response.ok;
+    },
+
     // 获取配置字段
     *getPageConfig({ payload }, { call, put, select }) {
       const { status, response } = yield call(businessPageDetailByNo, payload);
@@ -134,6 +149,21 @@ export default {
       if (response && response.ok) {
         createMessage({ type: 'success', description: '操作成功' });
       }
+    },
+    // 批量导入电子照片
+    *uploadOwerPhoto({ payload }, { call, put, select }) {
+      const { status, response } = yield call(batchUploadOwerPhotoFun, payload);
+      if (status === 100) {
+        // 主动取消请求
+        return {};
+      }
+      if (status === 200) {
+        if (!response.ok) {
+          return response;
+        }
+        return response;
+      }
+      return {};
     },
   },
 

@@ -6,18 +6,10 @@ import Title from '@/components/layout/Title';
 import { UdcSelect, Selection } from '@/pages/gen/field';
 import { genFakeId } from '@/utils/mathUtils';
 import EditableDataTable from '@/components/common/EditableDataTable';
-import BaseSelect from '@/components/production/basic/BaseSelect.tsx';
 
 import { AddrEditContext, DOMAIN } from './index';
 
-import { queryCascaderAddr } from '@/services/gen/app';
-
 // 注意-> 真正的上下文在Consumer里面，多个Tab共享父页面的上下文
-const fetchData = async params => {
-  const { response } = await queryCascaderAddr({ ...params, pcode: '-1' });
-  const result = response.data.rows.map(item => ({ title: item.name, value: item.code, ...item }));
-  return result;
-};
 const AddrEditT7 = props => (
   <AddrEditContext.Consumer>
     {({ dispatch, addressList, addressListDel }) => {
@@ -26,43 +18,11 @@ const AddrEditT7 = props => (
           rowFieldValue && rowFieldValue.target ? rowFieldValue.target.value : rowFieldValue;
         // console.log('rowIndex, rowField, val ->', rowIndex, rowField, val);
         // 更新单元格状态
-        if (rowField === 'country') {
+        if (rowField === 'province') {
           dispatch({
             type: `${DOMAIN}/handleChangeCity`,
             payload: {
-              pcode: val,
-            },
-          }).then(res => {
-            dispatch({
-              type: `${DOMAIN}/updateState`,
-              payload: {
-                addressList: update(addressList, {
-                  [rowIndex]: {
-                    provinceList: {
-                      $set: res,
-                    },
-                    province: {
-                      $set: null,
-                    },
-                    cityList: {
-                      $set: [],
-                    },
-                    city: {
-                      $set: null,
-                    },
-                    [rowField]: {
-                      $set: val,
-                    },
-                  },
-                }),
-              },
-            });
-          });
-        } else if (rowField === 'province') {
-          dispatch({
-            type: `${DOMAIN}/handleChangeCity`,
-            payload: {
-              pcode: val,
+              [rowField]: val,
             },
           }).then(res => {
             dispatch({
@@ -74,7 +34,7 @@ const AddrEditT7 = props => (
                       $set: res,
                     },
                     city: {
-                      $set: null,
+                      $set: '',
                     },
                     [rowField]: {
                       $set: val,
@@ -83,21 +43,20 @@ const AddrEditT7 = props => (
                 }),
               },
             });
-          });
-        } else {
-          dispatch({
-            type: `${DOMAIN}/updateState`,
-            payload: {
-              addressList: update(addressList, {
-                [rowIndex]: {
-                  [rowField]: {
-                    $set: val,
-                  },
-                },
-              }),
-            },
           });
         }
+        dispatch({
+          type: `${DOMAIN}/updateState`,
+          payload: {
+            addressList: update(addressList, {
+              [rowIndex]: {
+                [rowField]: {
+                  $set: val,
+                },
+              },
+            }),
+          },
+        });
       };
 
       const getTableProps = () => ({
@@ -153,9 +112,10 @@ const AddrEditT7 = props => (
               ],
             },
             render: (value, row, index) => (
-              <BaseSelect
+              <Selection.UDC
+                size="small"
                 value={value}
-                parentKey="FUNCTION:ADDRESS_TYPE"
+                code="TSK:ADDRESS_TYPE"
                 placeholder="请选择地址类型"
                 onChange={onCellChanged(index, 'addressType')}
               />
@@ -176,9 +136,10 @@ const AddrEditT7 = props => (
               ],
             },
             render: (value, row, index) => (
-              <BaseSelect
+              <Selection.UDC
+                size="small"
                 value={value}
-                fetchData={fetchData}
+                code="COM:COUNTRY"
                 placeholder="请选择国家"
                 onChange={onCellChanged(index, 'country')}
               />
@@ -190,10 +151,10 @@ const AddrEditT7 = props => (
             width: 200,
             align: 'center',
             render: (value, row, index) => (
-              <Selection
+              <Selection.UDC
                 size="small"
                 value={value}
-                source={row.provinceList}
+                code="COM:PROVINCE"
                 placeholder="请选择省"
                 onChange={onCellChanged(index, 'province')}
               />
@@ -265,6 +226,7 @@ const AddrEditT7 = props => (
         ],
         buttons: [],
       });
+
       return <EditableDataTable {...getTableProps()} />;
     }}
   </AddrEditContext.Consumer>

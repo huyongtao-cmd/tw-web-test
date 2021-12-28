@@ -205,7 +205,7 @@ class PrePayEdit extends React.Component {
         <Card
           className="tw-card-adjust"
           bordered={false}
-          title={<Title icon="profile" text="预付款申请新增" />}
+          title={<Title icon="profile" text="员工借款申请新增" />}
         >
           <div className="tw-card-title">基本信息</div>
           <FieldList layout="horizontal" getFieldDecorator={getFieldDecorator} col={2}>

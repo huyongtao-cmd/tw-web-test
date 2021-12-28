@@ -25,7 +25,11 @@ import AddrEditT8 from './components/AddrEditT8';
 const DOMAIN = 'userCustEdit';
 const AddrEditContext = createContext();
 
-@connect(({ userCustEdit, customerCreate }) => ({ ...userCustEdit, customerCreate }))
+@connect(({ loading, userCustEdit, customerCreate }) => ({
+  treeLoading: loading.effects[`${DOMAIN}/getTagTree`],
+  ...userCustEdit,
+  customerCreate,
+}))
 @Form.create({
   onFieldsChange(props, changedFields) {
     if (changedFields && Object.values(changedFields)[0]) {
@@ -147,6 +151,11 @@ class AddrEdit extends React.PureComponent {
     dispatch({ type: `${DOMAIN}/updateState`, payload: isSubmit });
     dispatch({ type: 'customerCreate/clearForm' });
     dispatch({ type: 'customerCreate/res' }); // 拉取资源下拉表
+    // 客户标签数据
+    dispatch({
+      type: `${DOMAIN}/getTagTree`,
+      payload: { key: 'CUSTOMER_TAG' },
+    });
     id &&
       dispatch({
         type: 'customerCreate/customerDetails',
@@ -508,7 +517,7 @@ class AddrEdit extends React.PureComponent {
   }
 
   render() {
-    const { tabkey, form, isFlow } = this.props;
+    const { tabkey, form, isFlow, tagTree, treeLoading, flatTags } = this.props;
     const { isSubmit } = fromQs();
     // console.log('tabkey', tabkey);
     return (
@@ -582,7 +591,14 @@ class AddrEdit extends React.PureComponent {
             onTabChange={this.onTabChange}
           >
             {{
-              custDetail: <AddrEditT0 form={form} />,
+              custDetail: (
+                <AddrEditT0
+                  form={form}
+                  tagTree={tagTree}
+                  treeLoading={treeLoading}
+                  flatTags={flatTags}
+                />
+              ),
               basic: <AddrEditT1 />,
               personDet: <AddrEditT2 />,
               compDet: <AddrEditT3 />,

@@ -237,6 +237,11 @@ class ExtrApplyCreate extends PureComponent {
         key="pResId"
         label={pageFieldJson.pResId.displayName}
         decorator={{
+          rules: [
+            {
+              required: true,
+            },
+          ],
           initialValue: formData.presId || undefined,
         }}
       >

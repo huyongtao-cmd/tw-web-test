@@ -48,6 +48,8 @@ module.exports = {
       findById: '/api/production/flowPanel/findById/:id', // get 新加流程配置 详情查询
       deleteByIds: '/api/production/flowPanel/delete/:ids', // patch 新加流程配置 删除
       partial: '/api/production/flowPanel/partial', // put 指定修改
+      getYeedocFlowList: '/api/openReport/v1/flow/getYeedocFlowList', // 易稻壳推送待办、退回、知会
+      saveOrUpdateYeedocFlow: '/api/openReport/v1/flow/saveOrUpdateYeedocFlow', // 易稻壳退回、知会表位已读
     },
     center: {
       addressList: '/api/common/v1/res/ab', // g 个人中心的通讯录
@@ -222,7 +224,10 @@ module.exports = {
 
       checkCreateProj: '/api/op/v1/contract/check/proj/:id', // 判断子合同是否能创建项目
 
+      checkSubmitVirtualContractUri: '/api/op/v1/contract/check/submitVirtualContract/:id', // 判断虚拟合同的状态
+
       recvPlanListPersonal: '/api/op/v1/contract/myRecvplan', // g 合同收款计划查询 -- 列表
+      myReceiveList: '/api/op/v1//center/myReceiveList', // g 我的收款计划查询 -- 列表
       recvPurchasePersonal: '/api/op/v1/pcontract/myPayplans', // g 付款计划查询 -- 列表
       selectRecvPlan: '/api/op/v1/contract/:id/select/recvplan', // 合同收款计划下拉
 
@@ -247,7 +252,12 @@ module.exports = {
 
       // 子合同维护 -> 渠道费用确认单
       channelCostConDetail: '/api/op/v1/contract/channelCostCon/:contractId', // 渠道费用确认单详情查询
+      channelCostConDDetailById: '/api/op/v1/contract/channelCostConDById/:channelCostCosDID', // 根据id渠道费用确认单详情查询
       channelCostConEdit: '/api/op/v1/contract/channelCostCon', // 渠道费用确认单编辑
+      channelCostConDEdit: '/api/op/v1/contract/channelCostConD', // 渠道费用确认单编辑
+
+      // 子合同维护 -> 渠道费用确认单 -> 渠道费用明细
+      submitChannelCostConD: '/api/op/v1/contract/channelCostConD/submit', //提交渠道明细
 
       // 子合同详情 - 从销售合同列表创建采购合同
       subDetail: '/api/op/v1/contract/subDetail/:contractId', // 渠道费用确认单编辑
@@ -257,6 +267,7 @@ module.exports = {
 
       passAccount: '/api/base/v1/profitdist/passAccount/:contractId', // 泛用结算分配 - 过账操作
       getNormSettleByContId: '/api/base/v1/profitdist/getNormSettleByContId/:contractId', // 泛用结算分配 - 过账操作
+      contractTagImportApi: '/api/op/v1/contract/uploadTag', // 导入合同标签
       getNewIncomeNormSettleByContId:
         'api/base/v1/profitdist/getNewIncomeNormSettleByContId/:contractId', // 利益分配页面的泛用结算申请单
     },
@@ -371,6 +382,14 @@ module.exports = {
       userTask: '/api/op/v1/taskManager/task/:id', // g 任务详情
 
       userTasks: '/api/op/v1/taskManager/tasks', // g 任务查询
+      authonzations: '/api/op/v1/taskAuthorized/paging', // g 授权查询
+      reasonInfo: '/api/op/v1/taskAuthorized/getReasonInfoIdAndType', // g 查询事由号相关信息
+      authonzationSave: '/api/op/v1/taskAuthorized/saveOrUpdateOrSubmit', // p 任务授权新增编辑提交
+      authPartSave: '/api/op/v1/taskAuthorized/partial', // p 任务授权部分修改
+      authonzationDel: '/api/op/v1/taskAuthorized', // 逻辑删除
+      authonzationGet: '/api/op/v1/taskAuthorized/{key}', // g 授权查询id
+      authonzationSel: '/api/op/v1/taskAuthorized/myList', // g 授权列表下拉
+      authTasks: '/api/op/v1/taskManager/tasksByAuthId', // g 授权任务查询
       userTaskAdd: '/api/op/v1/taskManager/task', // c 任务新增
       userTaskSave: '/api/op/v1/taskManager/task', // p 任务新增
       userTasksDel: '/api/op/v1/taskManager/task/del/:ids', // s 任务批量删除
@@ -384,7 +403,6 @@ module.exports = {
       userTaskBuSettles: '/api/op/v1/taskManager/buSettlePrice', // g BU结算价
       userTaskApply: '/api/op/v1/taskManager/task/apply', // 任务包申请
       selectBuByResId: '/api/common/v1/select/baseBu/:resId', // 根据资源id查找当前bu
-
       userTaskApplyById: '/api/op/v1/taskManager/task/apply/:id', // 任务包申请详情
       userTaskApplySubmit: '/api/op/v1/taskApply/proc/start/:id', // 任务包申请流程提交
       capasetDefault: '/api/base/v1/capaset/default', // 获取当前登录人的默认能力
@@ -460,7 +478,9 @@ module.exports = {
       timesheets: '/api/op/v1/timesheets', // g 查询工时列表
       timesheetAdminApproval: '/api/op/v1/timesheets/creditExpert/:ids', // 工时高级审批
       myTimesheets: '/api/op/v1/timesheets/self', // g 我的工时
+      examineTimesheets: '/api/op/v1/timesheets/selfmonth', // g 查看工时
       lastweekTimesheets: '/api/op/v1/timesheets/lastweek/:weekStart', // g 获取上周 工时数据
+      lastDayTimesheets: '/api/op/v1/timesheets/lastday/:weekStart', // g 获取上工作日工时数据
       timesheetSave: '/api/op/v1/timesheets/save', // c 批量保存工时
       timesheetDel: '/api/op/v1/timesheets/del/:ids', // c 批量删除工时
       projList: '/api/op/v1/projects/timesheet', // g 选项弹出框 展示项目列表
@@ -475,6 +495,7 @@ module.exports = {
       willApproveCount: '/api/op/v1/timesheetsCount', // g 待审批工时数量
       jdeTimesheetReport: '/api/op/v1/jdeTimesheetReport', // g jde工时报表
       recentWork: '/api/common/v1/recent/work', // g 近期工作提醒
+      freezeTime: '/api/common/v1/timerConf/getFreezeTime', //get 冻结工时时间
     },
     // management 线索及商机管理
     management: {
@@ -483,6 +504,7 @@ module.exports = {
       leadClose: '/api/op/v1/leads/status', // 线索关闭原因
       leadFinish: '/api/op/v1/leads/finish', // 点击领奖结束流程
       opportunities: '/api/op/v1/oppos', // 商机查询
+      opportunitiesNoP: '/api/op/v1/oppos/searchOppos', // 商机查询 无参数
       opportunitie: '/api/op/v1/oppos/:id', // 商机单条信息查询
       oppoCases: '/api/op/v1/oppo/analyzes', // 商机案情分析查询
       oppoCaseSave: '/api/op/v1/oppo/analyzes/save', // 商机案情分析保存
@@ -547,9 +569,11 @@ module.exports = {
       customerFuzzyList: '/api/person/v1/newCust/findRepetitionCustList', // 潜在客户模糊查询接口
       signInvalid: '/api/person/v1/newCust/updateRepetition/:ids', // 潜在客户标记无效
       customerUpload: '/api/person/v1/newCust/upload', // 导入潜在客户excel文件
+      customerTagUploadApi: '/api/person/v1/newCust/uploadTag', // 导入客户标签excel文件
     },
     project: {
       projects: '/api/op/v1/projects', //  项目列表
+      relatedProjects: '/api/op/v1/relatedProjects', // 相关项目
       myProjects: '/api/op/v1/myProjects', //  我的项目列表
       projectSave: '/api/op/v1/project', //  项目新增/编辑
       project: '/api/op/v1/project/:id', //  项目详情
@@ -562,13 +586,21 @@ module.exports = {
       projectShList: '/api/op/v1/project/sh/list', //  项目成员列表/新增/编辑
       projectShDel: '/api/op/v1/project/sh/del/:ids', //  项目成员删除
       projectActivitys: '/api/op/v1/project/:projId/actProc', //  项目活动列表/新增/编辑/删除
+      projectActivitysByChange: '/api/op/v1/project/actProcByChange', //  项目活动列表改变后
       workbenchProjectActivitys: '/api/op/v1/project/:projId/workbench/actProc', //  项目工作台活动列表
       workbenchTaskRes: '/api/op/v1/taskManager/workbench/res', //  项目工作台资源任务包
       workbenchTaskResComprehensive: '/api/op/v1/taskManager/workbench/res/comprehensive', //  项目工作台资源任务包
       workbenchProfile: '/api/op/v1/project/workbench/profile/:projId',
       totalDistedAndSettledEqvq: '/api/op/v1/project/:projId/workbench/totalDistedAndSettledEqvq', //  项目工作台特殊结算任务汇总
+      resourcePlanning: '/api/op/v1/new/planning', //资源规划
+      resourceModify: '/api/op/v1/newdetail/isModify', //资源规划
+      resourceDetail: '/api/op/v1/newdetail/planning', //资源规划明细详情
+      resHiddenrole: '/api/op/v1/new/hiddenrole/{roleIds}', //隐藏资源
+      resPlandetail: '/api/op/v1/new/plandetail', //资源规划一条数据修改
       resPlanning: '/api/op/v1/planning', // 项目资源计划
       resPlanningById: '/api/op/v1//planning/:id', // 项目资源计划详情
+      sysAltResPlanning: '/api/op/v1/sysAltResPlanning/{key}', // 查询资源规划更新提醒
+      resPlanningSubmit: '/api/op/v1/sysAltResPlanning/submit', // 查询资源规划更新提醒提交
       templateResPlanningList: '/api/op/v1/res_planning_template', // 项目资源规划的商机模板管理列表
       templateResPlanningUpdate: '/api/op/v1/res_planning_template', // 项目资源规划的商机模板管理新增，修改
       templateResPlanningDetail: '/api/op/v1/planningTemplate/:id', // 项目资源规划的商机模板管理详情
@@ -582,6 +614,9 @@ module.exports = {
       ledgerIoByProj: '/api/org/v1/ledger/projLedgerIo/:projId', // 项目当量交易记录
       projectLedger: '/api/org/v1/ledger/proj/:projId', // 项目账户
       projectLedgerIo: '/api/org/v1/ledger/io/proj/:projId', // 项目账户 - 台账
+      findContractInfoByProjectId: '/api/op/v1/project/getContractInfoByProjectId/:projectId', //通过项目id获取合同信息
+      getRatioByResIds: '/api/common/v1/getRatioByResId/:resId', //通过资源ID查询系数
+      getRatioByLevelIds: '/api/common/v1/getRatioByResId/:resId', //通过复合能力（系数）ID查询系数
 
       abstractChangeDetailByProjId: '/api/sys/v1/business_change/doc/type', // 预算变更的抽象变更功能通过项目id查询
       abstractChangeDetailById: '/api/sys/v1/business_change/:id', // 预算变更的抽象变更功能通过流程地址栏的id查询
@@ -885,9 +920,6 @@ module.exports = {
       specTaskStart: '/api/op/v1/feeapply/proc/start/:id', // 特殊费用申请 提交流程
     },
     // 公共下拉（建议后面的都放这）
-    roleSelect: '/county/pro/roleSelect', //角色下拉
-    addrList: '/api/production/select/ab', //地址簿下拉
-    companySelect: '/api/production/select/ou', //公司下拉
     coopSelect: '/api/common/v1/select/coop', // g 合作伙伴下拉
     capasetLevelSelectBy: '/api/common/v1/select/capasetLevelBy', //  复合能力级别下拉根据工种、工种子类
     capasetLevelSelect: '/api/common/v1/select/capasetLevel', //  复合能力级别下拉
@@ -968,6 +1000,17 @@ module.exports = {
       workCalendar: '/api/person/v1/res/work/calendar', // get 工作日历
       updateWorkStatus: '/api/person/v1/res/work/Position/:workStatus/:resId', // p 工作状态
 
+      // 项目资源报告 get
+      projectResReportQueryApi: '/api/person/v1/res/work/calendarPro',
+      // 资源上级下来 资源上级视角
+      authBuLeaderApi: '/api/person/v1/select/authBuLeader',
+      // 部门下拉 部门视角
+      authBApi: '/api/person/v1/select/authBu',
+      // 资源经理
+      resManagerApi: '/api/person/v1/select/resManager',
+      // 项目列表
+      queryProjectListApi: '/api/op/v1/projects/all',
+
       // 工作日志
       workLogSaveUri: '/api/op/v1/workdiarys/save', // 工作日志保存
       queryStartTimeUri: '/api/op/v1/workdiarys', // 工作日志查询
@@ -1032,6 +1075,7 @@ module.exports = {
       invoiceDtl: '/api/person/v1/invoice/get/:id', // get 根据ID查询发票详情
       getInvoicesFromBaiwang: '/api/person/v1/invoice/getInvoicesFromBaiwang', // get (从百望系统)同步个人的发票信息至发票池
       delInvoiceUrl: '/api/person/v1/invoice/delInvoice/:ids', // patch 物理删除发票
+      updateInvoice: '/api/person/v1/invoice/update', // put 修改发票信息
     },
 
     // 推行提醒
@@ -1124,6 +1168,8 @@ module.exports = {
       prePaymentApplySave: '/api/worth/v1/paymentApply/save', // 付款申请单保存
       prePaymentApplyUpdate: '/api/worth/v1/paymentApply/update', // 付款申请单更新
       paymentApplyDetail: '/api/worth/v1/paymentApply/get/:id', // 付款申请单详情
+      getPaymentApplyByIdEditPageApi: '/api/worth/v1/paymentApply/editGet/:id', //付款单 编辑回显接口
+      getSumPaymentAmtApi: '/api/worth/v1/paymentApply/getSumPaymentAmt', // 应付付款金额 汇总
       removePaymentApply: '/api/worth/v1/paymentApply/remove/:id', // 付款申请单删除
       paymentApplyFlowSubmit: '/api/worth/v1/paymentApply/flowSubmit/:id', // 付款申请单流程提交
       paymentAppFirstFlowSubmit: '/api/worth/v1/paymentApply/flowReSubmit/:id', // 流程退回第一节点，提交
@@ -1141,8 +1187,12 @@ module.exports = {
       paymentSlipFlowReSubmit: '/api/worth/v1/paymentSlip/flowReSubmit/:id', // 退回到底一个节点提交
       paymentSlipDelete: '/api/worth/v1/paymentSlip/delete/:id', // 删除付款记录
       paymentSlipView: '/api/worth/v1/paymentSlip/view', // 付款记录列表
+      paymentSlipExcelExport: '/api/worth/v1/paymentSlip/excel/export', // 付款记录excel导出
+      selectPaySerialsNumApi: '/api/worth/v1/paymentSlip/listGroup/paySerialsNum', // 付款记录流水号下拉列表
+      postPaymentSlipSubmitProApi: '/api/worth/v1/paymentSlip/submitPro/:paySerialsNum', // 应付会计按流水号方式提交Pro
       paymentApplyByDocNoScene: '/api/worth/v1/paymentApply/:docNo/:scene', // 根据前置单据的单据号获取单据信息
       purchaseByDoc: '/api/op/v1/purchase_contract_management/paymentApply/{no}', // 预付款：根据前置单据的单据号获取采购合同单据信息
+      purchaseByDocPro: '/api/op/v1/purchase_contract_management/paymentApplyPro/{no}', // 预付款：根据采购合同编号查询其付款申请单所需信息Pro 包含付款计划
       paymentSlipDetailById: '/api/worth/v1/paymentSlip/:id', // 付款记录详情
       paymentApplyWriteoffSelect:
         '/api/worth/v1/paymentApply/select/writeoff/:docType/:supplierLegalNo', // 预付款核销单据号下拉框
@@ -1156,7 +1206,11 @@ module.exports = {
       purchaseEdit: '/api/op/v1/purchase_contract_management/modify/:key', // 根据主键查询采购合同信息的修改回显接口
       purchasePending: '/api/op/v1/purchase_contract_management/:id/pending', // 采购合同的暂挂 采购合同ID
       purchaseActive: '/api/op/v1/purchase_contract_management/:id/active', // 采购合同的激活 采购合同ID
+      purchaseClose: '/api/op/v1/purchase_contract_management/updateContractStatus/:id/CLOSE', // post 采购合同的关闭 采购合同id
+      purchaseChangeSave: '/api/op/v1/purchase_contract_management/change/save', // 采购合同变更的保存
       purchaseChangeSubmit: '/api/op/v1/purchase_contract_management/change/submit', // 采购合同变更的提交
+      purchaseChangeByContractNo:
+        '/api/op/v1/purchase_contract_management/businessChangeByContractNo/:id', //采购合同变更 查询采购合同变更根据合同编号
       purchaseChangeBypurchaseId: '/api/op/v1/purchase_contract_management/businessChange/:id', // 采购合同变更 查询采购合同变更 采购合同id
       purchaseChangeBypurChangeId:
         '/api/op/v1/purchase_contract_management/businessChange/purchase/:id', // 根据抽象变更ID查询采购合同变更 抽象变更id
@@ -1171,6 +1225,11 @@ module.exports = {
       selectOuByOuId: '/api/common/v1/select/ou/:id', // 根据ouId获取完整的公司信息
       selectPackage: '/api/common/v1/select/task/package/type', // 采购任务包类型的任务下拉
       selectProjectByTaskId: '/api/common/v1/select/task/project/:id', // 根据任务id查询相关项目
+      purchaseEmergencyPaymentList: '/api/worth/v1/purchaseEmergencyPayment/paging', // get 紧急付款列表页
+      purchaseEmergencyPaymentEdit: '/api/worth/v1/purchaseEmergencyPayment/partial', // put  紧急付款修改
+      purchaseEmergencyPaymentCreate: '/api/worth/v1/purchaseEmergencyPayment', // post 紧急付款新建
+      selectByFlowNo: '/api/worth/v1/paymentApply/selectByFlowNo', // get 通过流程编号查询单据信息
+      isAPAccountant: '/api/op/v1/user/bpm/role', // get 获取当前用户是否是应付会计
 
       // 付款记录的审批和状态流转
       paymentSlipList: '/api/worth/v1/paymentSlip/view', // 列表查询
@@ -1204,6 +1263,16 @@ module.exports = {
       over: '/api/op/v1/purchase_agreement/over/submit', // 终止
       remove: '/api/op/v1/purchase_agreement/:ids', // 删除
       selectAssociation: '/api/op/v1/purchase_agreement/association', // 关联协议下拉
+    },
+    paymentPlan: {
+      purchaseConractPaymentPlans: '/api/production/pur/purchaseContract/paymentPlans', //采购合同付款计划查询 -- 列表
+      updatePaymentPlanById:
+        '/api/production/pur/purchaseContract/paymentPlan/updatePaymentPlanById', // 更新付款计划
+    },
+    opporPartner: {
+      createOpportner: '/api/person/v1/coopTemp', // put 创建合作伙伴准入流程
+      partnerFlow: '/api/person/v1/coopTemp/{key}',
+      updateOpportner: '/api/person/v1/coopTemp/partial',
     },
   },
   plat: {
@@ -1279,6 +1348,8 @@ module.exports = {
     entryExitList: '/api/person/v1/offerAndLeave/res/:resId', // 资源详情页面的入离职页签列表数据
     resAbility: '/api/person/v1/offerEntry/resAbility/:resId', // 资源单项能力和复核能力
     offerEntryMyCapaset: '/api/person/v1/offerEntry/myCapaset', // 拉取复合能力
+    getOwerPhotoFile: '/api/common/v1/getOwerPhotoFile',
+    batchUploadOwerPhotoApi: '/api/person/v1/res/owerPhoto/sfs/batchUpload', // 批量上传电子照片
 
     // 自评
     saveSelfEvaluation: '/api/person/v1/res/saveSelfEvaluation', // patch 保存自我评价
@@ -1334,7 +1405,6 @@ module.exports = {
       addrSel: '', // g 母公司下拉
       addrSupInfo: '/api/person/v1/ab/supp/:no/no', // 供应商查询详细信息
       addrs: '/api/person/v1/ab/s', // g 地址列表查询
-      addrPaging: '/api/person/v1/ab/paging', // g 地址列表查询
       addrSaveBasic: '/api/person/v1/ab', // p 地址新增 - 主数据
       addrSaveSup: '/api/person/v1/ab/supp', // p 地址新增 - 供应商
       addrSavePerson: '/api/person/v1/person', // p 地址新增 - 个人
@@ -1345,7 +1415,6 @@ module.exports = {
       addrSaveBook: '/api/person/v1/address', // p 地址新增 - 地址簿
       addrSaveCode: '/api/person/v1/ab/cats', // p 地址新增 - 类别码
       addrSaveCust: '/api/person/v1/cust/ab/updateCust', // p 地址新增 - 类别码
-      addrSaveSupplier: '/api/person/v1/supplier', // p 地址新增 - 类别码
       addrSaveCoop: '/api/person/v1/coop', // p 地址新增 - 合作伙伴
       addrDel: '/api/person/v1/ab/:id/d', // s 地址删除
       addrSup: '/api/person/v1/ab/supp/s', // 查询供应商
@@ -1389,6 +1458,7 @@ module.exports = {
       ouInternal: '/api/common/v1/select/ou/internal', // g 签约公司下拉
       recvPlanMultiColSelect: '/api/common/v1/select/multicol/recvplan', // 收款计划多列下拉数据
       innerAccountSelect: '/api/common/v1/select/multicol/innerAccount', // 公司内部银行账号多列下拉
+      updateRecvOrInvDate: '/api/op/v1/contract/recvplan/updateRecvOrInvDate', // 公司内部银行账号多列下拉
     },
     // auacc
     auacc: {
@@ -1414,7 +1484,9 @@ module.exports = {
       list: '/api/worth/v1/adpay/list', // get 预付款查询
       savePreAccountJde: '/api/worth/v1/adpay/savePreAccount/:adpayApplyIds', // post 保存预付款数据，用于jde数据同步，保存加修改
       activeSubContract: '/api/person/v1/contractActivation/:id', // get 子合同数据
+      virtualContractActivation: '/api/person/v1/virtualContractActivation/:id', // get 虚拟子合同激活
       submitSubContract: '/api/person/v1/twContractActivationView', // post 提交保存子合同数据
+      submitVirtualSubContract: '/api/person/v1/submitVirtualSubContract', // post 提交虚拟子合同数据
       checkSubContract: '/api/person/v1/activation/:id', // get 流程详情页面数据获取
       passSubContractResult: '/api/person/v1/activation/pass', // put 子合同结果请求
     },
@@ -1538,6 +1610,7 @@ module.exports = {
     resPortrayalTask: '/api/person/v1/res/portrayal/task/:id', // 资源画像 任务履历
     initLeaveChecks: '/api/person/v1/leaverEntry/initLeaveChecks/:resId/:leaveDate', // 初始化通过‘离职处理’进行的离职检查信息
     resLeaveUpdate: '/api/person/v1/res/updateResLeave/:resId/:leaveDate', // 资源列表 离职确认（继续）
+    batchEditLevel: '/api/person/v1/res/plat/:ids', // 批量修改专业级别、管理级别
 
     // ==========BaseBU变更申请===========
     BaseBUChange: {
@@ -1701,6 +1774,8 @@ module.exports = {
       videoCatData: '/api/base/v1/video/selectVCat/:catNo', // 视频类别数据
       selectVideoDrop: '/api/base/v1/video/selectVideoDrop', // 视频大类、视频小类、服务属性
       changeStatus: '/api/base/v1/video/updateShowFlag/:id/:showFlag', // 视频列表修改展示状态
+      getTagIdsByDocIdAndDocTypeApi:
+        '/api/base/v1/video/getTagIdsByDocIdAndDocType/:docId/:docType', // 根据业务Id和业务类型（合同、客户）获取关联标签
     },
     // 名片申请
     businessCard: {
@@ -1771,6 +1846,42 @@ module.exports = {
     },
   },
   hr: {
+    //资源管理
+    profile: {
+      applyAdviser: '/api/person/v1/workOrderApply', //独立顾问派工单申请
+      editAdviser: '/api/person/v1/workOrderApply/partial', // 独立派工单修改
+      adviserDetail: '/api/person/v1/workOrderApply/{key}', //详情
+      adviserList: '/api/person/v1/workOrderApply/paging', //列表
+    },
+    // 资源规划
+    resPlan: {
+      // 资源规划处理查询
+      rppItemListPageApi: '/api/rpp/v1/rppItem/listPage',
+      rppItemListListPageApi: '/api/rpp/v1/rppItem/list/listPage',
+      // 已执行完成任务列表 检索项
+      selectTaskListApi: '/api/rpp/v1/rppTask/selectList',
+      // 复合能力 列表 筛选
+      mainCapasetLevelNameListApi: '/api/rpp/v1/rppItem/mainCapasetLevelName/list',
+      rppItemExcelExport: '/api/rpp/v1/rppItem/excel/export',
+
+      // 批处理日志列表
+      resPlanLogListApi: '/api/rpp/v1/bpLog/paging',
+      listBpAllApi: '/api/rpp/v1/bpLog/all',
+      resPlanLogicalDeleteApi: '/api/rpp/v1/bpLog/:ids',
+
+      resPlanNeedListApi: '/api/rpp/v1/rppItem/planning/listPaging', // 资源规划需求处理
+      resPlanRoleDetailApi: '/api/op/v1/findRoleDetail/:id', // 点击角色查询详情
+      resPlanRecommendedApi: '/api/rpp/v1/rppItem/findByConditionPaging', // 推荐资源列表
+      confirmOrRecommendedApi: '/api/op/v1/planning/partial', // 确认或推荐指派
+      resPlanContrastApi: '/api/rpp/v1/rppItem/compare/:resId', // 资源规划对比
+      resPlanSubmitApi: '/api/rpp/v1/rppItem/makeSureSubmit', // 资源规划确认提交
+    },
+    // 资源规划任务
+    rppTask: {
+      selectListRppConfigApi: '/api/rpp/v1/rppConfig/list', // 查询所有的配置文件
+      // 任务运行
+      taskStartApi: '/api/rpp/v1/rppTask/start',
+    },
     tarinResult: {
       tarinResultList: '/api/base/v1/resTrainingProg/select', // 资源培训情况列表
       tarinResultClose: '/api/base/v1/resTrainingProg/update/:ids', // 资源培训情况列表关闭
@@ -1788,6 +1899,16 @@ module.exports = {
       cancelCheck: '/api/base/v1/resCapaExamLog/cancel/:id/:type', //  适岗考核能力列表取消考核
       getTrainingList: '/api/base/v1/resCapaExamLog/getTrainingProgList/:id', //  适岗考核能力列表页行 点击 试岗培训  获取 试岗培训列表
       updateCheckStatus: '/api/base/v1/resCapaExamLog/updateStatus', // 更新考核状态
+    },
+    baseBuChangeBatch: {
+      baseBuChange: '/api/person/v1/baseChange/BackDoor/:date/:date1', // baseBU批量变更
+    },
+    resPlanConfig: {
+      rppConfigPaging: '/api/rpp/v1/rppConfig/paging', // 资源规划配置列表
+      rppConfigEdit: '/api/rpp/v1/rppConfig', // 资源规划配置新增、修改
+      rppConfigDelete: '/api/rpp/v1/rppConfig/delete/:ids', // 资源规划配置删除
+      rppConfigView: '/api/rpp/v1/rppConfig/:id', // 资源规划配置详情
+      selectList: '/api/rpp/v1/rppTask/selectList', // 参照历史需求/供给结果列表
     },
   },
   sys: {
@@ -2015,6 +2136,7 @@ module.exports = {
     },
     setting: {
       clearCache: '/api/common/v1/select/clear/cache', // get 清除下拉缓存
+      reloadCacheDefIdApi: '/api/sys/v1/udc/val/reloadCache/:defId', // 更新指定defId的UDC缓存
     },
     menuConfig: {
       menuConfigList: '/api/sys/v1/mob/function/list', // g 获取菜单配置列表
@@ -2217,8 +2339,8 @@ module.exports = {
     terms: '/api/ctg/terms', // g/ 支付条款
     unit: '/api/unit_ranks', // g/ 计量单位
     cascaderUdc: '/api/common/v1/udc/items', // g/ 级联udc
-    cascaderAddr: '/county/common/areaCode/paging', // get 级联省市区
     getBuList: '/api/op/v1/select/allStatusBu', // get 获取全部 Bu List
+    divisionList: '/api/op/v1/select/allBu', // 事业部
   },
   ops: {
     rmcache: '/api/cache/x', // cf/ 清除后端缓存
@@ -2229,11 +2351,6 @@ module.exports = {
   sfs: {
     repo: '/eds/api/sfs/repo', // 资料库信息
     list: '/eds/api/sfs/items', // 资料列表
-    fileUpload: '/county/common/attachment/upload', // 文件通用上传
-    fileDelete: '/county/common/attachment/delete', // 文件删除
-    fileDownload: '/county/common/attachment/:key', // 附件下载id
-    filePreview: '/county/common/attachment/preview/:key', // 文件预览
-    getAttachments: '/county/common/attachment/getAttachments', // 查询业务单据的附件列表
     upload: '/eds/api/sfs/upload', // 文件上传（单个/多个）
     download: '/eds/api/sfs/item', // 资料下载/预览文件
     delete: '/eds/api/sfs/item/x', // 资料删除
@@ -2342,11 +2459,11 @@ module.exports = {
       resSelectPagingUri: '/api/production/select/res', // 资源下拉
       ouSelectPagingUri: '/api/production/select/ou', // 公司下拉
       buSelectPagingUri: '/api/production/select/bu', // bu下拉
-      contractSelectPagingUri: '/county/adm/contractSelect', // 合同下拉    -----郡州项目新
-      projectSelectPagingUri: '/county/pro/projectSelect', // 项目下拉
+      contractSelectPagingUri: '/api/production/select/contract', // 合同下拉
+      projectSelectPagingUri: '/api/production/select/project', // 项目下拉
       productSelectPagingUri: '/api/production/select/product', // 产品下拉
       businessAccItemPagingUri: '/api/production/select/businessAccItem', // 核算项目下拉
-      selectTenantProc: '/api/common/v1/select/tenantProc', // 租户资源类型
+
       // 系统模块下拉
       tenantSelectPagingUri: '/api/production/select/tenant', // 租户下拉
 
@@ -2360,10 +2477,10 @@ module.exports = {
     },
     system: {
       // 系统选择项
-      systemSelectionCreateUri: '/api/production/system_selection', // post 新增
+      systemSelectionCreateUri: '/api/production/system_selection', // post
       systemSelectionModifyUri: '/api/production/system_selection', // put
-      systemSelectionDetailUri: '/api/production/system_selection/:id', // get 详情
-      systemSelectionListPagingUri: '/api/production/system_selection/paging', // get 所有选择项
+      systemSelectionDetailUri: '/api/production/system_selection/:id', // get
+      systemSelectionListPagingUri: '/api/production/system_selection/paging', // get
       systemSelectionLogicalDeleteUri: '/api/production/system_selection', // patch
       systemSelectionListByKeyUri: '/api/production/systemSelection/byKey/:key', // get
       systemSelectionContainBaseUri: '/api/production/systemSelection/containBase', // get 获取包含基础租户数据的选择项
@@ -2380,6 +2497,7 @@ module.exports = {
       customSelectionContainBaseUri: '/api/production/customSelection/containBase', // get 获取包含基础租户数据的选择项
       customSelectionClearCacheUri: '/api/production/customSelection/clearCache', // get
       customSelectionCascaderUri: '/api/production/customSelection/cascader', // get
+      customSelectionTreeUri: '/api/production/customSelection/tree/:key', // get
 
       // 系统国际化
       systemLocalePortalUri: '/api/production/systemLocale/portal', // get
@@ -2490,6 +2608,7 @@ module.exports = {
       paymentRequestModifyUri: '/api/production/pur/paymentRequest/partial', // put
       paymentCompleteUri: '/api/production/pur/paymentComplete', // put
       paymentRequestLogicalDeleteUri: '/api/production/pur/paymentRequest', // patch
+      paymentRequestCompletePaymentUri: '/api/production/pur/paymentRequest/completePayment', // patch
     },
     // 出差申请
     trip: {
@@ -2581,6 +2700,14 @@ module.exports = {
       getBankInfo: '/api/production/salSelection/getBankInfo/:id', // 相关申请单下拉
       getCollectionDetailById: '/api/production/collectionPlan/getCollectionDetailById/:id', // 根据收款计划查收款明细 - get
     },
+    prompt: {
+      // 合同催款
+      promptIncrease: '/api/worth/v1/sysAltRcvpConfirm', // 催款单新建
+      promptDetail: '/api/worth/v1/sysAltRcvpConfirm/{key}', // 催款单详情获取
+      editPrompt: '/api/worth/v1/sysAltRcvpConfirm/submit', // 催款单提交
+      changeLog: '/api/worth/v1/sysAltRcvpConfirm/changeLog/list', // 收款计划变更历史
+      getRecvplan: '/api/worth/v1/sysAltRcvpConfirm/recvplan/getRecvplanByNoAccurate', //获取收款计划详情
+    },
     salesInvoice: {
       salesInvoiceApplyPging: '/api/production/salesInvoiceApply/paging', // 列表 - get
       salesInvoiceApplyOverall: '/api/production/salesInvoiceApply/overall', // 整体更新 - put
@@ -2619,64 +2746,14 @@ module.exports = {
     },
     user: {
       //员工信息
-      informationListPagingUri: '/county/user/information/paging', // get
-      informationImport: '/county/user/information/importExcel', //excel导入  post
-      informationSaveUri: '/county/user/information/save', //新增 post
-      informationLogicDeleteUri: '/county/user/information/:ids', //删除
-      informationFindById: '/county/user/information/:id', //查询
-      informationEditUri: '/county/user/information/partial', //修改
-    },
-    mrm: {
-      // 资源管理
-      mediaResource: {
-        mediaResourcePaging: '/county/mrm/mediaResource/paging', //资源列表-get
-        mediaResourceAdd: '/county/mrm/mediaResource', //资源登记-post
-        mediaResourceOverall: '/county/mrm/mediaResource/overall', //整体更新-put
-        mediaResourcePartial: '/county/mrm/mediaResource/partial', //指定更新-put
-        mediaResourceDelete: '/county/mrm/mediaResource', //删除-delete
-        mediaResourcePatch: '/county/mrm/mediaResource', //逻辑删除-patch
-        mediaResourceDetail: '/county/mrm/mediaResource/:key', //详情-get
-        mediaResourcepage: '/county/mrm/mediaResource/page', //资源价格列表-get
-        mediaResourceChangeStatus: '/county/mrm/mediaResource/optional', // 更改资源状态
-      },
-    },
-    // 项目管理
-    projectMgmt: {
-      // 项目成员管理
-      projectTeam: {
-        projectTeamAdd: '/county/pro/proMember', // 新增
-        projectTeamPartial: '/county/pro/proMember/partial', // 修改
-        projectTeamDelete: '/county/pro/proMember', // 删除
-        projectTeamDetail: '/county/pro/proMember/:id ', //根据主键查询
-        projectTeamPaging: '/county/pro/proMember/paging', // 分页查询
-      },
-      // 监播记录
-      monitoringRecord: {
-        monitoringRecordAdd: '/county/pla/projectPlayMonitor', // 新增
-        monitoringRecordPartial: '/county/pla/projectPlayMonitor/partial', // 修改
-        monitoringRecordDelete: '/county/pla/projectPlayMonitor', // 删除
-        monitoringRecordDetail: '/county/pla/projectPlayMonitor/:id ', //根据主键查询
-        monitoringRecordPaging: '/county/pla/projectPlayMonitor/paging', // 分页查询
-      },
-    },
-    // 收付款管理
-    payAndRec: {
-      contractPlanPaging: '/county/adm/contractPlan/paging', // 收付款列表
-      salesInvoiceApply: '/county/col/salesInvoiceApply', //开票申请
+      informationListPagingUri: '/api/production/user/information/paging', // get
+      informationImport: '/api/production/user/information/importExcel', //excel导入  post
     },
   },
 
   // 工作台
   workbench: {
     contract: {
-      //  =======================郡州合同管理======================
-      contractSave: '/county/adm/contract', //合同管理-保存接口 post
-      contractPaging: '/county/adm/contract/paging', // 合同管理-列表查询接口 GET
-      contractDetail: '/county/adm/contract/:id', // 合同管理-详情接口 GET
-      contractDelete: '/county/adm/contract/:ids', // 合同管理-删除接口 PATCH
-      contractOverall: '/county/adm/contract/overall', // 合同管理-整体更新接口 PUT
-      contractPartial: '/county/adm/contract/partial', // 合同管理-指定更新接口 PUT
-
       // =====================合同管理=====================
       pcontractSave: '/api/production/adm/v1/pcontract/save', // 合同管理-保存接口 post
       pcontractSubmit: '/api/production/adm/v1/pcontract/submit', // 合同管理-提交接口post
@@ -2700,28 +2777,6 @@ module.exports = {
         '/api/production/com/v1/rulesTemplateDetail/:associatedObject/:associatedObjectClass1/:associatedObjectClass2', // 规则模版管理-根据合同分类对象、合同分类对象1、合同分类对象2查询规则明细
     },
     project: {
-      // ======================郡州/项目管理=================
-      projectSave: '/county/pro/project', // 新增 - post
-      projectPaging: '/county/pro/project/paging', // 列表 - get
-      projectDetail: '/county/pro/project/:id', // 详情 - get
-      projectOverall: '/county/pro/project/overall', // 修改 - put
-      projectDelete: '/county/pro/project/:ids', // 删除 - patch
-      projectPermission: '/county/pro/project/selectPermission', // 当前人项目角色-  get
-      projectPermissionSelect: '/county/pro/projectRolePermission/selectByProjectId', //项目权限控制get
-      projectRoleSelect: '/county/pro/projectRolePermission/projectRoleSelect', //项目角色下拉
-      projectFlow: '/county/pro/project/pushProcess', //流程
-      // ======================郡州/排期管理=================
-      scheduleSave: '/county/pro/projectSchedule', // 新增 - post
-      schedulePaging: '/county/pro/projectSchedule/paging', // 列表 - get
-      scheduleDetail: '/county/pro/project/findScheduleById', // 详情 - get
-      scheduleOverall: '/county/pro/project/updateScheduleById', // 整体修改 - put
-      schedulePartial: '/county/pro/projectSchedule/partial', //部分修改 -put
-      scheduleDelete: '/county/pro/projectSchedule/:ids', // 删除 - patch
-      scheduleStatusOverall: '/county/pro/projectSchedule/updateStatus', //排期状态修改 -put
-      scheduleCommSave: '/county/pro/project/insertPoint', //指派新增
-      scheduleListSelect: '/county/pro/project/findLoginPersonSchedule', //查询当期登录人被指派、抄送的排期 -get
-      scheduleListImport: '/county/pro/project/resolveScheduleExcel', //解析导入的排期 excel   -post
-
       // ======================产品列表管理=================
       productManagementSave: '/api/production/pro/productManagement', // 新增 - post
       productManagementOverall: '/api/production/pro/productManagement/overall', // 修改 - put

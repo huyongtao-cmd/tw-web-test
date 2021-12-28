@@ -3,7 +3,7 @@ import { connect } from 'dva';
 import router from 'umi/router';
 import Link from 'umi/link';
 import moment from 'moment';
-import { Input, Select } from 'antd';
+import { Input, Select, Tooltip } from 'antd';
 import { mountToTab } from '@/layouts/routerControl';
 import PageHeaderWrapper from '@/components/layout/PageHeaderWrapper';
 import DataTable from '@/components/common/DataTable';
@@ -12,9 +12,11 @@ import { formatMessage } from 'umi/locale';
 import { selectIamUsers } from '@/services/gen/list';
 import AsyncSelect from '@/components/common/AsyncSelect';
 import { Selection, DatePicker } from '@/pages/gen/field';
-import { selectContract } from '@/services/user/Contract/sales';
+import { selectContract, selectCust } from '@/services/user/Contract/sales';
 import Ellipsis from '@/components/common/Ellipsis';
 import { selectUsers } from '@/services/sys/user';
+import { isEmpty, isNil } from 'ramda';
+import { formatDT } from '@/utils/tempUtils/DateTime';
 
 const DOMAIN = 'salePurchaseDemandList';
 
@@ -74,30 +76,16 @@ class PayRecordList extends PureComponent {
         });
       },
       searchForm,
-      enableSelection: false,
+      // enableSelection: false,
       searchBarForm: [
-        {
-          title: '采购合同编号',
-          dataIndex: 'contractNo',
-          options: {
-            initialValue: searchForm.contractNo || undefined,
-          },
-          tag: <Input placeholder="请输入采购合同编号" />,
-        },
-        {
-          title: '需求负责人',
-          dataIndex: 'edemandResId',
-          tag: (
-            <AsyncSelect
-              source={() => selectUsers().then(resp => resp.response)}
-              placeholder="请需求负责人"
-              showSearch
-              filterOption={(input, option) =>
-                option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-              }
-            />
-          ),
-        },
+        // {
+        //   title: '采购合同编号',
+        //   dataIndex: 'contractNo',
+        //   options: {
+        //     initialValue: searchForm.contractNo || undefined,
+        //   },
+        //   tag: <Input placeholder="请输入采购合同编号" />,
+        // },
         {
           title: '需求编号',
           dataIndex: 'demandNo',
@@ -107,9 +95,26 @@ class PayRecordList extends PureComponent {
           tag: <Input placeholder="请输入需求编号" />,
         },
         {
-          title: '需求类别',
-          dataIndex: 'demandType',
-          tag: <Selection.UDC code="TSK:BUSINESS_TYPE" placeholder="请选择需求类别" />,
+          title: '销售合同编号',
+          dataIndex: 'saleContractNo',
+          options: {
+            initialValue: searchForm.saleContractNo || undefined,
+          },
+          tag: <Input placeholder="请输入销售合同名称/编号" />,
+        },
+        {
+          title: '需求负责人',
+          dataIndex: 'edemandResId',
+          tag: (
+            <AsyncSelect
+              source={() => selectUsers().then(resp => resp.response)}
+              placeholder="请输入需求负责人"
+              showSearch
+              filterOption={(input, option) =>
+                option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }
+            />
+          ),
         },
         {
           title: '需求日期',
@@ -118,6 +123,37 @@ class PayRecordList extends PureComponent {
             initialValue: searchForm.uploadDate,
           },
           tag: <DatePicker.RangePicker format="YYYY-MM-DD" />,
+        },
+        {
+          title: '合同号',
+          dataIndex: 'userdefinedNo',
+          options: {
+            initialValue: searchForm.userdefinedNo,
+          },
+          tag: <Input placeholder="请输入参考合同号" />,
+        },
+        {
+          title: '客户',
+          dataIndex: 'custId',
+          key: 'custId',
+          options: {
+            initialValue: searchForm.custId,
+          },
+          tag: <Selection source={() => selectCust()} placeholder="请输入客户" />,
+        },
+
+        {
+          title: '需求类别',
+          dataIndex: 'demandType',
+          tag: <Selection.UDC code="TSK:BUSINESS_TYPE" placeholder="请选择需求类别" />,
+        },
+        {
+          title: '状态',
+          dataIndex: 'demandStatus',
+          options: {
+            initialValue: searchForm.demandStatus,
+          },
+          tag: <Selection.UDC code="TSK:DEMAND_STATUS" placeholder="请选择状态" />,
         },
 
         // {
@@ -130,6 +166,50 @@ class PayRecordList extends PureComponent {
         // },
       ],
       columns: [
+        {
+          title: '需求编号',
+          dataIndex: 'demandNo',
+          align: 'center',
+          width: 100,
+        },
+        {
+          title: '销售合同编号',
+          dataIndex: 'saleContractNo',
+          align: 'center',
+          width: 100,
+        },
+        {
+          title: '销售合同名称',
+          dataIndex: 'saleContractName',
+          align: 'center',
+          width: 100,
+        },
+        {
+          title: '销售合同号',
+          dataIndex: 'userdefinedNo',
+          align: 'center',
+          width: 100,
+        },
+        {
+          title: '客户名称',
+          dataIndex: 'custName',
+          align: 'center',
+          width: 100,
+        },
+        {
+          title: '需求备注',
+          dataIndex: 'demandRem',
+          align: 'center',
+          width: 100,
+          render: (value, row, key) =>
+            value && value.length > 20 ? (
+              <Tooltip placement="left" title={<pre>{value}</pre>}>
+                <span>{`${value.substr(0, 20)}...`}</span>
+              </Tooltip>
+            ) : (
+              <span>{value}</span>
+            ),
+        },
         {
           title: '采购合同编号',
           dataIndex: 'contractNo',
@@ -172,6 +252,7 @@ class PayRecordList extends PureComponent {
           dataIndex: 'demandData',
           align: 'center',
           width: 120,
+          render: value => formatDT(value),
         },
         {
           title: '货币',
@@ -207,6 +288,81 @@ class PayRecordList extends PureComponent {
           dataIndex: 'demandNum',
           align: 'center',
           width: 100,
+        },
+      ],
+      leftButtons: [
+        {
+          key: 'edit',
+          className: 'tw-btn-primary',
+          title: '生成采购合同',
+          loading: false,
+          hidden: false,
+          disabled: selectedRows =>
+            !selectedRows.length || selectedRows.filter(v => v.contractNo).length,
+          minSelections: 0,
+          cb: (selectedRowKeys, selectedRows, queryParams) => {
+            const target = selectedRows[0];
+            const index = selectedRows.findIndex(
+              item => item.saleContractId !== target.saleContractId
+            );
+            if (index > -1) {
+              createMessage({
+                type: 'warn',
+                description: '不是同一合同，不可同时生成采购合同！',
+              });
+              return;
+            }
+
+            if (selectedRows.findIndex(item => isNil(item.projectId)) > -1) {
+              createMessage({
+                type: 'warn',
+                description: '合同尚未关联项目，不能生成采购合同！',
+              });
+              return;
+            }
+
+            if (selectedRows.findIndex(item => item.saleContractStatus !== 'ACTIVE') > -1) {
+              createMessage({
+                type: 'warn',
+                description: '合同尚未激活，不能生成采购合同！',
+              });
+              return;
+            }
+
+            if (isEmpty(selectedRowKeys)) {
+              createMessage({ type: 'warn', description: '请选择需要生成采购合同的明细！' });
+              return;
+            }
+
+            const tt = selectedRows.filter(v => v.contractNo);
+            if (!isEmpty(tt)) {
+              createMessage({
+                type: 'warn',
+                description:
+                  '选择的采购需求明细中含有已经生成的采购合同明细，不能再生成采购合同的明细！',
+              });
+              return;
+            }
+
+            // 选择相同的建议供应商才能生成采购合同
+            const tt1 = [...new Set(selectedRows.map(v => Number(v.supplierId)))];
+            if (tt1.length > 1) {
+              createMessage({
+                type: 'warn',
+                description: '只能选择相同建议供应商的需求明细提交',
+              });
+              return;
+            }
+
+            const selectedSortNo = selectedRows.map(v => v.sortNo).join(',');
+            router.push(
+              `/sale/purchaseContract/Edit?mode=edit&purchaseType=CONTRACT&businessType=${
+                target.demandType
+              }&contractId=${
+                target.saleContractId
+              }&selectedSortNo=${selectedSortNo}&from=contract&fromTab=PurchaseDemandDeal`
+            );
+          },
         },
       ],
       // leftButtons: [

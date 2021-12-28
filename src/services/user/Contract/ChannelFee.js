@@ -8,6 +8,8 @@ const {
   insertPurConMan,
   insertPurConManModify,
   subDetail,
+  channelCostConDDetailById,
+  channelCostConDEdit,
 } = api.user.contract;
 
 // 子合同详情 - 从销售合同列表创建采购合同
@@ -20,9 +22,21 @@ export async function channelCostConDetailRq(params) {
   return request.get(toUrl(channelCostConDetail, params));
 }
 
+// 渠道费用确认单详情查询
+export async function channelCostConDDetailByIdRq(params) {
+  return request.get(toUrl(channelCostConDDetailById, params));
+}
+
 // 采购需求新增/修改
 export async function channelCostConEditRq(params) {
   return request.post(channelCostConEdit, {
+    body: params,
+  });
+}
+
+// 渠道费用明细 修改（拆分金额）
+export async function channelCostConDEditRq(params) {
+  return request.post(channelCostConDEdit, {
     body: params,
   });
 }

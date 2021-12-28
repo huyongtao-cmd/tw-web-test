@@ -11,6 +11,14 @@ class SystemSetting extends PureComponent {
     });
   };
 
+  reloadUdcCacheHandle = () => {
+    const { dispatch } = this.props;
+    dispatch({
+      type: 'syssetting/reloadCacheDefIdFn',
+      payload: { defId: 'SQL_LOG_CONFIG' },
+    });
+  };
+
   render() {
     return (
       <div
@@ -25,6 +33,16 @@ class SystemSetting extends PureComponent {
           }}
         >
           下拉缓存清除
+        </Button>
+
+        <Button
+          size="large"
+          className="tw-btn-primary"
+          onClick={() => {
+            this.reloadUdcCacheHandle();
+          }}
+        >
+          重载SQL日志配置相关缓存
         </Button>
       </div>
     );

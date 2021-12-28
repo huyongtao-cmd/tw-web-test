@@ -1,6 +1,7 @@
 import { closeThenGoto } from '@/layouts/routerControl';
 import { linkagePurchaseSupplier, linkagePurchaseBu } from '@/services/user/Contract/sales';
 import { selectOuByOuId } from '@/services/sale/purchaseContract/purchaseContract';
+import { getViewConf } from '@/services/gen/flow';
 import {
   selectAssociation,
   queryEdit,
@@ -67,6 +68,14 @@ export default {
     associationArr: [],
     resArr: [],
     pageConfig: {},
+    fieldsConfig: {
+      buttons: [],
+      panels: {},
+    },
+    flowForm: {
+      remark: undefined,
+      dirty: false,
+    },
   },
   effects: {
     /* 获取采购合同详情 */
@@ -182,6 +191,23 @@ export default {
         return response;
       }
       return {};
+    },
+
+    *fetchConfig({ payload }, { call, put }) {
+      const { status, response } = yield call(getViewConf, payload);
+      console.log(response, 987);
+      if (status === 200) {
+        yield put({
+          type: 'updateState',
+          payload: {
+            fieldsConfig: response || {},
+            flowForm: {
+              remark: undefined,
+              dirty: false,
+            },
+          },
+        });
+      }
     },
   },
   reducers: {

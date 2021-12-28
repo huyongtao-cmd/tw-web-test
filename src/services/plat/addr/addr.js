@@ -18,12 +18,10 @@ const {
   addrSaveBook,
   addrSaveCode,
   addrSaveCust,
-  addrSaveSupplier,
   addrSaveCoop,
   addrDel,
   abList,
   addrSaveAll,
-  addrPaging,
 } = api.plat.addr;
 
 export async function queryAbList() {
@@ -32,10 +30,6 @@ export async function queryAbList() {
 
 export async function queryAddrList(params) {
   return request.get(toQs(addrs, params));
-}
-
-export async function queryAddrPaging(params) {
-  return request.get(toQs(addrPaging, params));
 }
 
 export async function queryAddrSup(params) {
@@ -110,12 +104,6 @@ export async function saveAddrCode(params) {
 
 export async function saveAddrCust(params) {
   return request.put(addrSaveCust, {
-    body: params,
-  });
-}
-
-export async function saveAddrSupplier(params) {
-  return request.put(addrSaveSupplier, {
     body: params,
   });
 }

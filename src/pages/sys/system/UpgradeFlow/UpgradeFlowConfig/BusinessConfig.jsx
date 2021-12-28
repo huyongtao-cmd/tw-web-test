@@ -435,7 +435,7 @@ class BusinessConfig extends PureComponent {
               fieldCol={1}
               labelCol={{ span: 4, xxl: 3 }}
               wrapperCol={{ span: 19, xxl: 20 }}
-              // extra={<div dangerouslySetInnerHTML={{ __html: cmsInfo }} />}
+              extra={<div dangerouslySetInnerHTML={{ __html: cmsInfo }} />}
             >
               <Input.TextArea rows={3} placeholder="请输入流程相关信息模板" />
             </Field>

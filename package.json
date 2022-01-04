@@ -49,6 +49,7 @@
     "handlebars": "^4.0.12",
     "handlebars-loader": "^1.7.1",
     "hash.js": "^1.1.5",
+    "highcharts": "^9.3.2",
     "html-to-draftjs": "^1.4.0",
     "immutability-helper": "^2.8.1",
     "inherits": "^2.0.4",

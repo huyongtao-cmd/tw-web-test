@@ -1,25 +1,29 @@
 /* eslint-disable react/no-unused-state */
+// 框架类
 import React, { PureComponent } from 'react';
 import { connect } from 'dva';
-import router from 'umi/router';
-import { formatMessage } from 'umi/locale';
 import { Button, Card, DatePicker, Form } from 'antd';
 import classnames from 'classnames';
 import { isEmpty, isNil, mapObjIndexed } from 'ramda';
-import { createConfirm } from '@/components/core/Confirm';
+import { formatMessage } from 'umi/locale';
+import moment from 'moment';
+import JSGanttComponent from 'react-jsgantt';
+import Highcharts from 'highcharts';
+import xrange from 'highcharts/modules/xrange';
+
+// 产品化组件
 import { fromQs } from '@/utils/stringUtils';
 import PageHeaderWrapper from '@/components/layout/PageHeaderWrapper';
 import { mountToTab, closeThenGoto } from '@/layouts/routerControl';
-import createMessage from '@/components/core/AlertMessage';
-import moment from 'moment';
-import JSGanttComponent from 'react-jsgantt';
-import Gant from 'react-gant';
 import ResourceModal from './modal/ResourceModal';
 import History from './modal/History';
 import HistoryModal from './modal/HistoryModal';
 import ResourceListModal from './modal/ResourceListModal';
+
+// css样式
 import './ResourcePlanning.less';
 
+xrange(Highcharts);
 // 编辑页tab
 const editOperationTabList = [
   {
@@ -34,6 +38,10 @@ const editOperationTabList = [
     key: 'gantt',
     tab: formatMessage({ id: `user.project.menuMap.gantt`, desc: '甘特图' }),
   },
+  {
+    key: 'ganttTest',
+    tab: formatMessage({ id: `user.project.menuMap.ganttTest`, desc: '甘特图测试' }),
+  },
 ];
 
 // 保存历史版本明细初始化
@@ -44,37 +52,6 @@ const historyFormDataModel = {
 };
 
 const DOMAIN = 'userResourcePlanning';
-
-const STATEMAP = {
-  waiting: {
-    bgColor: '#C6D57E',
-    label: '等待',
-  },
-  primary: {
-    bgColor: '#A2D2FF',
-    label: '正常',
-  },
-  success: {
-    bgColor: '#61B15A',
-    label: '成功',
-  },
-  warning: {
-    bgColor: '#FFC93C',
-    label: '警告',
-  },
-  error: {
-    bgColor: '#FA1E0E',
-    label: '异常',
-  },
-  closed: {
-    bgColor: '#DDDDDD',
-    label: '关闭',
-  },
-  subTask: {
-    bgColor: '#7868e6',
-    label: '子任务',
-  },
-};
 
 const chinese = {
   january: '一月',
@@ -148,6 +125,49 @@ const chinese = {
   mths: '月',
   qtrs: '季',
 };
+
+// 甘特图数据处理
+let today = new Date();
+const day = 1000 * 60 * 60 * 24;
+// const dateFormat = Highcharts.dateFormat;
+// const series;
+// const cars;
+
+today.setUTCHours(0); // 从8点开始设置与现在对应的小时数
+today.setUTCMinutes(0);
+today.setUTCSeconds(0);
+today.setUTCMilliseconds(0);
+today = today.getTime();
+
+const left = [
+  {
+    model: 'Nissan Leaf',
+    current: 0,
+    deals: [
+      {
+        rentedTo: 'Lisa Star',
+        from: today - 1 * day,
+        to: today + 2 * day,
+      },
+    ],
+  },
+];
+
+const series = left.map((item, index) => {
+  const data = item.deals.map(deal => ({
+    id: 'deal-' + index,
+    rentedTo: deal.rentedTo,
+    start: deal.from,
+    end: deal.to,
+    y: index,
+  }));
+  return {
+    name: item.model,
+    data,
+    current: item.deals[item.current],
+  };
+});
+
 @connect(({ loading, userResourcePlanning }) => ({
   loading,
   userResourcePlanning,
@@ -195,6 +215,7 @@ class ResourcePlanning extends PureComponent {
     this.setState({
       operationkey: 'resPlanning',
     });
+    // this.renderGentt()
   }
 
   componentDidUpdate() {
@@ -212,6 +233,8 @@ class ResourcePlanning extends PureComponent {
     } else if (key === 'gantt') {
       // this.ref.editor.addLang('chinese',chinese)
       this.setState({ btnDisabled: true });
+    } else if (key === 'ganttTest') {
+      this.renderGentt();
     } else {
       this.setState({ btnDisabled: false });
     }
@@ -248,6 +271,127 @@ class ResourcePlanning extends PureComponent {
         });
       }
     });
+  };
+
+  renderGentt = () => {
+    const GenttData = {
+      chart: {
+        type: 'xrange', // 指定图表的类型，默认是折线图（line）
+      },
+      title: {
+        text: '简易甘特图', // 标题
+      },
+      xAxis: {
+        // 横坐标轴数据
+        type: 'datetime',
+        dateTimeLabelFormats: {
+          // 日期格式化
+          week: '%Y/%m/%d',
+        },
+      },
+      yAxis: {
+        // y轴配置项
+        title: {
+          text: '', // y 轴标题
+        },
+        categories: ['制作产品原型', '开发', '测试'], // y轴分类
+        reversed: false, // 控制分类是否反转
+      },
+      tooltip: {
+        // 提示框设置
+        dateTimeLabelFormats: {
+          day: '%Y/%m/%d',
+        },
+      },
+      series: [
+        {
+          // 属性和数据
+          name: '项目1', // 显示数据列的名称
+          // pointPadding: 0,
+          // groupPadding: 0,
+          borderColor: 'gray',
+          pointWidth: 20,
+          data: [
+            {
+              // 显示在图表中的数据列，可以为数组或者JSON格式的数组。
+              // 返回指定日期与 1970 年 1 月 1 日午夜之间的毫秒数
+              x: Date.UTC(2014, 10, 21), // 每个阶段的起始日期
+              x2: Date.UTC(2014, 11, 5), // 每个阶段的结束日期
+              y: 1, // 控制纵向位置
+              partialFill: 0.25,
+            },
+            {
+              x: Date.UTC(2014, 11, 2),
+              x2: Date.UTC(2014, 11, 5),
+              y: 1,
+            },
+            {
+              x: Date.UTC(2014, 11, 8),
+              x2: Date.UTC(2014, 11, 9),
+              y: 2,
+            },
+            {
+              x: Date.UTC(2014, 11, 9),
+              x2: Date.UTC(2014, 11, 19),
+              y: 1,
+            },
+            {
+              x: Date.UTC(2014, 11, 10),
+              x2: Date.UTC(2014, 11, 23),
+              y: 2,
+            },
+          ],
+          dataLabels: {
+            enabled: true,
+          },
+        },
+        {
+          // 属性和数据
+          name: '项目', // 显示数据列的名称
+          // pointPadding: 0,
+          // groupPadding: 0,
+          borderColor: 'gray',
+          pointWidth: 20,
+          data: [
+            {
+              // 显示在图表中的数据列，可以为数组或者JSON格式的数组。
+              x: Date.UTC(2014, 10, 21), // 返回指定日期与 1970 年 1 月 1 日午夜之间的毫秒数：
+              x2: Date.UTC(2014, 11, 2),
+              y: 0,
+              partialFill: 0.25,
+            },
+            {
+              x: Date.UTC(2014, 11, 2),
+              x2: Date.UTC(2014, 11, 5),
+              y: 1,
+            },
+            {
+              x: Date.UTC(2014, 11, 8),
+              x2: Date.UTC(2014, 11, 9),
+              y: 2,
+            },
+            {
+              x: Date.UTC(2014, 11, 9),
+              x2: Date.UTC(2014, 11, 19),
+              y: 1,
+            },
+            {
+              x: Date.UTC(2014, 11, 10),
+              x2: Date.UTC(2014, 11, 23),
+              y: 2,
+            },
+          ],
+          dataLabels: {
+            enabled: true,
+          },
+        },
+      ],
+      credits: {
+        //去掉版权logo
+        enabled: false,
+      },
+    };
+    Highcharts.chart('genttTest', GenttData); // 图表初始化函数
   };
 
   // 保存历史版本新增弹出窗。
@@ -337,12 +481,10 @@ class ResourcePlanning extends PureComponent {
     } = this.props;
     console.log(dataSource);
 
-    const newData = []
-    dataSource.map((item, index) => {
-      newData.push({
-       
-      })
-    })
+    // const newData = [];
+    // dataSource.map((item, index) => {
+    //   newData.push({});
+    // });
 
     const data = dataSource.map(item => ({
       pID: item.id,
@@ -407,6 +549,7 @@ class ResourcePlanning extends PureComponent {
           key={this.ref}
         />
       ),
+      ganttTest: <div id="genttTest" />,
     };
     const submitBtn =
       loading.effects[`userResourcePlanning/query`] || loading.effects[`userResourcePlanning/save`];
@@ -460,6 +603,7 @@ class ResourcePlanning extends PureComponent {
           resourceListModal={this.editModeal}
           onRef={this.onRefList}
         />
+        <div id="genttTest" />
       </PageHeaderWrapper>
     );
   }

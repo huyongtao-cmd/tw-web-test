@@ -114,6 +114,7 @@ export default {
   'user.project.menuMap.resplanning': '资源规划',
   'user.project.menuMap.changehistory': '变更历史',
   'user.project.menuMap.gantt': '甘特图',
+  'user.project.menuMap.ganttTest': '甘特图测试',
   'user.project.workbench': '工作台',
   // ###########任务#############
   'user.task.subpack': '转包信息',

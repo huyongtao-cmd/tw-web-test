@@ -4,7 +4,7 @@ import React, { PureComponent } from 'react';
 import { connect } from 'dva';
 import { Button, Card, DatePicker, Form } from 'antd';
 import classnames from 'classnames';
-import { isEmpty, isNil, mapObjIndexed } from 'ramda';
+import { isEmpty, isNil, mapObjIndexed, none } from 'ramda';
 import { formatMessage } from 'umi/locale';
 import moment from 'moment';
 import JSGanttComponent from 'react-jsgantt';
@@ -227,6 +227,7 @@ class ResourcePlanning extends PureComponent {
       operationkey: key,
       didMountFlag: key,
     });
+
     if (key === 'changeHistory') {
       // 切换到变更历史时，保存等按钮禁用
       this.setState({ btnDisabled: true });
@@ -273,7 +274,39 @@ class ResourcePlanning extends PureComponent {
     });
   };
 
+  getYearMonth = date => {
+    // 将日期以空格隔开，即['2020-06-13', '17:10:09']
+    const dateTemp = (date + '').split(/[ ]+/);
+    const result = [];
+    const reg = /^(\d{4})-(\d{1,2})-(\d{1,2})$/;
+    // 用截取出来的年月日进行正则表达式匹配
+    reg.exec(dateTemp[0]);
+    // result.year = RegExp.$1
+    // result.month = RegExp.$2
+    // result.day = RegExp.$3
+    result.push(RegExp.$1); //获取匹配到的第一个子匹配，即‘2020’
+    result.push(RegExp.$2);
+    result.push(RegExp.$3);
+    return result;
+  };
+
   renderGentt = () => {
+    const {
+      userResourcePlanning: { dataSource },
+    } = this.props;
+    const resNames = [];
+    const ganttData = dataSource.map((item, index) => {
+      resNames.push(item.resName);
+      const startDate = this.getYearMonth(item.startDate);
+      const endDate = this.getYearMonth(item.endDate);
+      return {
+        x: Date.UTC(startDate[0], startDate[1], startDate[2]),
+        x2: Date.UTC(endDate[0], endDate[1], endDate[2]),
+        y: index,
+        // partialFill: 0.25,
+      };
+    });
+
     const GenttData = {
       chart: {
         type: 'xrange', // 指定图表的类型，默认是折线图（line）
@@ -294,104 +327,107 @@ class ResourcePlanning extends PureComponent {
         title: {
           text: '', // y 轴标题
         },
-        categories: ['制作产品原型', '开发', '测试'], // y轴分类
+        categories: resNames, // y轴分类
         reversed: false, // 控制分类是否反转
       },
       tooltip: {
         // 提示框设置
         dateTimeLabelFormats: {
+          // 格式化
           day: '%Y/%m/%d',
         },
+        pointFormat: '<span>总天数：20</span><br/><span>剩余天数：11</span>',
       },
       series: [
         {
           // 属性和数据
-          name: '项目1', // 显示数据列的名称
+          name: '资源', // 显示数据列的名称
           // pointPadding: 0,
           // groupPadding: 0,
           borderColor: 'gray',
           pointWidth: 20,
-          data: [
-            {
-              // 显示在图表中的数据列，可以为数组或者JSON格式的数组。
-              // 返回指定日期与 1970 年 1 月 1 日午夜之间的毫秒数
-              x: Date.UTC(2014, 10, 21), // 每个阶段的起始日期
-              x2: Date.UTC(2014, 11, 5), // 每个阶段的结束日期
-              y: 1, // 控制纵向位置
-              partialFill: 0.25,
-            },
-            {
-              x: Date.UTC(2014, 11, 2),
-              x2: Date.UTC(2014, 11, 5),
-              y: 1,
-            },
-            {
-              x: Date.UTC(2014, 11, 8),
-              x2: Date.UTC(2014, 11, 9),
-              y: 2,
-            },
-            {
-              x: Date.UTC(2014, 11, 9),
-              x2: Date.UTC(2014, 11, 19),
-              y: 1,
-            },
-            {
-              x: Date.UTC(2014, 11, 10),
-              x2: Date.UTC(2014, 11, 23),
-              y: 2,
-            },
-          ],
+          data: ganttData,
+          // data: [
+          //   {
+          //     // 显示在图表中的数据列，可以为数组或者JSON格式的数组。
+          //     // 返回指定日期与 1970 年 1 月 1 日午夜之间的毫秒数
+          //     x: Date.UTC(2014, 10, 21), // 每个阶段的起始日期
+          //     x2: Date.UTC(2014, 11, 5), // 每个阶段的结束日期
+          //     y: 1, // 控制纵向位置
+          //     // partialFill: 0.25, // 项目进度
+          //   },
+          //   {
+          //     x: Date.UTC(2014, 11, 2),
+          //     x2: Date.UTC(2014, 11, 5),
+          //     y: 1,
+          //   },
+          //   {
+          //     x: Date.UTC(2014, 11, 8),
+          //     x2: Date.UTC(2014, 11, 9),
+          //     y: 2,
+          //   },
+          //   {
+          //     x: Date.UTC(2014, 11, 9),
+          //     x2: Date.UTC(2014, 11, 19),
+          //     y: 1,
+          //   },
+          //   {
+          //     x: Date.UTC(2014, 11, 10),
+          //     x2: Date.UTC(2014, 11, 23),
+          //     y: 2,
+          //   },
+          // ],
           dataLabels: {
             enabled: true,
           },
         },
-        {
-          // 属性和数据
-          name: '项目', // 显示数据列的名称
-          // pointPadding: 0,
-          // groupPadding: 0,
-          borderColor: 'gray',
-          pointWidth: 20,
-          data: [
-            {
-              // 显示在图表中的数据列，可以为数组或者JSON格式的数组。
-              x: Date.UTC(2014, 10, 21), // 返回指定日期与 1970 年 1 月 1 日午夜之间的毫秒数：
-              x2: Date.UTC(2014, 11, 2),
-              y: 0,
-              partialFill: 0.25,
-            },
-            {
-              x: Date.UTC(2014, 11, 2),
-              x2: Date.UTC(2014, 11, 5),
-              y: 1,
-            },
-            {
-              x: Date.UTC(2014, 11, 8),
-              x2: Date.UTC(2014, 11, 9),
-              y: 2,
-            },
-            {
-              x: Date.UTC(2014, 11, 9),
-              x2: Date.UTC(2014, 11, 19),
-              y: 1,
-            },
-            {
-              x: Date.UTC(2014, 11, 10),
-              x2: Date.UTC(2014, 11, 23),
-              y: 2,
-            },
-          ],
-          dataLabels: {
-            enabled: true,
-          },
-        },
+        // {
+        //   // 属性和数据
+        //   name: '项目', // 显示数据列的名称
+        //   // pointPadding: 0,
+        //   // groupPadding: 0,
+        //   borderColor: 'gray',
+        //   pointWidth: 20,
+        //   data: [
+        //     {
+        //       // 显示在图表中的数据列，可以为数组或者JSON格式的数组。
+        //       x: Date.UTC(2014, 10, 21), // 返回指定日期与 1970 年 1 月 1 日午夜之间的毫秒数：
+        //       x2: Date.UTC(2014, 11, 2),
+        //       y: 0,
+        //       partialFill: 0.25,
+        //     },
+        //     {
+        //       x: Date.UTC(2014, 11, 2),
+        //       x2: Date.UTC(2014, 11, 5),
+        //       y: 1,
+        //     },
+        //     {
+        //       x: Date.UTC(2014, 11, 8),
+        //       x2: Date.UTC(2014, 11, 9),
+        //       y: 2,
+        //     },
+        //     {
+        //       x: Date.UTC(2014, 11, 9),
+        //       x2: Date.UTC(2014, 11, 19),
+        //       y: 1,
+        //     },
+        //     {
+        //       x: Date.UTC(2014, 11, 10),
+        //       x2: Date.UTC(2014, 11, 23),
+        //       y: 2,
+        //     },
+        //   ],
+        //   dataLabels: {
+        //     enabled: true,
+        //   },
+        // },
       ],
       credits: {
         //去掉版权logo
         enabled: false,
       },
     };
-    Highcharts.chart('genttTest', GenttData); // 图表初始化函数
+    Highcharts.chart('ganttTest', GenttData); // 图表初始化函数
   };
 
   // 保存历史版本新增弹出窗。
@@ -479,13 +515,6 @@ class ResourcePlanning extends PureComponent {
         formData: { planType },
       },
     } = this.props;
-    console.log(dataSource);
-
-    // const newData = [];
-    // dataSource.map((item, index) => {
-    //   newData.push({});
-    // });
-
     const data = dataSource.map(item => ({
       pID: item.id,
       pName: item.role,
@@ -549,11 +578,13 @@ class ResourcePlanning extends PureComponent {
           key={this.ref}
         />
       ),
-      ganttTest: <div id="genttTest" />,
+      ganttTest: <div id="ganttTest" />,
     };
     const submitBtn =
       loading.effects[`userResourcePlanning/query`] || loading.effects[`userResourcePlanning/save`];
 
+    const style = { display: 'none' };
+    const show = { display: 'block' };
     return (
       <PageHeaderWrapper>
         <Card className="tw-card-rightLine">
@@ -603,7 +634,7 @@ class ResourcePlanning extends PureComponent {
           resourceListModal={this.editModeal}
           onRef={this.onRefList}
         />
-        <div id="genttTest" />
+        <div id="ganttTest" style={operationkey !== 'ganttTest' ? style : show} />
       </PageHeaderWrapper>
     );
   }

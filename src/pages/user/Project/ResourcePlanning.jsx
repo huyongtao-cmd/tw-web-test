@@ -274,6 +274,7 @@ class ResourcePlanning extends PureComponent {
     });
   };
 
+  // 年月日格式转换
   getYearMonth = date => {
     // 将日期以空格隔开，即['2020-06-13', '17:10:09']
     const dateTemp = (date + '').split(/[ ]+/);
@@ -290,29 +291,73 @@ class ResourcePlanning extends PureComponent {
     return result;
   };
 
+  // 计算两个日期之间的天数
+  timeDifference = (startDate, endDate) => {
+    // const start = new Date(); // 开始时间
+    // const end = new Date(); // 结束时间
+    const startDateTemp = new Date(startDate).getTime();
+    const endDateTemp = new Date(endDate).getTime();
+    const dateCha = endDateTemp - startDateTemp;
+    //计算出相差天数
+    const days = Math.floor(dateCha / (24 * 3600 * 1000));
+    return days;
+    // //计算出小时数
+    // const leave1 = dateCha % (24 * 3600 * 1000); //计算天数后剩余的毫秒数
+    // const hours = Math.floor(leave1 / (3600 * 1000));
+    // //计算相差分钟数
+    // const leave2 = leave1 % (3600 * 1000); //计算小时数后剩余的毫秒数
+    // const minutes = Math.floor(leave2 / (60 * 1000)); // 分
+    // //计算相差秒数
+    // const leave3 = leave2 % (60 * 1000); //计算分钟数后剩余的毫秒数
+    // const seconds = Math.round(leave3 / 1000); // 秒
+    // console.log(days + "天 " + hours + "小时 ");
+  };
+
   renderGentt = () => {
     const {
       userResourcePlanning: { dataSource },
     } = this.props;
     const resNames = [];
+    const totalDays = [];
     const ganttData = dataSource.map((item, index) => {
       resNames.push(item.resName);
+      totalDays.push(this.timeDifference(item.startDate, item.endDate));
       const startDate = this.getYearMonth(item.startDate);
       const endDate = this.getYearMonth(item.endDate);
       return {
         x: Date.UTC(startDate[0], startDate[1], startDate[2]),
         x2: Date.UTC(endDate[0], endDate[1], endDate[2]),
         y: index,
-        // partialFill: 0.25,
+        partialFill: 0.25,
       };
     });
 
     const GenttData = {
+      credits: {
+        //去掉版权logo
+        enabled: false,
+      },
+      tooltip: {
+        // 提示框设置
+        dateTimeLabelFormats: {
+          // 格式化
+          day: '%Y/%m/%d',
+        },
+        useHTML: true,
+        formatter() {
+          //格式化提示框的内容样式
+          console.log(this);
+          const diffDay = Math.floor((this.x2 - this.x) / (1000 * 60 * 60 * 24));
+          return `<span>总天数：${diffDay}</span><br/>
+          <span>资源：${this.yCategory}</span>`;
+        },
+        // pointFormat: `<span>总天数：${console.log(series)}</span><br/><span>资源：${resNames}</span>`,
+      },
       chart: {
         type: 'xrange', // 指定图表的类型，默认是折线图（line）
       },
       title: {
-        text: '简易甘特图', // 标题
+        text: '资源规划甘特图', // 标题
       },
       xAxis: {
         // 横坐标轴数据
@@ -329,14 +374,6 @@ class ResourcePlanning extends PureComponent {
         },
         categories: resNames, // y轴分类
         reversed: false, // 控制分类是否反转
-      },
-      tooltip: {
-        // 提示框设置
-        dateTimeLabelFormats: {
-          // 格式化
-          day: '%Y/%m/%d',
-        },
-        pointFormat: '<span>总天数：20</span><br/><span>剩余天数：11</span>',
       },
       series: [
         {
@@ -422,10 +459,6 @@ class ResourcePlanning extends PureComponent {
         //   },
         // },
       ],
-      credits: {
-        //去掉版权logo
-        enabled: false,
-      },
     };
     Highcharts.chart('ganttTest', GenttData); // 图表初始化函数
   };

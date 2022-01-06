@@ -215,7 +215,7 @@ class ResourcePlanning extends PureComponent {
     this.setState({
       operationkey: 'resPlanning',
     });
-    // this.renderGentt()
+    this.renderGentt();
   }
 
   componentDidUpdate() {
@@ -319,19 +319,23 @@ class ResourcePlanning extends PureComponent {
     } = this.props;
     const resNames = [];
     const totalDays = [];
+    const yIndex = [];
     const ganttData = dataSource.map((item, index) => {
+      yIndex.push(index);
       resNames.push(item.resName);
       totalDays.push(this.timeDifference(item.startDate, item.endDate));
       const startDate = this.getYearMonth(item.startDate);
       const endDate = this.getYearMonth(item.endDate);
+      console.log(Date.UTC(startDate[0], startDate[1], startDate[2]));
       return {
-        x: Date.UTC(startDate[0], startDate[1], startDate[2]),
-        x2: Date.UTC(endDate[0], endDate[1], endDate[2]),
+        ...item,
+        x: Date.UTC(startDate[0], startDate[1] - 1, startDate[2]),
+        x2: Date.UTC(endDate[0], endDate[1] - 1, endDate[2]),
         y: index,
-        partialFill: 0.25,
+        // partialFill: 0.25,
       };
     });
-
+    console.log(ganttData);
     const GenttData = {
       credits: {
         //去掉版权logo
@@ -349,7 +353,10 @@ class ResourcePlanning extends PureComponent {
           console.log(this);
           const diffDay = Math.floor((this.x2 - this.x) / (1000 * 60 * 60 * 24));
           return `<span>总天数：${diffDay}</span><br/>
-          <span>资源：${this.yCategory}</span>`;
+          <span>资源：${this.yCategory}</span><br/>
+            <span> 角色：${this.point.role}</span><br/>
+            <span>开始时间：${this.point.startDate}</span><br/>
+            <span>结束时间：${this.point.endDate}</span>`;
         },
         // pointFormat: `<span>总天数：${console.log(series)}</span><br/><span>资源：${resNames}</span>`,
       },
@@ -362,6 +369,7 @@ class ResourcePlanning extends PureComponent {
       xAxis: {
         // 横坐标轴数据
         type: 'datetime',
+        tickInterval: 7 * 24 * 3600 * 1000, // 设置x轴的时间间隔
         dateTimeLabelFormats: {
           // 日期格式化
           week: '%Y/%m/%d',
@@ -372,6 +380,15 @@ class ResourcePlanning extends PureComponent {
         title: {
           text: '', // y 轴标题
         },
+        // plotLines: [{
+        //   value: 0,
+        //   width: 1,
+        //   color: '#808080'
+        // }],
+        // min: 30,  //最小
+        // tickInterval: 10, //步长
+        // max: 300,//最大
+        tickPositions: yIndex,
         categories: resNames, // y轴分类
         reversed: false, // 控制分类是否反转
       },
@@ -384,80 +401,11 @@ class ResourcePlanning extends PureComponent {
           borderColor: 'gray',
           pointWidth: 20,
           data: ganttData,
-          // data: [
-          //   {
-          //     // 显示在图表中的数据列，可以为数组或者JSON格式的数组。
-          //     // 返回指定日期与 1970 年 1 月 1 日午夜之间的毫秒数
-          //     x: Date.UTC(2014, 10, 21), // 每个阶段的起始日期
-          //     x2: Date.UTC(2014, 11, 5), // 每个阶段的结束日期
-          //     y: 1, // 控制纵向位置
-          //     // partialFill: 0.25, // 项目进度
-          //   },
-          //   {
-          //     x: Date.UTC(2014, 11, 2),
-          //     x2: Date.UTC(2014, 11, 5),
-          //     y: 1,
-          //   },
-          //   {
-          //     x: Date.UTC(2014, 11, 8),
-          //     x2: Date.UTC(2014, 11, 9),
-          //     y: 2,
-          //   },
-          //   {
-          //     x: Date.UTC(2014, 11, 9),
-          //     x2: Date.UTC(2014, 11, 19),
-          //     y: 1,
-          //   },
-          //   {
-          //     x: Date.UTC(2014, 11, 10),
-          //     x2: Date.UTC(2014, 11, 23),
-          //     y: 2,
-          //   },
-          // ],
           dataLabels: {
+            // 是否显示数据标签
             enabled: true,
           },
         },
-        // {
-        //   // 属性和数据
-        //   name: '项目', // 显示数据列的名称
-        //   // pointPadding: 0,
-        //   // groupPadding: 0,
-        //   borderColor: 'gray',
-        //   pointWidth: 20,
-        //   data: [
-        //     {
-        //       // 显示在图表中的数据列，可以为数组或者JSON格式的数组。
-        //       x: Date.UTC(2014, 10, 21), // 返回指定日期与 1970 年 1 月 1 日午夜之间的毫秒数：
-        //       x2: Date.UTC(2014, 11, 2),
-        //       y: 0,
-        //       partialFill: 0.25,
-        //     },
-        //     {
-        //       x: Date.UTC(2014, 11, 2),
-        //       x2: Date.UTC(2014, 11, 5),
-        //       y: 1,
-        //     },
-        //     {
-        //       x: Date.UTC(2014, 11, 8),
-        //       x2: Date.UTC(2014, 11, 9),
-        //       y: 2,
-        //     },
-        //     {
-        //       x: Date.UTC(2014, 11, 9),
-        //       x2: Date.UTC(2014, 11, 19),
-        //       y: 1,
-        //     },
-        //     {
-        //       x: Date.UTC(2014, 11, 10),
-        //       x2: Date.UTC(2014, 11, 23),
-        //       y: 2,
-        //     },
-        //   ],
-        //   dataLabels: {
-        //     enabled: true,
-        //   },
-        // },
       ],
     };
     Highcharts.chart('ganttTest', GenttData); // 图表初始化函数
@@ -548,6 +496,16 @@ class ResourcePlanning extends PureComponent {
         formData: { planType },
       },
     } = this.props;
+    const {
+      operationkey,
+      historyFormData,
+      historyVisible,
+      templateVisible,
+      btnDisabled,
+      didMountFlag,
+      editVisible,
+      isPastDate,
+    } = this.state;
     const data = dataSource.map(item => ({
       pID: item.id,
       pName: item.role,
@@ -574,16 +532,6 @@ class ResourcePlanning extends PureComponent {
       // vWeekMinorDateDisplayFormat: 'dd mon'
       vFormatArr: ['Week'],
     };
-    const {
-      operationkey,
-      historyFormData,
-      historyVisible,
-      templateVisible,
-      btnDisabled,
-      didMountFlag,
-      editVisible,
-      isPastDate,
-    } = this.state;
 
     // 获取url上的参数
     const param = fromQs();
@@ -616,8 +564,8 @@ class ResourcePlanning extends PureComponent {
     const submitBtn =
       loading.effects[`userResourcePlanning/query`] || loading.effects[`userResourcePlanning/save`];
 
-    const style = { display: 'none' };
-    const show = { display: 'block' };
+    const hidden = { display: 'none' };
+    const show = { display: 'block', overflow: 'scroll' };
     return (
       <PageHeaderWrapper>
         <Card className="tw-card-rightLine">
@@ -667,7 +615,7 @@ class ResourcePlanning extends PureComponent {
           resourceListModal={this.editModeal}
           onRef={this.onRefList}
         />
-        <div id="ganttTest" style={operationkey !== 'ganttTest' ? style : show} />
+        <div id="ganttTest" style={operationkey !== 'ganttTest' ? hidden : show} />
       </PageHeaderWrapper>
     );
   }
